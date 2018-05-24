@@ -1,0 +1,34 @@
+------>RUNNING STEP : checking all inputs validity
+------>RUNNING STEP : checking database
+DATABASE: OK
+------>RUNNING STEP : checking each folder in studied organism
+------>RUNNING STEP : checking if FAA or GBK was given for e_siliculosus
+No given GBK for studied organism
+FAA studied organism: OK
+------>RUNNING STEP : checking if FAA or GBK was given for e_subulatus
+No given GBK for studied organism
+FAA studied organism: OK
+------>RUNNING STEP : checking if FAA or GBK was given for t_lutea
+No given GBK for studied organism
+FAA studied organism: OK
+------>RUNNING STEP : checking (if exist) each folder in orthology based reconstruction
+------>RUNNING STEP : checking model organism data validity for athaliana
+------>RUNNING STEP : checking fasta model validity of /shared/template/model_data/athaliana/FAA_model.faa
+check genes ids model_metablic vs model_faa
+Only 0.04% genes of the model_metabolic are not in the model_faa
+------>RUNNING STEP : Creating fasta with only genes in metabolic model
+todo
+------>RUNNING STEP : checking model organism data validity for creinhardtii
+------>RUNNING STEP : checking fasta model validity of /shared/template/model_data/creinhardtii/FAA_model.faa
+check genes ids model_metablic vs model_faa
+Only 2.95% genes of the model_metabolic are not in the model_faa
+------>RUNNING STEP : Creating fasta with only genes in metabolic model
+todo
+------>RUNNING STEP : checking model organism data validity for synechocystis
+------>RUNNING STEP : checking fasta model validity of /shared/template/model_data/synechocystis/FAA_model.faa
+check genes ids model_metablic vs model_faa
+Only 2.16% genes of the model_metabolic are not in the model_faa
+------>RUNNING STEP : Creating fasta with only genes in metabolic model
+todo
+------>RUNNING STEP : creating file all_orthomcl.out
+cp -r /programs/template_omcl_1.4 /shared/template/orthology_based/e_siliculosus_VS_synechocystis//programs/template_omcl_1
