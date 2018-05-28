@@ -77,7 +77,7 @@ def main():
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
-        mpwt.multiprocess_pwt(folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_checking=True)
+        mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
 
     all_study_gbk = dict([(study_name, "{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
