@@ -31,6 +31,7 @@ import configparser
 import re
 import libsbml
 import csv
+
 from padmet.utils import sbmlPlugin as sp
 import mpwt
 
@@ -312,7 +313,7 @@ def orthogroup_to_sbml(dict_data):
         
     for rxn_id, gene_assoc in  dict_rxn_ga.items():
         
-                
+
 
     
 def create_config_file(config_file_path, run_id):
@@ -345,9 +346,15 @@ def create_run(run_id):
     create a run folder
     #todo, mkdir all tree
     """
-
-
-
+    os.mkdir(run_id + '/studied_organisms')
+    os.mkdir(run_id + '/model_organisms')
+    os.mkdir(run_id + '/orthology_based')
+    os.mkdir(run_id + '/orthology_based/Orthofinder_WD')
+    os.mkdir(run_id + '/annotation_based')
+    os.mkdir(run_id + '/annotation_based/PGDBs')
+    os.mkdir(run_id + '/annotation_based/PADMETs')
+    os.mkdir(run_id + '/annotation_based/SBMLs')
+    os.mkdir(run_id + '/networks')
 
 if __name__ == "__main__":
     main()
