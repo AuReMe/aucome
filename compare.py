@@ -10,7 +10,7 @@ get all fasta in model_data/
 ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
-    compare.py --run_id=DIR [-i] [-o] [-d] [-v] [--log=FILE]
+    compare.py --run_id=DIR [-i] [-o] [-d] [-p] [-v] [--log=FILE]
 
 options:
     -h --help     Show help.
@@ -77,7 +77,7 @@ def main():
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
-        mpwt.multiprocessing(studied_organisms_path, pgdb_from_annotation_path, True)
+        mpwt.multiprocess_pwt(folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_checking=True)
 
     all_study_gbk = dict([(study_name, "{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
