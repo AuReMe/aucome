@@ -10,13 +10,13 @@ get all fasta in model_data/
 ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
-    compare.py --run_id=DIR [-i] [-o] [-d] [-v] [--log=FILE]
+    compare.py --run_id=DIR [-i] [-o] [-d] [-p] [-v] [--log=FILE]
 
 options:
     -h --help     Show help.
     --run_id=FILE    pathname to the comparison workspace
     -o    Run Orthofinder
-    -p    Run pantograph
+    -p    Run Pathway-Tools
     -d    Run inparanoid, omlc, pantograph and merge all networks
     -v    Verbose
 
@@ -31,7 +31,9 @@ import configparser
 import re
 import libsbml
 import csv
+
 from padmet.utils import sbmlPlugin as sp
+import mpwt
 
 def main():
     args = docopt.docopt(__doc__)
@@ -57,6 +59,7 @@ def main():
     orthology_based_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','orthology_based_path'))
     orthofinder_wd_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','orthofinder_wd_path'))    
     annotation_based_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','annotation_based_path'))
+    pgdb_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','pgdb_from_annotation_path'))
     padmet_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','padmet_from_annotation_path'))
     sbml_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','sbml_from_annotation_path'))
     networks_path = "{0}/{1}".format(all_run_folder, config.get('RUN_PATHS','networks_path'))
@@ -71,9 +74,10 @@ def main():
     #create dict for ortho data
     all_study_name = set(os.walk(studied_organisms_path).next()[1])
     all_model_name = set(os.walk(model_organisms_path).next()[1])
-    
-    #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools    
 
+    if args["-p"]:
+        #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
+        mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
 
     all_study_gbk = dict([(study_name, "{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
@@ -314,7 +318,7 @@ def orthogroup_to_sbml(dict_data):
         
     for rxn_id, gene_assoc in  dict_rxn_ga.items():
         
-                
+
 
     
 def create_config_file(config_file_path, run_id):
@@ -327,6 +331,7 @@ def create_config_file(config_file_path, run_id):
     config.set('RUN_PATHS', 'orthology_based_path', '%(run_id)s/orthology_based')
     config.set('RUN_PATHS', 'orthofinder_wd_path', '%(run_id)s/orthology_based/Orthofinder_WD')
     config.set('RUN_PATHS', 'annotation_based_path', '%(run_id)s/annotation_based')
+    config.set('RUN_PATHS', 'pgdb_from_annotation_path', '%(annotation_based_path)s/PGDBs')
     config.set('RUN_PATHS', 'padmet_from_annotation_path', '%(annotation_based_path)s/PADMETs')
     config.set('RUN_PATHS', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('RUN_PATHS', 'networks_path', '%(run_id)s/networks')
@@ -346,9 +351,15 @@ def create_run(run_id):
     create a run folder
     #todo, mkdir all tree
     """
-        
-
-
+    os.mkdir(run_id + '/studied_organisms')
+    os.mkdir(run_id + '/model_organisms')
+    os.mkdir(run_id + '/orthology_based')
+    os.mkdir(run_id + '/orthology_based/Orthofinder_WD')
+    os.mkdir(run_id + '/annotation_based')
+    os.mkdir(run_id + '/annotation_based/PGDBs')
+    os.mkdir(run_id + '/annotation_based/PADMETs')
+    os.mkdir(run_id + '/annotation_based/SBMLs')
+    os.mkdir(run_id + '/networks')
 
 if __name__ == "__main__":
     main()
