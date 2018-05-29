@@ -304,8 +304,13 @@ def orthogroup_to_sbml(dict_data):
     if verbose:
         print("Removing unused reactions" %len(rxn_id_to_remove))
     [model_to_compare.removeReaction(rxn_id) for rxn_id in rxn_id_to_remove]
-    cpd_id_to_remove = set()
-    for rxn_id dict_rxn_ga.keys():
+    cpd_id_to_preseve = set()
+    for rxn_id in dict_rxn_ga.keys():
+        rxn = model_to_compare.getElementBySId(rxn_id)
+        cpd_in_rxn = set([p.getSpecies() for p in rxn.getListOfProducts()]).union(\
+                         set([r.getSpecies() for r in rxn.getListOfReactants()]))
+        cpd_id_to_preseve.update(cpd_in_rxn)
+    [model_to_compare.removeSpecies(cpd.id ) for cpd in model_to_compare.getListOfSpecies() if cpd.id not in cpd_id_to_preseve]
         
     for rxn_id, gene_assoc in  dict_rxn_ga.items():
         
