@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
 """
 Created on Thu Apr 26 16:32:23 2018
 
-@author: maite
+@author: Meziane AITE, meziane.aite@inria.fr
 
 1./ get all fasta in studied_orgnisms/ in dict_faa_paths['study']
 ex dict_faa_paths['study'] = [studied_organisms_path/study_1/faa_study_name, ...]
@@ -47,8 +46,10 @@ def main():
     """
     args = {"--run":"algues", "-v":True}
     all_run_folder = "/home/maite/Forge/docker/comparison_workspace"
-    database_path = "/home/maite/Forge/docker/comparison_workspace/template/database/metacyc_22.0_enhanced.padmet"
+    database_path = "/home/maite/Forge/docker/comparison_workspace/metacyc_22.0_enhanced.padmet"
     padmet_utils_path = "/home/maite/padmet-tools/padmet-utils"
+    mnx_rxn_path = "/home/maite/Documents/data/metaNetX/new/reac_xref.tsv"
+    mnx_cpd_path = "/home/maite/Documents/data/metaNetX/new/chem_xref_2017.tsv"
     """
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
@@ -284,7 +285,7 @@ def main():
                 dict_orthogroup[orth_id] = new_dict
 
         if verbose:
-            print("Start multiprocess sbml creation...")
+            print("Start sbml creation...")
         all_dict_data = []
         for study_name in all_study_name:
             if verbose:
@@ -304,8 +305,8 @@ def main():
                 if sbml_template:
                     dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':True}
                     all_dict_data.append(dict_data)
-
             chronoDepart = time.time()
+            """
             p = Pool(processes=cpu_count())
             p.map_async(orthogroup_to_sbml, all_dict_data)
             p.close()
@@ -313,7 +314,6 @@ def main():
             """
             for dict_data in all_dict_data:
                 orthogroup_to_sbml(dict_data)
-            """
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
             chrono = ".".join([partie_entiere, partie_decimale[:3]])
@@ -323,21 +323,21 @@ def main():
         all_sbml_from_ortho = [dict_data['output'] for dict_data in all_dict_data]
         for sbml_file in all_sbml_from_ortho:
             if os.path.isfile(sbml_file):
-                cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
-                db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True).splitlines() if line.startswith("Database")][0]
-                if verbose:
-                    print("%s: %s" %(sbml_file, db_ref))
-                if db_ref.lower() != "metacyc":
-                    dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
+                dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
+                if not os.path.exists(dict_file):
+                    cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
+                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True).splitlines() if line.startswith("Database")][0]
                     if verbose:
-                        print("Creating id mapping file: %s" %dict_file)
-                    cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
-                    padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
-                    
+                        print("%s: %s" %(os.path.basename(sbml_file), db_ref))
+                    if db_ref.lower() != "metacyc":
+                        if verbose:
+                            print("Creating id mapping file: %s" %dict_file)
+                        cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
+                        padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
+                        subprocess.call(cmd, shell=True)
                     
 
     if args["-d"]:
-        padmetRef = PadmetRef(database_path)
         for study_name in all_study_name:
             output = "{0}/{1}.padmet".format(networks_path, study_name)
             if os.path.exists(output):
@@ -345,22 +345,21 @@ def main():
                     print("%s already exist, skip" %os.path.basename(output))
                     pass
             else:
+                ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
                 if verbose:
                     print("Creating %s" %os.path.basename(output))
                 if os.path.exists(all_study_padmet[study_name]):
                     if verbose:
                         print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
                     padmet_path = all_study_padmet[study_name]
-                    padmet = PadmetSpec(padmet_path)
+                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5}".format(\
+                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output)
                 else:
                     if verbose:
                         print("\tStarting from an empty PADMET")
-                    padmet = PadmetSpec()
-                    padmet.setInfo(padmetRef)
-                    padmet.setPolicy(padmetRef)                
-                ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
+                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4}".format(\
+                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output)
                 if os.path.exists(ortho_sbml_folder) and os.walk(ortho_sbml_folder).next()[2]:
-                    cmd = ""
                     subprocess.call(cmd, shell=True)
                 else:
                     if verbose:
@@ -378,14 +377,13 @@ def orthogroup_to_sbml(dict_data):
     sbml_template = dict_data['sbml_template']
     output = dict_data['output']
     verbose = dict_data.get('verbose',False)
-    if verbose:
-        print("%s:" %study_name)
     if os.path.isfile(output):
         if verbose:
-            print("\t%s is already created, skip" %os.path.basename(output))
+            print("*{0} is already created, skip".format(os.path.basename(output)))
         return
     if verbose:
-        print("\tExtracting orthology data to create sbml of {0} from {1}".format(study_name, to_compare_name))
+        print("*Extracting orthology data to create sbml of {0} from {1}".format(study_name, to_compare_name))
+
     #k = gene_id from to_compare, v = list of genes id of study
     sub_dict_orth = {}
     for k in dict_orthogroup.values():
@@ -413,7 +411,7 @@ def orthogroup_to_sbml(dict_data):
     listOfReactions_with_genes = [rxn for rxn in model_to_compare.getListOfReactions()
                                   if sp.parseNotes(rxn).get("GENE_ASSOCIATION",[None])[0]]
     if verbose:
-        print("\tSBML Model contains %s/%s reactions with genes assocation" %(len(listOfReactions_with_genes), len(model_to_compare.getListOfReactions())))
+        print("\tSbml of {0} contains {1}/{2} reactions with genes assocation".format(to_compare_name, len(listOfReactions_with_genes), len(model_to_compare.getListOfReactions())))
     dict_rxn_ga = {}
     for rxn in listOfReactions_with_genes:
         ga = sp.parseNotes(rxn)['GENE_ASSOCIATION'][0]
@@ -487,9 +485,9 @@ def orthogroup_to_sbml(dict_data):
 def create_config_file(config_file_path, run_id):
     config = configparser.RawConfigParser()
     config.add_section('DATABASE_PATHS')
-    config.set('DATABASE_PATHS', 'database_ref_path', '/home/data/database/BIOCYC/Metacyc/22.0_enhanced/metacyc_22.0_enhanced.padmet')
-    config.set('DATABASE_PATHS', 'mnx_rxn_path', '/data/database/MNX/reac_xref.csv')
-    config.set('DATABASE_PATHS', 'mnx_cpd_path', '/data/database/MNX/chem_xref.csv')
+    config.set('DATABASE_PATHS', 'database_ref_path', '/data/database/BIOCYC/METACYC/22.0_enhanced/metacyc_22.0_enhanced.padmet')
+    config.set('DATABASE_PATHS', 'mnx_rxn_path', '/data/database/MNX/reac_xref.tsv')
+    config.set('DATABASE_PATHS', 'mnx_cpd_path', '/data/database/MNX/chem_xref.tsv')
     config.add_section('PATHS_IN_RUN')
     config.set('PATHS_IN_RUN', 'run_id', run_id)
     config.set('PATHS_IN_RUN', 'studied_organisms_path', '%(run_id)s/studied_organisms')
