@@ -106,17 +106,17 @@ def main():
     all_study_name = set(os.walk(studied_organisms_path).next()[1])
     all_model_name = set(os.walk(model_organisms_path).next()[1])
 
-    if args["-v"]:
+    if verbose:
         print('Checking genbank file.')
     for study_name in all_study_name:
         checking_genbank_name(study_name)
     for model_name in all_model_name:
         checking_genbank_name(model_name)
 
-    if args["-v"]:
+    if verbose:
         print('Hashing gene id.')
     for study_name in all_study_name:
-        hashing_id(studied_organisms_path, study_name, args)
+        hashing_id(studied_organisms_path, study_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -392,7 +392,7 @@ def checking_genbank_name(genbank_file):
                 '.', ':', '!', '+', '[', ']', ',' ''')
         exit()
 
-def hashing_id(studied_organisms_path, genbank_file, args):
+def hashing_id(studied_organisms_path, genbank_file, verbose):
     """
     Create hashed id for gene (and CDS/mRNA) in genbank file.
     Create a tsv mapping file between old and new id in studied_organisms_path.
@@ -401,7 +401,7 @@ def hashing_id(studied_organisms_path, genbank_file, args):
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
 
-    # Dictionnary wtih gene id as key and hashed id as value.
+    # Dictionary wtih gene id as key and hashed id as value.
     feature_id_mappings = {}
 
     feature_number = 0
@@ -427,7 +427,7 @@ def hashing_id(studied_organisms_path, genbank_file, args):
     new_genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_hashed.gbk'
     SeqIO.write(new_records, new_genbank_path, 'genbank')
 
-    # Save non hashed genabnk.
+    # Save non hashed genbank.
     genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
     os.rename(genbank_path, genbank_path_renamed)
 
@@ -442,7 +442,7 @@ def hashing_id(studied_organisms_path, genbank_file, args):
         for key, value in feature_id_mappings.items():
             writer.writerow([key, value])
 
-    if args["-v"]:
+    if verbose:
         print(genbank_file + ': ' + str(feature_number) + ' ids have been hashed.')
 
 def orthogroup_to_sbml(dict_data):
