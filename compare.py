@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Created on Thu Apr 26 16:32:23 2018
 
@@ -12,7 +12,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
     compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
+    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [-i] [--log=FILE]
     compare.py -R
 
 options:
@@ -24,6 +24,7 @@ options:
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
     -v     Verbose.
+    -i    Hash gene id
 
 """
 import docopt
@@ -113,10 +114,11 @@ def main():
     for model_name in all_model_name:
         checking_genbank_name(model_name)
 
-    if verbose:
-        print('Hashing gene id.')
-    for study_name in all_study_name:
-        hashing_id(studied_organisms_path, study_name, verbose)
+    if args["-i"]:
+        if verbose:
+            print('Hashing gene id.')
+        for study_name in all_study_name:
+            hashing_id(studied_organisms_path, study_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -400,7 +402,11 @@ def hashing_id(studied_organisms_path, genbank_file, verbose):
     """
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+    genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
 
+    if os.path.exists(genbank_path_renamed):
+        print(genbank_file + ': Hashing has already been made on the data.')
+        return
     # Dictionary wtih gene id as key and hashed id as value.
     feature_id_mappings = {}
 
@@ -428,7 +434,6 @@ def hashing_id(studied_organisms_path, genbank_file, verbose):
     SeqIO.write(new_records, new_genbank_path, 'genbank')
 
     # Save non hashed genbank.
-    genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
     os.rename(genbank_path, genbank_path_renamed)
 
     # Rename hashed genbank to genbank used by the script.
