@@ -424,7 +424,7 @@ def orthogroup_to_sbml(dict_data):
             cmd = "python3 {0}/connection/grammar-boolean-rapsody.py {1}".format(padmet_utils_path, ga_for_gbr)
             to_compare_ga_subsets = eval(subprocess.check_output(cmd, shell=True))
         else:
-            to_compare_ga_subsets = [ga_for_gbr]            
+            to_compare_ga_subsets = [(re.sub(r'\(|\)|\"', "", ga_for_gbr),)]            
         study_ga_subsets = []
         """
         to_compare_ga_subsets = [('a','c','d'),('c',)]
