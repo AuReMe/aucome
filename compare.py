@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Created on Thu Apr 26 16:32:23 2018
 
@@ -12,7 +12,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
     compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
+    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [-i] [--log=FILE]
     compare.py -R
 
 options:
@@ -24,6 +24,7 @@ options:
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
     -v     Verbose.
+    -i    Hash gene id
 
 """
 import docopt
@@ -37,6 +38,7 @@ import re
 import libsbml
 import csv
 
+from Bio import SeqIO
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
 #import mpwt
@@ -104,6 +106,19 @@ def main():
     #create dict for ortho data
     all_study_name = set(os.walk(studied_organisms_path).next()[1])
     all_model_name = set(os.walk(model_organisms_path).next()[1])
+
+    if verbose:
+        print('Checking genbank file.')
+    for study_name in all_study_name:
+        checking_genbank_name(study_name)
+    for model_name in all_model_name:
+        checking_genbank_name(model_name)
+
+    if args["-i"]:
+        if verbose:
+            print('Hashing gene id.')
+        for study_name in all_study_name:
+            hashing_id(studied_organisms_path, study_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -365,7 +380,75 @@ def main():
                     if verbose:
                         print("\t%s's folder is empty" %study_name)
                     pass
-            
+
+def checking_genbank_name(genbank_file):
+    """
+    Check if there is a special character in the genbank file.
+    If yes exit and print an error.
+    """
+    invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
+                '.', ':', '!', '+', '[', ']', ',', " "]
+    if any(char in invalid_characters for char in genbank_file):
+        print('Error in genbank file name: ' + genbank_file)
+        print('''Rename the file without: '-', ' ', '|', '/', '(', ')', '\'', '=', '#', '*',
+                '.', ':', '!', '+', '[', ']', ',' ''')
+        exit()
+
+def hashing_id(studied_organisms_path, genbank_file, verbose):
+    """
+    Create hashed id for gene (and CDS/mRNA) in genbank file.
+    Create a tsv mapping file between old and new id in studied_organisms_path.
+    Keep ol genbank (by adding '_original').
+    """
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+    genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
+
+    if os.path.exists(genbank_path_renamed):
+        print(genbank_file + ': Hashing has already been made on the data.')
+        return
+    # Dictionary wtih gene id as key and hashed id as value.
+    feature_id_mappings = {}
+
+    feature_number = 0
+    new_records = []
+    # Parse genbank to create new records with hashed id.
+    # Hashed id len: 10 (10 first letter of genbank file name) + 1 ('_') + 20 (hash) = 31.
+    # Max ID len is 39 for Pathway-Tools.
+    for record in SeqIO.parse(genbank_path, 'genbank'):
+        for feature in record.features:
+            if 'locus_tag' in feature.qualifiers:
+                feature_id = feature.qualifiers['locus_tag'][0]
+                if feature_id not in feature_id_mappings:
+                    new_feature_id = genbank_file[:10] + '_' + str(hash(feature_id)).replace('-', '_')
+                    feature_id_mappings[feature_id] = new_feature_id
+                    feature.qualifiers['locus_tag'][0] = new_feature_id
+                    feature_number += 1
+                else:
+                    feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
+                    feature_number += 1
+        new_records.append(record)
+
+    # Create genbank with hashed id.
+    new_genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_hashed.gbk'
+    SeqIO.write(new_records, new_genbank_path, 'genbank')
+
+    # Save non hashed genbank.
+    os.rename(genbank_path, genbank_path_renamed)
+
+    # Rename hashed genbank to genbank used by the script.
+    os.rename(new_genbank_path, genbank_path)
+
+    # Create a TSV mapping file with nonhashed and hashed ids.
+    mapping_dic_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_dict.csv'
+    with open(mapping_dic_path, 'w') as csv_file:
+        writer = csv.writer(csv_file, delimiter='\t')
+        writer.writerow(["feature_id", "hashed_id"])
+        for key, value in feature_id_mappings.items():
+            writer.writerow([key, value])
+
+    if verbose:
+        print(genbank_file + ': ' + str(feature_number) + ' ids have been hashed.')
 
 def orthogroup_to_sbml(dict_data):
     """

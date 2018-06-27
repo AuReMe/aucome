@@ -19,8 +19,7 @@ RUN apt-get -y update && \
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
 # Install OrthoFinder.
-RUN mkdir /shared;\
-    mkdir /programs;\ 
+RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /data/database/MNX/;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.6/OrthoFinder-2.2.6.tar.gz;\
     tar xzf OrthoFinder-2.2.6.tar.gz;\
