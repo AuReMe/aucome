@@ -118,7 +118,7 @@ def main():
         if verbose:
             print('Hashing gene id.')
         for study_name in all_study_name:
-            hashing_id(studied_organisms_path, study_name, verbose)
+            hashing_id(study_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -390,11 +390,9 @@ def checking_genbank_name(genbank_file):
                 '.', ':', '!', '+', '[', ']', ',', " "]
     if any(char in invalid_characters for char in genbank_file):
         print('Error in genbank file name: ' + genbank_file)
-        print('''Rename the file without: '-', ' ', '|', '/', '(', ')', '\'', '=', '#', '*',
-                '.', ':', '!', '+', '[', ']', ',' ''')
-        exit()
+        print('Rename the file without:',invalid_characters)
 
-def hashing_id(studied_organisms_path, genbank_file, verbose):
+def hashing_id(genbank_file, verbose):
     """
     Create hashed id for gene (and CDS/mRNA) in genbank file.
     Create a tsv mapping file between old and new id in studied_organisms_path.
