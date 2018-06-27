@@ -41,7 +41,7 @@ import csv
 from Bio import SeqIO
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
-#import mpwt
+import mpwt
 
 def main():
     args = docopt.docopt(__doc__)

@@ -1,5 +1,5 @@
 install:
-	chmod u+x $(PWT)
-	$(PWT) --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended
-	echo 'export PATH="$PATH:/programs/pathway-tools:"' >> ~/.bashrc
+		chmod u+x $(PWT)
+		$(PWT) --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended
+		echo 'export PATH="$$PATH:/programs/pathway-tools:"' >> ~/.bashrc
 
