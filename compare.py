@@ -123,12 +123,15 @@ def main():
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
-        mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
+        if verbose:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, verbose=True)
+        else:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
         if verbose:
-            print("Pathwaytools done in: %ss" %chrono)
+            print("Pathway-Tools done in: %ss" %chrono)
     #PGDB, padmet, sbml
     all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
