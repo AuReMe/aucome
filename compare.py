@@ -104,8 +104,8 @@ def main():
 
 
     #create dict for ortho data
-    all_study_name = set(os.walk(studied_organisms_path).next()[1])
-    all_model_name = set(os.walk(model_organisms_path).next()[1])
+    all_study_name = set(next(os.walk(studied_organisms_path))[1])
+    all_model_name = set(next(os.walk(model_organisms_path))[1])
 
     if verbose:
         print('Checking genbank file.')
@@ -262,13 +262,13 @@ def main():
         except ValueError:
             if verbose:
                 print("Enable to find file Orthogroups.csv in {1}, need to run Orthofinder...".format(orthofinder_wd_path))
-            for name, faa_path in all_study_faa.items():
+            for name, faa_path in list(all_study_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
                     cmd = "cp {0} {1}/".format(faa_path, orthofinder_wd_path)
                     subprocess.call(cmd, shell=True)
-            for name, faa_path in all_model_faa.items():
+            for name, faa_path in list(all_model_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
@@ -296,7 +296,7 @@ def main():
             for row in reader:
                 orth_id = row['']
                 row.pop('')
-                new_dict = dict([(name, set(genes.split(","))) for (name, genes) in row.items() if genes])
+                new_dict = dict([(name, set(genes.split(","))) for (name, genes) in list(row.items()) if genes])
                 dict_orthogroup[orth_id] = new_dict
 
         if verbose:
@@ -318,7 +318,7 @@ def main():
                 except KeyError:
                     sbml_template = all_study_sbml[to_compare_name]
                 if sbml_template:
-                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':True}
+                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':verbose}
                     all_dict_data.append(dict_data)
             chronoDepart = time.time()
             """
@@ -367,14 +367,21 @@ def main():
                     if verbose:
                         print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
                     padmet_path = all_study_padmet[study_name]
-                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5}".format(\
-                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output)
+                    if os.path.exists(ortho_sbml_folder):
+                        cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5}".format(\
+                        padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output)
+                    else:
+                        if verbose:
+                            print("\tNo orthology folder.")
+                            print(("\tMove {0} in {1}".format(study_name, output)))
+                        subprocess.call("cp " + padmet_path + " " + output, shell=True)
+                        pass
                 else:
                     if verbose:
                         print("\tStarting from an empty PADMET")
                     cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4}".format(\
                     padmet_utils_path, database_path, ortho_sbml_folder, verbose, output)
-                if os.path.exists(ortho_sbml_folder) and os.walk(ortho_sbml_folder).next()[2]:
+                if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
                     subprocess.call(cmd, shell=True)
                 else:
                     if verbose:
@@ -442,7 +449,7 @@ def hashing_id(genbank_file, verbose):
     with open(mapping_dic_path, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter='\t')
         writer.writerow(["feature_id", "hashed_id"])
-        for key, value in feature_id_mappings.items():
+        for key, value in list(feature_id_mappings.items()):
             writer.writerow([key, value])
 
     if verbose:
@@ -457,7 +464,7 @@ def orthogroup_to_sbml(dict_data):
     to_compare_name = dict_data['to_compare_name']
     sbml_template = dict_data['sbml_template']
     output = dict_data['output']
-    verbose = dict_data.get('verbose',False)
+    verbose = dict_data.get('verbose')
     if os.path.isfile(output):
         if verbose:
             print("*{0} is already created, skip".format(os.path.basename(output)))
@@ -467,7 +474,7 @@ def orthogroup_to_sbml(dict_data):
 
     #k = gene_id from to_compare, v = list of genes id of study
     sub_dict_orth = {}
-    for k in dict_orthogroup.values():
+    for k in list(dict_orthogroup.values()):
         try:
             all_to_compare_genes = k[to_compare_name]
             all_study_genes = k[study_name]
@@ -487,7 +494,7 @@ def orthogroup_to_sbml(dict_data):
     reader = libsbml.SBMLReader()
     document_to_compare = reader.readSBML(sbml_template)
     for i in range(document_to_compare.getNumErrors()):
-        print (document_to_compare.getError(i).getMessage())
+        print(document_to_compare.getError(i).getMessage())
     model_to_compare = document_to_compare.getModel()
     listOfReactions_with_genes = [rxn for rxn in model_to_compare.getListOfReactions()
                                   if sp.parseNotes(rxn).get("GENE_ASSOCIATION",[None])[0]]
@@ -514,7 +521,7 @@ def orthogroup_to_sbml(dict_data):
         for to_compare_subset in to_compare_ga_subsets:
             study_subset = set()
             for gene in to_compare_subset:
-                if gene in sub_dict_orth.keys():
+                if gene in list(sub_dict_orth.keys()):
                     study_subset.update(sub_dict_orth[gene])
                 else:
                     study_subset = set()
@@ -535,18 +542,18 @@ def orthogroup_to_sbml(dict_data):
         if verbose:
             print("\tNo reaction added from {0} to {1} because of missing orthologues".format(to_compare_name, study_name))
         return
-    rxn_id_to_remove = set([rxn.id for rxn in model_to_compare.getListOfReactions()]).difference(dict_rxn_ga.keys())
+    rxn_id_to_remove = set([rxn.id for rxn in model_to_compare.getListOfReactions()]).difference(list(dict_rxn_ga.keys()))
     if verbose:
         print("\tRemoving %s unused reactions" %len(rxn_id_to_remove))
     [model_to_compare.removeReaction(rxn_id) for rxn_id in rxn_id_to_remove]
     cpd_id_to_preserve = set()
-    for rxn_id, study_ga in dict_rxn_ga.items():
+    for rxn_id, study_ga in list(dict_rxn_ga.items()):
         rxn = model_to_compare.getElementBySId(rxn_id)
         #update notes
         notes_in_dict = sp.parseNotes(rxn)
         notes_in_dict["GENE_ASSOCIATION"] = [study_ga]
         notes = "<body xmlns=\"http://www.w3.org/1999/xhtml\">"
-        for k,v_list in notes_in_dict.items():
+        for k,v_list in list(notes_in_dict.items()):
             for v in v_list:
                 notes += "<p>"+k+": "+v+"</p>"
         notes += "</body>"
