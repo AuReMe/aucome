@@ -341,7 +341,7 @@ def main():
                 dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
                 if not os.path.exists(dict_file):
                     cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
-                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True).splitlines() if line.startswith("Database")][0]
+                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                     if verbose:
                         print("%s: %s" %(os.path.basename(sbml_file), db_ref))
                     if db_ref.lower() != "metacyc":
