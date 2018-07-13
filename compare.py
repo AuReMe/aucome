@@ -145,7 +145,7 @@ def main():
             if not os.path.isfile(padmet_file) and pgdb_folder:
                 if verbose:
                     print("Creating padmet from pgdb for %s" %study_name)
-                cmd = "python {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
+                cmd = "python3 {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
                 format(padmet_utils_path, padmet_file, pgdb_folder, database_path, verbose)
                 subprocess.call(cmd, shell=True)
     all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
@@ -159,7 +159,7 @@ def main():
             if not os.path.isfile(sbml_file) and padmet_file:
                 if verbose:
                     print("Creating sbml from padmet for %s" %study_name)
-                cmd = "python {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
+                cmd = "python3 {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
                 subprocess.call(cmd, shell=True)
 
     #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
@@ -182,7 +182,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %study_name)
-                cmd = "python {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in studied_org_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -204,7 +204,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %model_name)
-                cmd = "python {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -264,7 +264,7 @@ def main():
             last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups.csv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups.csv' in x[2]])
         except ValueError:
             if verbose:
-                print("Enable to find file Orthogroups.csv in {1}, need to run Orthofinder...".format(orthofinder_wd_path))
+                print("Enable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
             for name, faa_path in list(all_study_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
@@ -343,14 +343,14 @@ def main():
             if os.path.isfile(sbml_file):
                 dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
                 if not os.path.exists(dict_file):
-                    cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
+                    cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
                     db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                     if verbose:
                         print("%s: %s" %(os.path.basename(sbml_file), db_ref))
                     if db_ref.lower() != "metacyc":
                         if verbose:
                             print("Creating id mapping file: %s" %dict_file)
-                        cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
+                        cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
                         padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
                         subprocess.call(cmd, shell=True)
                     
@@ -373,7 +373,7 @@ def main():
                         print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
                     padmet_path = all_study_padmet[study_name]
                     if os.path.exists(ortho_sbml_folder):
-                        cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
+                        cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
                         padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
                     else:
                         if verbose:
@@ -384,7 +384,7 @@ def main():
                 else:
                     if verbose:
                         print("\tStarting from an empty PADMET")
-                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
+                    cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
                     padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
                 if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
                     subprocess.call(cmd, shell=True)
