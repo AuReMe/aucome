@@ -364,6 +364,8 @@ def main():
                     pass
             else:
                 ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
+                source_tool = "ORTHOFINDER"
+                source_category = "ORTHOLOGY"
                 if verbose:
                     print("Creating %s" %os.path.basename(output))
                 if os.path.exists(all_study_padmet[study_name]):
@@ -371,8 +373,8 @@ def main():
                         print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
                     padmet_path = all_study_padmet[study_name]
                     if os.path.exists(ortho_sbml_folder):
-                        cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5}".format(\
-                        padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output)
+                        cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
+                        padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
                     else:
                         if verbose:
                             print("\tNo orthology folder.")
@@ -382,8 +384,8 @@ def main():
                 else:
                     if verbose:
                         print("\tStarting from an empty PADMET")
-                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4}".format(\
-                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output)
+                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
+                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
                 if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
                     subprocess.call(cmd, shell=True)
                 else:
