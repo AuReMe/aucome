@@ -1,16 +1,16 @@
 install:
-                chmod u+x $(PWT)
-                $(PWT) --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended
-                echo 'export PATH="$$PATH:/programs/pathway-tools:"' >> ~/.bashrc
+	chmod u+x $(PWT)
+	$(PWT) --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended
+	echo 'export PATH="$$PATH:/programs/pathway-tools:"' >> ~/.bashrc
 
 uninstall:
-                /programs/pathway-tools/uninstall --mode unattended;\
-                grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc;\
-                read -p 'Delete ptools-local, containing all PGDBs (y/n)? ' INPUT;\
-                echo $$INPUT;\
-                if [ $$INPUT = y ]; then\
-                        rm -r /root/ptools-local;\
-                        echo 'Uninstallation of Pahtway-Tools and ptools-local done!';\
-                else\
-                        echo 'Uninstallation of Pathway-Tools done!.';\
-                fi
+	/programs/pathway-tools/uninstall --mode unattended;\
+	grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc;\
+	read -p 'Delete ptools-local, containing all PGDBs (y/n)? ' INPUT;\
+	echo $$INPUT;\
+	if [ $$INPUT = y ]; then\
+			rm -r /root/ptools-local;\
+			echo 'Uninstallation of Pahtway-Tools and ptools-local done!';\
+	else\
+			echo 'Uninstallation of Pathway-Tools done!.';\
+	fi
