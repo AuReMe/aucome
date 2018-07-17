@@ -9,8 +9,8 @@ uninstall:
 	read -p 'Delete ptools-local, containing all PGDBs (y/n)? ' INPUT;\
 	echo $$INPUT;\
 	if [ $$INPUT = y ]; then\
-			rm -r /root/ptools-local;\
-			echo 'Uninstallation of Pahtway-Tools and ptools-local done!';\
+		rm -r /root/ptools-local;\
+		echo 'Uninstallation of Pahtway-Tools and ptools-local done!';\
 	else\
-			echo 'Uninstallation of Pathway-Tools done!.';\
+		echo 'Uninstallation of Pathway-Tools done!.';\
 	fi
