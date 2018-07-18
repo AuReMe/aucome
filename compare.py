@@ -599,7 +599,7 @@ def create_config_file(config_file_path, run_id):
     config.set('VAR', 'study_from_annot_prefix', 'output_pathwaytools_')
 
     # Writing our configuration file to 'example.cfg'
-    with open(config_file_path, 'wb') as configfile:
+    with open(config_file_path, 'w') as configfile:
         config.write(configfile)
 
 def create_run(run_id):
