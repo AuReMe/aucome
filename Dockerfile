@@ -32,12 +32,12 @@ RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /d
     rm -rf fastme-2.1.5*
 
 # Install padmet, mpwt and comparison script.
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7;\
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip2 install python-libsbml configparser;\ 
-    pip2 install padmet mpwt;\
+    pip3 install python-libsbml configparser;\
+    pip3 install padmet mpwt;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
