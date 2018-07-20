@@ -39,6 +39,7 @@ import libsbml
 import csv
 
 from Bio import SeqIO
+from Bio.SeqFeature import FeatureLocation
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
 import mpwt
@@ -113,12 +114,13 @@ def main():
         checking_genbank_name(study_name)
     for model_name in all_model_name:
         checking_genbank_name(model_name)
-
-    if args["-i"]:
-        if verbose:
-            print('Hashing gene id.')
-        for study_name in all_study_name:
-            hashing_id(study_name, verbose)
+  
+    if verbose:
+        print('Checking gene id.')
+    for study_name in all_study_name:
+        checking_gene_id(study_name, verbose)
+    for model_name in all_model_name:
+        checking_gene_id(model_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -404,9 +406,73 @@ def checking_genbank_name(genbank_file):
         print('Error in genbank file name: ' + genbank_file)
         print('Rename the file without:',invalid_characters)
 
-def hashing_id(genbank_file, verbose):
+def checking_gene_id(genbank_file, verbose):
     """
-    Create hashed id for gene (and CDS/mRNA) in genbank file.
+    Check gene ID in genbank.
+    < or > in gene location make Pathway-Tools reject this gene.
+    """
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+
+    invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
+                '.', ':', '!', '+', '[', ']', ',', " "]
+
+    invalid_gene_ids = []
+    too_long_ids = []
+    invalid_locations = []
+    for record in SeqIO.parse(genbank_path, 'genbank'):
+        for feature in record.features:
+            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
+                invalid_locations.append(feature.location)
+            if 'locus_tag' in feature.qualifiers:
+                locus_tag = feature.qualifiers['locus_tag'][0]
+                if any(char in invalid_characters for char in locus_tag):
+                    if verbose:
+                        invalid_gene_ids.append(locus_tag)
+                if len(locus_tag) >= 40:
+                        too_long_ids.append(locus_tag)
+
+    if len(invalid_gene_ids) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
+    if len(too_long_ids) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(too_long_ids)) + ' genes have a gene id too long.')
+    if len(invalid_locations) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_locations)) + ' genes have < or > in their location.')
+
+    if len(invalid_gene_ids) > 0 or len(too_long_ids) > 0:
+        print('Gene ID in ' + genbank_file + ' must be renamed.')
+        renaming_id(genbank_file, verbose)
+
+    if len(invalid_locations) > 0:
+        fix_gene_locations(genbank_file, verbose)
+
+def adapt_gene_id(gene_id, longest_gene_id):
+    max_id_number = len(longest_gene_id.split('_')[-1])
+    diff_gene_id = len(longest_gene_id) - len(gene_id)
+    adding_position = diff_gene_id - max_id_number
+    if diff_gene_id != 0:
+        gene_id = gene_id[:len(gene_id)+adding_position] + "0"*diff_gene_id + gene_id[len(gene_id)+adding_position:]
+        return gene_id
+    else:
+        return gene_id
+
+def fix_gene_locations(genbank_file, verbose):
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+
+    new_records = []
+    for record in SeqIO.parse(genbank_path, 'genbank'):
+        for feature in record.features:
+            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
+                new_start = int((str(feature.location.start).replace('<','').replace('>','')))
+                new_end = int(str(feature.location.end).replace('<', '').replace('>',''))
+                feature.location = FeatureLocation(new_start, new_end, feature.location.strand)
+        new_records.append(record)
+    SeqIO.write(new_records, genbank_path, 'genbank')
+
+def renaming_id(genbank_file, verbose):
+    """
+    Create renamed id for gene (and CDS/mRNA) in genbank file.
     Create a tsv mapping file between old and new id in studied_organisms_path.
     Keep ol genbank (by adding '_original').
     """
@@ -415,50 +481,57 @@ def hashing_id(genbank_file, verbose):
     genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
 
     if os.path.exists(genbank_path_renamed):
-        print(genbank_file + ': Hashing has already been made on the data.')
+        print(genbank_file + ': Renaming has already been made on the data.')
         return
-    # Dictionary wtih gene id as key and hashed id as value.
+    # Dictionary wtih gene id as key and renamed id as value.
     feature_id_mappings = {}
 
-    feature_number = 0
+    number_genes_genbanks = len([feature  for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
+    gene_number = 1
     new_records = []
-    # Parse genbank to create new records with hashed id.
-    # Hashed id len: 10 (10 first letter of genbank file name) + 1 ('_') + 20 (hash) = 31.
+    # Parse genbank to create new records with renamed id.
+    # Renamed ID: genbank file name + '_' + gene_position_number.
     # Max ID len is 39 for Pathway-Tools.
     for record in SeqIO.parse(genbank_path, 'genbank'):
         for feature in record.features:
             if 'locus_tag' in feature.qualifiers:
                 feature_id = feature.qualifiers['locus_tag'][0]
                 if feature_id not in feature_id_mappings:
-                    new_feature_id = genbank_file[:10] + '_' + str(hash(feature_id)).replace('-', '_')
+                    if len(genbank_file) > 30:
+                        genbank_file_name = genbank_file
+                    else:
+                       genbank_file_name = genbank_file[:30]
+                    new_gene_id = genbank_file_name + '_' + str(gene_number)
+                    new_feature_id = adapt_gene_id(new_gene_id, genbank_file + '_' + str(number_genes_genbanks))
                     feature_id_mappings[feature_id] = new_feature_id
                     feature.qualifiers['locus_tag'][0] = new_feature_id
-                    feature_number += 1
+                    feature.qualifiers['old_locus_tag'] = feature_id
+                    gene_number += 1
                 else:
                     feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
-                    feature_number += 1
+                    feature.qualifiers['old_locus_tag'] = feature_id
         new_records.append(record)
 
-    # Create genbank with hashed id.
+    # Create genbank with renamed id.
     new_genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_hashed.gbk'
     SeqIO.write(new_records, new_genbank_path, 'genbank')
 
-    # Save non hashed genbank.
+    # Save original genbank.
     os.rename(genbank_path, genbank_path_renamed)
 
-    # Rename hashed genbank to genbank used by the script.
+    # Rename renamed genbank to genbank used by the script.
     os.rename(new_genbank_path, genbank_path)
 
-    # Create a TSV mapping file with nonhashed and hashed ids.
+    # Create a TSV mapping file with original and renamed ids.
     mapping_dic_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_dict.csv'
     with open(mapping_dic_path, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter='\t')
-        writer.writerow(["feature_id", "hashed_id"])
+        writer.writerow(["original_gene_id", "renamed_gene_id"])
         for key, value in list(feature_id_mappings.items()):
             writer.writerow([key, value])
 
     if verbose:
-        print(genbank_file + ': ' + str(feature_number) + ' ids have been hashed.')
+        print(genbank_file + ' ids have been renamed.')
 
 def orthogroup_to_sbml(dict_data):
     """
