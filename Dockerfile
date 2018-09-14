@@ -40,13 +40,8 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-<<<<<<< Dockerfile
-    pip3 install python-libsbml configparser;\
-    pip3 install padmet mpwt;\
-=======
     pip2 install python-libsbml configparser;\ 
     pip2 install padmet mpwt eventlet;\
->>>>>>> Dockerfile
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\

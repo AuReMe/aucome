@@ -14,6 +14,7 @@ usage:
     compare.py --init=ID [-v]
     compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [-i] [--log=FILE]
     compare.py -R
+    compare.py --version
 
 options:
     -h --help     Show help.
@@ -38,7 +39,6 @@ import libsbml
 import mpwt
 import os
 import re
-import requests
 import subprocess
 import time
 
@@ -48,6 +48,10 @@ from multiprocessing import Pool, cpu_count
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
 
+# Monkey patch before requests import to avoid RecursionError.
+# See https://github.com/gevent/gevent/issues/1016
+eventlet.monkey_patch()
+import requests
 
 def main():
     args = docopt.docopt(__doc__)
@@ -729,7 +733,6 @@ def get_version():
     Get version from Gitlab.
     Check internet connection using requests and eventlet timeout.
     '''
-    eventlet.monkey_patch()
     reg_version = r'^\#+VERSION:([0-9.]*)#+'
     with eventlet.Timeout(2):
         try:
