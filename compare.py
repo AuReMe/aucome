@@ -27,22 +27,27 @@ options:
     -i    Hash gene id
 
 """
-import docopt
-import os
-import subprocess
-import itertools
-from multiprocessing import Pool, cpu_count
-import time
+__version__ = "0.1"
+
 import configparser
-import re
-import libsbml
 import csv
+import docopt
+import eventlet
+import itertools
+import libsbml
+import mpwt
+import os
+import re
+import requests
+import subprocess
+import time
 
 from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation
+from multiprocessing import Pool, cpu_count
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
-import mpwt
+
 
 def main():
     args = docopt.docopt(__doc__)
@@ -56,7 +61,31 @@ def main():
     """
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
-    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path
+    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab
+
+    release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
+
+    #always_check_version
+    online_version = get_version()
+    current_version = __version__
+    if online_version:
+        if online_version != current_version:
+            print("/!\ WARNING, your Compare_metabo is not up-to-date. You are using the version %s, the latest is %s" %(current_version, online_version))
+            print("Check the Changelog here %s" %release_on_gitlab.replace("/raw/","/blob/"))
+            print("To update Compare_metabo:")
+            print("\tRemove your compare-img and the container created from this image:")
+            print("\t\t$sudo docker rmi -f docker.io/dyliss/compare-img")
+            print("\tCreate a new container with the new image:")
+            print("\t\t$sudo docker run -ti -v /PATH/TO/COMPARE_WORKSPACE:/shared --name=compare docker.io/dyliss/compare-img bash")
+            print("\tObviously change /PATH/TO/COMPARE_WORKSPACE to the real path of you Compare workspace")
+
+    if args["--version"]:
+        online_version = get_version()
+        current_version = __version__
+        if online_version:
+            print("You are using the version %s, the latest is %s" %(current_version, online_version))
+        else:
+            print('No internet connection. Skip checking Compare version.')
 
     all_run_folder = "/shared"
     #add permission to all folder in all_run_folder, usefull because all cmd exec from container are root based
@@ -694,6 +723,23 @@ def create_run(run_id):
             os.mkdir("{0}/{1}/{2}".format(all_run_folder, run_id, folder))
         config_file_path = "{0}/{1}/config.txt".format(all_run_folder, run_id)
         create_config_file(config_file_path, run_id)
+
+def get_version():
+    '''
+    Get version from Gitlab.
+    Check internet connection using requests and eventlet timeout.
+    '''
+    eventlet.monkey_patch()
+    reg_version = r'^\#+VERSION:([0-9.]*)#+'
+    with eventlet.Timeout(2):
+        try:
+            response = requests.get(release_on_gitlab)
+            first_line = response.text.split('\n')[0]
+            version = re.match(reg_version,first_line).group(1)
+        except eventlet.timeout.Timeout:
+            print('No internet connection. Skip checking Compare version.')
+            version = None
+    return version
 
 if __name__ == "__main__":
     main()
