@@ -43,6 +43,7 @@ import subprocess
 import time
 
 from Bio import SeqIO
+from Bio.SeqFeature import FeatureLocation
 from multiprocessing import Pool, cpu_count
 from padmet.utils import sbmlPlugin as sp
 from padmet.classes import PadmetSpec, PadmetRef
@@ -133,8 +134,8 @@ def main():
 
 
     #create dict for ortho data
-    all_study_name = set(os.walk(studied_organisms_path).next()[1])
-    all_model_name = set(os.walk(model_organisms_path).next()[1])
+    all_study_name = set(next(os.walk(studied_organisms_path))[1])
+    all_model_name = set(next(os.walk(model_organisms_path))[1])
 
     if verbose:
         print('Checking genbank file.')
@@ -142,22 +143,26 @@ def main():
         checking_genbank_name(study_name)
     for model_name in all_model_name:
         checking_genbank_name(model_name)
-
-    if args["-i"]:
-        if verbose:
-            print('Hashing gene id.')
-        for study_name in all_study_name:
-            hashing_id(study_name, verbose)
+  
+    if verbose:
+        print('Checking gene id.')
+    for study_name in all_study_name:
+        checking_gene_id(study_name, verbose)
+    for model_name in all_model_name:
+        checking_gene_id(model_name, verbose)
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
-        mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
+        if verbose:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, verbose=True)
+        else:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
         if verbose:
-            print("Pathwaytools done in: %ss" %chrono)
+            print("Pathway-Tools done in: %ss" %chrono)
     #PGDB, padmet, sbml
     all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
@@ -171,7 +176,7 @@ def main():
             if not os.path.isfile(padmet_file) and pgdb_folder:
                 if verbose:
                     print("Creating padmet from pgdb for %s" %study_name)
-                cmd = "python {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
+                cmd = "python3 {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
                 format(padmet_utils_path, padmet_file, pgdb_folder, database_path, verbose)
                 subprocess.call(cmd, shell=True)
     all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
@@ -185,7 +190,7 @@ def main():
             if not os.path.isfile(sbml_file) and padmet_file:
                 if verbose:
                     print("Creating sbml from padmet for %s" %study_name)
-                cmd = "python {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
+                cmd = "python3 {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
                 subprocess.call(cmd, shell=True)
 
     #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
@@ -208,7 +213,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %study_name)
-                cmd = "python {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in studied_org_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -230,7 +235,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %model_name)
-                cmd = "python {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -290,14 +295,14 @@ def main():
             last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups.csv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups.csv' in x[2]])
         except ValueError:
             if verbose:
-                print("Enable to find file Orthogroups.csv in {1}, need to run Orthofinder...".format(orthofinder_wd_path))
-            for name, faa_path in all_study_faa.items():
+                print("Enable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
+            for name, faa_path in list(all_study_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
                     cmd = "cp {0} {1}/".format(faa_path, orthofinder_wd_path)
                     subprocess.call(cmd, shell=True)
-            for name, faa_path in all_model_faa.items():
+            for name, faa_path in list(all_model_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
@@ -308,7 +313,7 @@ def main():
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
             chronoDepart = time.time()
-            cmd = "{0} -f {1} -t {2}".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use)
+            cmd = "{0} -f {1} -t {2} -S mmseqs".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use)
             subprocess.call(cmd, shell=True)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
@@ -325,7 +330,7 @@ def main():
             for row in reader:
                 orth_id = row['']
                 row.pop('')
-                new_dict = dict([(name, set(genes.split(","))) for (name, genes) in row.items() if genes])
+                new_dict = dict([(name, set(genes.split(","))) for (name, genes) in list(row.items()) if genes])
                 dict_orthogroup[orth_id] = new_dict
 
         if verbose:
@@ -347,7 +352,7 @@ def main():
                 except KeyError:
                     sbml_template = all_study_sbml[to_compare_name]
                 if sbml_template:
-                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':True}
+                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':verbose}
                     all_dict_data.append(dict_data)
             chronoDepart = time.time()
             """
@@ -369,14 +374,14 @@ def main():
             if os.path.isfile(sbml_file):
                 dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
                 if not os.path.exists(dict_file):
-                    cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
-                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True).splitlines() if line.startswith("Database")][0]
+                    cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
+                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                     if verbose:
                         print("%s: %s" %(os.path.basename(sbml_file), db_ref))
                     if db_ref.lower() != "metacyc":
                         if verbose:
                             print("Creating id mapping file: %s" %dict_file)
-                        cmd = "python {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
+                        cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
                         padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
                         subprocess.call(cmd, shell=True)
                     
@@ -390,20 +395,29 @@ def main():
                     pass
             else:
                 ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
+                source_tool = "ORTHOFINDER"
+                source_category = "ORTHOLOGY"
                 if verbose:
                     print("Creating %s" %os.path.basename(output))
                 if os.path.exists(all_study_padmet[study_name]):
                     if verbose:
                         print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
                     padmet_path = all_study_padmet[study_name]
-                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5}".format(\
-                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output)
+                    if os.path.exists(ortho_sbml_folder):
+                        cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
+                        padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
+                    else:
+                        if verbose:
+                            print("\tNo orthology folder.")
+                            print(("\tMove {0} in {1}".format(study_name, output)))
+                        subprocess.call("cp " + padmet_path + " " + output, shell=True)
+                        pass
                 else:
                     if verbose:
                         print("\tStarting from an empty PADMET")
-                    cmd = "python {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4}".format(\
-                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output)
-                if os.path.exists(ortho_sbml_folder) and os.walk(ortho_sbml_folder).next()[2]:
+                    cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
+                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
+                if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
                     subprocess.call(cmd, shell=True)
                 else:
                     if verbose:
@@ -421,9 +435,73 @@ def checking_genbank_name(genbank_file):
         print('Error in genbank file name: ' + genbank_file)
         print('Rename the file without:',invalid_characters)
 
-def hashing_id(genbank_file, verbose):
+def checking_gene_id(genbank_file, verbose):
     """
-    Create hashed id for gene (and CDS/mRNA) in genbank file.
+    Check gene ID in genbank.
+    < or > in gene location make Pathway-Tools reject this gene.
+    """
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+
+    invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
+                '.', ':', '!', '+', '[', ']', ',', " "]
+
+    invalid_gene_ids = []
+    too_long_ids = []
+    invalid_locations = []
+    for record in SeqIO.parse(genbank_path, 'genbank'):
+        for feature in record.features:
+            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
+                invalid_locations.append(feature.location)
+            if 'locus_tag' in feature.qualifiers:
+                locus_tag = feature.qualifiers['locus_tag'][0]
+                if any(char in invalid_characters for char in locus_tag):
+                    if verbose:
+                        invalid_gene_ids.append(locus_tag)
+                if len(locus_tag) >= 40:
+                        too_long_ids.append(locus_tag)
+
+    if len(invalid_gene_ids) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
+    if len(too_long_ids) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(too_long_ids)) + ' genes have a gene id too long.')
+    if len(invalid_locations) > 0:
+        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_locations)) + ' genes have < or > in their location.')
+
+    if len(invalid_gene_ids) > 0 or len(too_long_ids) > 0:
+        print('Gene ID in ' + genbank_file + ' must be renamed.')
+        renaming_id(genbank_file, verbose)
+
+    if len(invalid_locations) > 0:
+        fix_gene_locations(genbank_file, verbose)
+
+def adapt_gene_id(gene_id, longest_gene_id):
+    max_id_number = len(longest_gene_id.split('_')[-1])
+    diff_gene_id = len(longest_gene_id) - len(gene_id)
+    adding_position = diff_gene_id - max_id_number
+    if diff_gene_id != 0:
+        gene_id = gene_id[:len(gene_id)+adding_position] + "0"*diff_gene_id + gene_id[len(gene_id)+adding_position:]
+        return gene_id
+    else:
+        return gene_id
+
+def fix_gene_locations(genbank_file, verbose):
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
+
+    new_records = []
+    for record in SeqIO.parse(genbank_path, 'genbank'):
+        for feature in record.features:
+            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
+                new_start = int((str(feature.location.start).replace('<','').replace('>','')))
+                new_end = int(str(feature.location.end).replace('<', '').replace('>',''))
+                feature.location = FeatureLocation(new_start, new_end, feature.location.strand)
+        new_records.append(record)
+    SeqIO.write(new_records, genbank_path, 'genbank')
+
+def renaming_id(genbank_file, verbose):
+    """
+    Create renamed id for gene (and CDS/mRNA) in genbank file.
     Create a tsv mapping file between old and new id in studied_organisms_path.
     Keep ol genbank (by adding '_original').
     """
@@ -432,50 +510,57 @@ def hashing_id(genbank_file, verbose):
     genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
 
     if os.path.exists(genbank_path_renamed):
-        print(genbank_file + ': Hashing has already been made on the data.')
+        print(genbank_file + ': Renaming has already been made on the data.')
         return
-    # Dictionary wtih gene id as key and hashed id as value.
+    # Dictionary wtih gene id as key and renamed id as value.
     feature_id_mappings = {}
 
-    feature_number = 0
+    number_genes_genbanks = len([feature  for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
+    gene_number = 1
     new_records = []
-    # Parse genbank to create new records with hashed id.
-    # Hashed id len: 10 (10 first letter of genbank file name) + 1 ('_') + 20 (hash) = 31.
+    # Parse genbank to create new records with renamed id.
+    # Renamed ID: genbank file name + '_' + gene_position_number.
     # Max ID len is 39 for Pathway-Tools.
     for record in SeqIO.parse(genbank_path, 'genbank'):
         for feature in record.features:
             if 'locus_tag' in feature.qualifiers:
                 feature_id = feature.qualifiers['locus_tag'][0]
                 if feature_id not in feature_id_mappings:
-                    new_feature_id = genbank_file[:10] + '_' + str(hash(feature_id)).replace('-', '_')
+                    if len(genbank_file) > 30:
+                        genbank_file_name = genbank_file
+                    else:
+                       genbank_file_name = genbank_file[:30]
+                    new_gene_id = genbank_file_name + '_' + str(gene_number)
+                    new_feature_id = adapt_gene_id(new_gene_id, genbank_file + '_' + str(number_genes_genbanks))
                     feature_id_mappings[feature_id] = new_feature_id
                     feature.qualifiers['locus_tag'][0] = new_feature_id
-                    feature_number += 1
+                    feature.qualifiers['old_locus_tag'] = feature_id
+                    gene_number += 1
                 else:
                     feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
-                    feature_number += 1
+                    feature.qualifiers['old_locus_tag'] = feature_id
         new_records.append(record)
 
-    # Create genbank with hashed id.
+    # Create genbank with renamed id.
     new_genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_hashed.gbk'
     SeqIO.write(new_records, new_genbank_path, 'genbank')
 
-    # Save non hashed genbank.
+    # Save original genbank.
     os.rename(genbank_path, genbank_path_renamed)
 
-    # Rename hashed genbank to genbank used by the script.
+    # Rename renamed genbank to genbank used by the script.
     os.rename(new_genbank_path, genbank_path)
 
-    # Create a TSV mapping file with nonhashed and hashed ids.
+    # Create a TSV mapping file with original and renamed ids.
     mapping_dic_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_dict.csv'
     with open(mapping_dic_path, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter='\t')
-        writer.writerow(["feature_id", "hashed_id"])
-        for key, value in feature_id_mappings.items():
+        writer.writerow(["original_gene_id", "renamed_gene_id"])
+        for key, value in list(feature_id_mappings.items()):
             writer.writerow([key, value])
 
     if verbose:
-        print(genbank_file + ': ' + str(feature_number) + ' ids have been hashed.')
+        print(genbank_file + ' ids have been renamed.')
 
 def orthogroup_to_sbml(dict_data):
     """
@@ -486,7 +571,7 @@ def orthogroup_to_sbml(dict_data):
     to_compare_name = dict_data['to_compare_name']
     sbml_template = dict_data['sbml_template']
     output = dict_data['output']
-    verbose = dict_data.get('verbose',False)
+    verbose = dict_data.get('verbose')
     if os.path.isfile(output):
         if verbose:
             print("*{0} is already created, skip".format(os.path.basename(output)))
@@ -496,7 +581,7 @@ def orthogroup_to_sbml(dict_data):
 
     #k = gene_id from to_compare, v = list of genes id of study
     sub_dict_orth = {}
-    for k in dict_orthogroup.values():
+    for k in list(dict_orthogroup.values()):
         try:
             all_to_compare_genes = k[to_compare_name]
             all_study_genes = k[study_name]
@@ -516,7 +601,7 @@ def orthogroup_to_sbml(dict_data):
     reader = libsbml.SBMLReader()
     document_to_compare = reader.readSBML(sbml_template)
     for i in range(document_to_compare.getNumErrors()):
-        print (document_to_compare.getError(i).getMessage())
+        print(document_to_compare.getError(i).getMessage())
     model_to_compare = document_to_compare.getModel()
     listOfReactions_with_genes = [rxn for rxn in model_to_compare.getListOfReactions()
                                   if sp.parseNotes(rxn).get("GENE_ASSOCIATION",[None])[0]]
@@ -543,7 +628,7 @@ def orthogroup_to_sbml(dict_data):
         for to_compare_subset in to_compare_ga_subsets:
             study_subset = set()
             for gene in to_compare_subset:
-                if gene in sub_dict_orth.keys():
+                if gene in list(sub_dict_orth.keys()):
                     study_subset.update(sub_dict_orth[gene])
                 else:
                     study_subset = set()
@@ -564,18 +649,18 @@ def orthogroup_to_sbml(dict_data):
         if verbose:
             print("\tNo reaction added from {0} to {1} because of missing orthologues".format(to_compare_name, study_name))
         return
-    rxn_id_to_remove = set([rxn.id for rxn in model_to_compare.getListOfReactions()]).difference(dict_rxn_ga.keys())
+    rxn_id_to_remove = set([rxn.id for rxn in model_to_compare.getListOfReactions()]).difference(list(dict_rxn_ga.keys()))
     if verbose:
         print("\tRemoving %s unused reactions" %len(rxn_id_to_remove))
     [model_to_compare.removeReaction(rxn_id) for rxn_id in rxn_id_to_remove]
     cpd_id_to_preserve = set()
-    for rxn_id, study_ga in dict_rxn_ga.items():
+    for rxn_id, study_ga in list(dict_rxn_ga.items()):
         rxn = model_to_compare.getElementBySId(rxn_id)
         #update notes
         notes_in_dict = sp.parseNotes(rxn)
         notes_in_dict["GENE_ASSOCIATION"] = [study_ga]
         notes = "<body xmlns=\"http://www.w3.org/1999/xhtml\">"
-        for k,v_list in notes_in_dict.items():
+        for k,v_list in list(notes_in_dict.items()):
             for v in v_list:
                 notes += "<p>"+k+": "+v+"</p>"
         notes += "</body>"
@@ -616,7 +701,7 @@ def create_config_file(config_file_path, run_id):
     config.set('VAR', 'study_from_annot_prefix', 'output_pathwaytools_')
 
     # Writing our configuration file to 'example.cfg'
-    with open(config_file_path, 'wb') as configfile:
+    with open(config_file_path, 'w') as configfile:
         config.write(configfile)
 
 def create_run(run_id):

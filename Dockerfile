@@ -1,7 +1,7 @@
 # Need a Pathway-tools installer in the same folder.
 # Use it with the command mpwt -f folder
 FROM ubuntu:16.04
-MAINTAINER "Meziane AITE & Arnaud BELCOUR"
+LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
 LABEL Version="0.2"
 LABEL Description="Metabolic Network comparison dockerfile."
 
@@ -22,22 +22,31 @@ RUN apt-get -y update && \
 # Install OrthoFinder.
 RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /data/database/MNX/;\
     cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.6/OrthoFinder-2.2.6.tar.gz;\
-    tar xzf OrthoFinder-2.2.6.tar.gz;\
-    rm OrthoFinder-2.2.6.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.6:"' >> ~/.bashrc;\
+    wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
+    tar xzf OrthoFinder-2.2.7.tar.gz;\
+    rm OrthoFinder-2.2.7.tar.gz;\
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"' >> ~/.bashrc;\
     wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
     tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
     mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
-    rm -rf fastme-2.1.5*
+    rm -rf fastme-2.1.5*;\
+    wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
+    tar xvzf mmseqs-static_avx2.tar.gz;\
+    echo 'export PATH="$PATH:/programs/mmseqs2/bin/:"' >> ~/.bashrc
+
 
 # Install padmet, mpwt and comparison script.
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7;\
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
+<<<<<<< Dockerfile
+    pip3 install python-libsbml configparser;\
+    pip3 install padmet mpwt;\
+=======
     pip2 install python-libsbml configparser;\ 
     pip2 install padmet mpwt eventlet;\
+>>>>>>> Dockerfile
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
