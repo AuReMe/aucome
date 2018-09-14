@@ -284,7 +284,7 @@ def main():
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
             chronoDepart = time.time()
-            cmd = "{0} -f {1} -t {2}".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use)
+            cmd = "{0} -f {1} -t {2} -S mmseqs".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use)
             subprocess.call(cmd, shell=True)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')

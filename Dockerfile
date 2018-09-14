@@ -22,14 +22,18 @@ RUN apt-get -y update && \
 # Install OrthoFinder.
 RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /data/database/MNX/;\
     cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.6/OrthoFinder-2.2.6.tar.gz;\
-    tar xzf OrthoFinder-2.2.6.tar.gz;\
-    rm OrthoFinder-2.2.6.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.6:"' >> ~/.bashrc;\
+    wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
+    tar xzf OrthoFinder-2.2.7.tar.gz;\
+    rm OrthoFinder-2.2.7.tar.gz;\
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"' >> ~/.bashrc;\
     wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
     tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
     mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
-    rm -rf fastme-2.1.5*
+    rm -rf fastme-2.1.5*;\
+    wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
+    tar xvzf mmseqs-static_avx2.tar.gz;\
+    echo 'export PATH="$PATH:/programs/mmseqs2/bin/:"' >> ~/.bashrc
+
 
 # Install padmet, mpwt and comparison script.
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
