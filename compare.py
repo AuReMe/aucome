@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 26 16:32:23 2018
@@ -28,7 +28,7 @@ options:
     -i    Hash gene id
 
 """
-__version__ = "0.1"
+__version__ = "0.2"
 
 import configparser
 import csv
@@ -56,16 +56,16 @@ import requests
 def main():
     args = docopt.docopt(__doc__)
     """
-    args = {"--run":"algues", "-v":True}
-    all_run_folder = "/home/maite/Forge/docker/comparison_workspace"
-    database_path = "/home/maite/Forge/docker/comparison_workspace/metacyc_22.0_enhanced.padmet"
-    padmet_utils_path = "/home/maite/padmet-tools/padmet-utils"
-    mnx_rxn_path = "/home/maite/Documents/data/metaNetX/new/reac_xref.tsv"
-    mnx_cpd_path = "/home/maite/Documents/data/metaNetX/new/chem_xref_2017.tsv"
+    args = {"--run":"test", "-v":True}
+    all_run_folder = "/home/maite/Forge/docker/comparison_workspace/workdir"
+    database_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/BIOCYC/METACYC/22.0_enhanced/metacyc_22.0_enhanced.padmet"
+    padmet_utils_path = "/home/maite/Aureme/padmet-utils"
+    mnx_rxn_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/MNX/reac_xref.tsv"
+    mnx_cpd_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/MNX/chem_xref.tsv"
     """
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
-    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab
+    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab, verbose
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
@@ -90,7 +90,7 @@ def main():
             print("You are using the version %s, the latest is %s" %(current_version, online_version))
         else:
             print('No internet connection. Skip checking Compare version.')
-
+        return
     all_run_folder = "/shared"
     #add permission to all folder in all_run_folder, usefull because all cmd exec from container are root based
     if args['-R']:
@@ -106,6 +106,8 @@ def main():
     config_file_path = "{0}/{1}/config.txt".format(all_run_folder, run_id)
     if args["--init"]:
         create_run(run_id)
+        cmd = "chmod -R 777 %s" %all_run_folder
+        subprocess.call(cmd, shell=True)
         return
     config = configparser.ConfigParser()
     config.read(config_file_path)
@@ -136,82 +138,29 @@ def main():
     else:
         verbose = ''
 
-
     #create dict for ortho data
     all_study_name = set(next(os.walk(studied_organisms_path))[1])
     all_model_name = set(next(os.walk(model_organisms_path))[1])
-
-    if verbose:
-        print('Checking genbank file.')
-    for study_name in all_study_name:
-        checking_genbank_name(study_name)
-    for model_name in all_model_name:
-        checking_genbank_name(model_name)
-  
-    if verbose:
-        print('Checking gene id.')
-    for study_name in all_study_name:
-        checking_gene_id(study_name, verbose)
-    for model_name in all_model_name:
-        checking_gene_id(model_name, verbose)
-
-    if args["-p"]:
-        #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
-        chronoDepart = time.time()
-        if verbose:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, verbose=True)
-        else:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
-        chrono = (time.time() - chronoDepart)
-        partie_entiere, partie_decimale = str(chrono).split('.')
-        chrono = ".".join([partie_entiere, partie_decimale[:3]])
-        if verbose:
-            print("Pathway-Tools done in: %ss" %chrono)
-    #PGDB, padmet, sbml
     all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    if args["-c"]:
-        for study_name in all_study_name:
-            padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
-            pgdb_folder = all_study_pgdb[study_name]
-            if not os.path.isfile(padmet_file) and pgdb_folder:
-                if verbose:
-                    print("Creating padmet from pgdb for %s" %study_name)
-                cmd = "python3 {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
-                format(padmet_utils_path, padmet_file, pgdb_folder, database_path, verbose)
-                subprocess.call(cmd, shell=True)
-    all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
-                          if os.path.isfile("{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
-                          else (study_name, '')
-                          for study_name in all_study_name])
-    if args["-c"]:
-        for study_name in all_study_name:
-            sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
-            padmet_file = all_study_padmet[study_name]
-            if not os.path.isfile(sbml_file) and padmet_file:
-                if verbose:
-                    print("Creating sbml from padmet for %s" %study_name)
-                cmd = "python3 {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
-                subprocess.call(cmd, shell=True)
-
-    #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
-    #k = study_name (== folder_name in studied_org_path or obtained from sbml name), v = path to sbml, sbml_study_prefi+study_name+.sbml
-    all_study_sbml = dict([(study_name, "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
-                           if os.path.isfile("{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
-                           else (study_name, '')
-                           for study_name in all_study_name])
-
     all_study_gbk = dict([(study_name, "{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
+    #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
+    all_model_gbk = dict([(model_name, "{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
+                          if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
+                          else (model_name, '')
+                          for model_name in all_model_name])
 
-    #create Faa from gbk if no faa found
     if args["-c"]:
+        if verbose:
+            print('Checking genbank file.')
         for study_name in all_study_name:
+            checking_genbank(study_name)
+            #create Faa from gbk if no faa found
             faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
             gbk_file = all_study_gbk[study_name]
             if not os.path.isfile(faa_path) and gbk_file:
@@ -225,12 +174,6 @@ def main():
                           if os.path.isfile("{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
-    all_model_gbk = dict([(model_name, "{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
-                          if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
-                          else (model_name, '')
-                          for model_name in all_model_name])
 
     if args["-c"]:
         for model_name in all_model_name:
@@ -248,12 +191,49 @@ def main():
                           else (model_name, '')
                           for model_name in all_model_name])
 
+    if args["-c"]:
+        for study_name in all_study_name:
+            padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
+            pgdb_folder = all_study_pgdb[study_name]
+            if not os.path.isfile(padmet_file) and pgdb_folder:
+                if verbose:
+                    print("Creating padmet from pgdb for %s" %study_name)
+                cmd = "python3 {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
+                format(padmet_utils_path, padmet_file, pgdb_folder, database_path, verbose)
+                subprocess.call(cmd, shell=True)
+
+    all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
+                          if os.path.isfile("{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
+                          else (study_name, '')
+                          for study_name in all_study_name])
+
+    if args["-c"]:
+        for study_name in all_study_name:
+            sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
+            padmet_file = all_study_padmet[study_name]
+            if not os.path.isfile(sbml_file) and padmet_file:
+                if verbose:
+                    print("Creating sbml from padmet for %s" %study_name)
+                cmd = "python3 {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
+                subprocess.call(cmd, shell=True)
+
+    #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
+    #k = study_name (== folder_name in studied_org_path or obtained from sbml name), v = path to sbml, sbml_study_prefi+study_name+.sbml
+    all_study_sbml = dict([(study_name, "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
+                           if os.path.isfile("{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
+                           else (study_name, '')
+                           for study_name in all_study_name])
+
     #k = folder_name in model_organisms_path, v = path to sbml in this folder, sbml name should be folder_name.sbml
     all_model_sbml = dict([(model_name, "{0}/{1}/{1}.sbml".format(model_organisms_path, model_name))
                           if os.path.isfile("{0}/{1}/{1}.sbml".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
-
+    #PGDB, padmet, sbml
+    all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
+                          if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
+                          else (study_name, '')
+                          for study_name in all_study_name])
 
     if verbose:
         print("Input summary:")
@@ -291,6 +271,19 @@ def main():
                 print("\tSBML: OK")
             else:
                 print("\t[WARNING] No SBML found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
+
+    if args["-p"]:
+        #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
+        chronoDepart = time.time()
+        if verbose:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, verbose=True)
+        else:
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
+        chrono = (time.time() - chronoDepart)
+        partie_entiere, partie_decimale = str(chrono).split('.')
+        chrono = ".".join([partie_entiere, partie_decimale[:3]])
+        if verbose:
+            print("Pathway-Tools done in: %ss" %chrono)
 
     #for each faa, check if already in ortho_based
     if args["-o"]:
@@ -428,27 +421,22 @@ def main():
                         print("\t%s's folder is empty" %study_name)
                     pass
 
-def checking_genbank_name(genbank_file):
+def checking_genbank(genbank_file_name):
     """
     Check if there is a special character in the genbank file.
     If yes exit and print an error.
-    """
-    invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
-                '.', ':', '!', '+', '[', ']', ',', " "]
-    if any(char in invalid_characters for char in genbank_file):
-        print('Error in genbank file name: ' + genbank_file)
-        print('Rename the file without:',invalid_characters)
 
-def checking_gene_id(genbank_file, verbose):
-    """
     Check gene ID in genbank.
     < or > in gene location make Pathway-Tools reject this gene.
     """
-    # Path to the genbank file.
-    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
-
     invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
                 '.', ':', '!', '+', '[', ']', ',', " "]
+    if any(char in invalid_characters for char in genbank_file_name):
+        print('Error in genbank file name: ' + genbank_file_name)
+        print('Rename the file without:',genbank_file_name)
+
+    # Path to the genbank file.
+    genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '.gbk'
 
     invalid_gene_ids = []
     too_long_ids = []
@@ -456,28 +444,33 @@ def checking_gene_id(genbank_file, verbose):
     for record in SeqIO.parse(genbank_path, 'genbank'):
         for feature in record.features:
             if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
-                invalid_locations.append(feature.location)
+                invalid_locations.append(feature)
             if 'locus_tag' in feature.qualifiers:
                 locus_tag = feature.qualifiers['locus_tag'][0]
                 if any(char in invalid_characters for char in locus_tag):
                     if verbose:
-                        invalid_gene_ids.append(locus_tag)
+                        invalid_gene_ids.append(feature)
                 if len(locus_tag) >= 40:
-                        too_long_ids.append(locus_tag)
+                        too_long_ids.append(feature)
 
     if len(invalid_gene_ids) > 0:
-        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
+        print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
     if len(too_long_ids) > 0:
-        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(too_long_ids)) + ' genes have a gene id too long.')
+        print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(too_long_ids)) + ' genes have a gene id too long.')
     if len(invalid_locations) > 0:
-        print('Error of gene id in genbank ' + genbank_file + ', ' + str(len(invalid_locations)) + ' genes have < or > in their location.')
+        print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(invalid_locations)) + ' genes have < or > in their location.')
 
     if len(invalid_gene_ids) > 0 or len(too_long_ids) > 0:
-        print('Gene ID in ' + genbank_file + ' must be renamed.')
-        renaming_id(genbank_file, verbose)
-
+        print('Gene ID in ' + genbank_file_name + ' must be renamed.')
+        fix_name = True
+    else:
+        fix_name = False                
     if len(invalid_locations) > 0:
-        fix_gene_locations(genbank_file, verbose)
+        fix_location = True
+    else:
+        fix_location = False
+    if fix_name or fix_location:
+        fix_genebank_file(genbank_file_name, fix_name, fix_location)
 
 def adapt_gene_id(gene_id, longest_gene_id):
     max_id_number = len(longest_gene_id.split('_')[-1])
@@ -489,10 +482,10 @@ def adapt_gene_id(gene_id, longest_gene_id):
     else:
         return gene_id
 
-def fix_gene_locations(genbank_file, verbose):
+def fix_genebank_file(genbank_file, fix_name, fix_location):
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
-
+    #TODO FINIR! !!!!!!!!
     new_records = []
     for record in SeqIO.parse(genbank_path, 'genbank'):
         for feature in record.features:
@@ -503,7 +496,7 @@ def fix_gene_locations(genbank_file, verbose):
         new_records.append(record)
     SeqIO.write(new_records, genbank_path, 'genbank')
 
-def renaming_id(genbank_file, verbose):
+def renaming_id(genbank_file):
     """
     Create renamed id for gene (and CDS/mRNA) in genbank file.
     Create a tsv mapping file between old and new id in studied_organisms_path.
@@ -684,9 +677,9 @@ def orthogroup_to_sbml(dict_data):
 def create_config_file(config_file_path, run_id):
     config = configparser.RawConfigParser()
     config.add_section('DATABASE_PATHS')
-    config.set('DATABASE_PATHS', 'database_ref_path', '/data/database/BIOCYC/METACYC/22.0_enhanced/metacyc_22.0_enhanced.padmet')
-    config.set('DATABASE_PATHS', 'mnx_rxn_path', '/data/database/MNX/reac_xref.tsv')
-    config.set('DATABASE_PATHS', 'mnx_cpd_path', '/data/database/MNX/chem_xref.tsv')
+    config.set('DATABASE_PATHS', 'database_ref_path', '/home/database/BIOCYC/METACYC/22.0_enhanced/metacyc_22.0_enhanced.padmet')
+    config.set('DATABASE_PATHS', 'mnx_rxn_path', '/home/database/MNX/reac_xref.tsv')
+    config.set('DATABASE_PATHS', 'mnx_cpd_path', '/home/database/MNX/chem_xref.tsv')
     config.add_section('PATHS_IN_RUN')
     config.set('PATHS_IN_RUN', 'run_id', run_id)
     config.set('PATHS_IN_RUN', 'studied_organisms_path', '%(run_id)s/studied_organisms')
