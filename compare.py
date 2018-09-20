@@ -470,7 +470,7 @@ def checking_genbank(genbank_file_name):
     else:
         fix_location = False
     if fix_name or fix_location:
-        fix_genebank_file(genbank_file_name, fix_name, fix_location)
+        fix_genbank_file(genbank_file_name, fix_name, fix_location)
 
 def adapt_gene_id(gene_id, longest_gene_id):
     max_id_number = len(longest_gene_id.split('_')[-1])
@@ -482,64 +482,63 @@ def adapt_gene_id(gene_id, longest_gene_id):
     else:
         return gene_id
 
-def fix_genebank_file(genbank_file, fix_name, fix_location):
+def fix_genbank_file(genbank_file_name, fix_name, fix_location):
     # Path to the genbank file.
-    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
-    #TODO FINIR! !!!!!!!!
-    new_records = []
-    for record in SeqIO.parse(genbank_path, 'genbank'):
-        for feature in record.features:
-            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
+    genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '.gbk'
+    genbank_path_renamed = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_original.gbk'
+
+    if os.path.exists(genbank_path_renamed):
+        print(genbank_file_name + ': Renaming has already been made on the data.')
+        return
+
+    # Create records that will be modified according to the issue: location or gene id.
+    new_records = [record for record in SeqIO.parse(genbank_path, 'genbank')]
+
+    # Fix location (delete < or >).
+    if fix_location:
+        for record in new_records:
+            for feature in record.features:
                 new_start = int((str(feature.location.start).replace('<','').replace('>','')))
                 new_end = int(str(feature.location.end).replace('<', '').replace('>',''))
                 feature.location = FeatureLocation(new_start, new_end, feature.location.strand)
-        new_records.append(record)
-    SeqIO.write(new_records, genbank_path, 'genbank')
 
-def renaming_id(genbank_file):
-    """
-    Create renamed id for gene (and CDS/mRNA) in genbank file.
-    Create a tsv mapping file between old and new id in studied_organisms_path.
-    Keep ol genbank (by adding '_original').
-    """
-    # Path to the genbank file.
-    genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '.gbk'
-    genbank_path_renamed = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_original.gbk'
+    if fix_name:
+        # Dictionary wtih gene id as key and renamed id as value.
+        feature_id_mappings = {}
 
-    if os.path.exists(genbank_path_renamed):
-        print(genbank_file + ': Renaming has already been made on the data.')
-        return
-    # Dictionary wtih gene id as key and renamed id as value.
-    feature_id_mappings = {}
-
-    number_genes_genbanks = len([feature  for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
-    gene_number = 1
-    new_records = []
-    # Parse genbank to create new records with renamed id.
-    # Renamed ID: genbank file name + '_' + gene_position_number.
-    # Max ID len is 39 for Pathway-Tools.
-    for record in SeqIO.parse(genbank_path, 'genbank'):
-        for feature in record.features:
-            if 'locus_tag' in feature.qualifiers:
-                feature_id = feature.qualifiers['locus_tag'][0]
-                if feature_id not in feature_id_mappings:
-                    if len(genbank_file) > 30:
-                        genbank_file_name = genbank_file
+        number_genes_genbanks = len([feature  for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
+        gene_number = 1
+        # Renamed ID: genbank file name + '_' + gene_position_number.
+        # Max ID len is 39 for Pathway-Tools.
+        for record in new_records:
+            for feature in record.features:
+                if 'locus_tag' in feature.qualifiers:
+                    feature_id = feature.qualifiers['locus_tag'][0]
+                    if feature_id not in feature_id_mappings:
+                        if len(genbank_file_name) > 30:
+                            genbank_file_name_gene = genbank_file_name
+                        else:
+                            genbank_file_name_gene = genbank_file_name[:30]
+                        new_gene_id = genbank_file_name_gene + '_' + str(gene_number)
+                        new_feature_id = adapt_gene_id(new_gene_id, genbank_file_name + '_' + str(number_genes_genbanks))
+                        feature_id_mappings[feature_id] = new_feature_id
+                        feature.qualifiers['locus_tag'][0] = new_feature_id
+                        feature.qualifiers['old_locus_tag'] = feature_id
+                        gene_number += 1
                     else:
-                       genbank_file_name = genbank_file[:30]
-                    new_gene_id = genbank_file_name + '_' + str(gene_number)
-                    new_feature_id = adapt_gene_id(new_gene_id, genbank_file + '_' + str(number_genes_genbanks))
-                    feature_id_mappings[feature_id] = new_feature_id
-                    feature.qualifiers['locus_tag'][0] = new_feature_id
-                    feature.qualifiers['old_locus_tag'] = feature_id
-                    gene_number += 1
-                else:
-                    feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
-                    feature.qualifiers['old_locus_tag'] = feature_id
-        new_records.append(record)
+                        feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
+                        feature.qualifiers['old_locus_tag'] = feature_id
+
+        # Create a TSV mapping file with original and renamed ids.
+        mapping_dic_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_dict.csv'
+        with open(mapping_dic_path, 'w') as csv_file:
+            writer = csv.writer(csv_file, delimiter='\t')
+            writer.writerow(["original_gene_id", "renamed_gene_id"])
+            for key, value in list(feature_id_mappings.items()):
+                writer.writerow([key, value])
 
     # Create genbank with renamed id.
-    new_genbank_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_hashed.gbk'
+    new_genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_tmp.gbk'
     SeqIO.write(new_records, new_genbank_path, 'genbank')
 
     # Save original genbank.
@@ -548,16 +547,8 @@ def renaming_id(genbank_file):
     # Rename renamed genbank to genbank used by the script.
     os.rename(new_genbank_path, genbank_path)
 
-    # Create a TSV mapping file with original and renamed ids.
-    mapping_dic_path = studied_organisms_path + '/' + genbank_file + '/' + genbank_file + '_dict.csv'
-    with open(mapping_dic_path, 'w') as csv_file:
-        writer = csv.writer(csv_file, delimiter='\t')
-        writer.writerow(["original_gene_id", "renamed_gene_id"])
-        for key, value in list(feature_id_mappings.items()):
-            writer.writerow([key, value])
-
     if verbose:
-        print(genbank_file + ' ids have been renamed.')
+        print(genbank_file_name + ' ids have been renamed.')
 
 def orthogroup_to_sbml(dict_data):
     """
