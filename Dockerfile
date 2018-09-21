@@ -38,10 +38,8 @@ RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /d
 # Install padmet, mpwt and comparison script.
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
-    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip2 install python-libsbml configparser;\ 
-    pip2 install padmet mpwt eventlet;\
+    pip3 install configparser padmet mpwt eventlet requests;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
