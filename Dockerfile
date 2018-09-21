@@ -1,6 +1,10 @@
 # Need a Pathway-tools installer in the same folder.
-# Use it with the command mpwt -f folder
 FROM ubuntu:16.04
+
+# To fix the issue with locale language.
+ENV LANG C.UTF-8
+ENV PYTHONIOENCODING=utf-8
+
 LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
 LABEL Version="0.2"
 LABEL Description="Metabolic Network comparison dockerfile."
