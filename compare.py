@@ -12,7 +12,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
     compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [-i] [--log=FILE]
+    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
     compare.py -R
     compare.py --version
 
@@ -25,7 +25,6 @@ options:
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
     -v     Verbose.
-    -i    Hash gene id
 
 """
 __version__ = "0.2"
@@ -683,7 +682,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'networks_path', '%(run_id)s/networks')
     config.add_section('TOOL_PATHS')
-    config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.2.6/orthofinder')
+    config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.2.7/orthofinder')
     config.set('TOOL_PATHS', 'padmet_utils_path', '/programs/padmet-utils')
     config.add_section('VAR')
     config.set('VAR', 'study_from_annot_prefix', 'output_pathwaytools_')

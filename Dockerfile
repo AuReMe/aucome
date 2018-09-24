@@ -15,12 +15,13 @@ RUN apt-get -y update && \
     git \
     ncbi-blast+ \
     mcl \
-    libxm4 \
+    libxm4 \ 
+    vim \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
 # Install OrthoFinder.
-RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /data/database/MNX/;\
+RUN mkdir /programs/ /shared/;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
     tar xzf OrthoFinder-2.2.7.tar.gz;\
@@ -32,6 +33,7 @@ RUN mkdir /programs/ /shared/ -p /data/database/BIOCYC/Metacyc/22.0_enhanced/ /d
     rm -rf fastme-2.1.5*;\
     wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
     tar xvzf mmseqs-static_avx2.tar.gz;\
+    rm mmseqs-static_avx2.tar.gz;\
     echo 'export PATH="$PATH:/programs/mmseqs2/bin/:"' >> ~/.bashrc
 
 
@@ -40,9 +42,12 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip2 install python-libsbml configparser;\ 
-    pip2 install padmet mpwt eventlet;\
+    pip3 install python-libsbml configparser;\ 
+    pip3 install padmet mpwt eventlet requests;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
     chmod u+x compare
+
+COPY database /home/database/
+COPY ptools /programs

@@ -1,3 +1,9 @@
+###VERSION:0.2###
+Changelog:
+	- Fix Dockerfile, missing python package
+	- Fix compare script for python3
+	- Fix Genbank parser in compare script
+
 ###VERSION:0.1###
 Changelog:
 	- Adding versioning system
