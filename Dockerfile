@@ -52,4 +52,3 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     chmod u+x compare
 
 COPY database /home/database/
-COPY ptools /programs
