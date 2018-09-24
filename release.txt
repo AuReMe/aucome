@@ -1,3 +1,10 @@
+###VERSION:0.3###
+Changelog:
+	- Add install/uninstall PWT function in compare script
+	- Set UTF-8 encoding as default
+	- Update OrthoFinder to 2.2.7
+	- Add MMSEQs tool
+
 ###VERSION:0.2###
 Changelog:
 	- Fix Dockerfile, missing python package

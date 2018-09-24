@@ -15,6 +15,8 @@ usage:
     compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
     compare.py -R
     compare.py --version
+    compare.py --installPWT=PWT_path
+    compare.py --uninstallPWT
 
 options:
     -h --help     Show help.
@@ -27,7 +29,7 @@ options:
     -v     Verbose.
 
 """
-__version__ = "0.2"
+__version__ = "0.3"
 
 import configparser
 import csv
@@ -49,7 +51,7 @@ from padmet.classes import PadmetSpec, PadmetRef
 
 # Monkey patch before requests import to avoid RecursionError.
 # See https://github.com/gevent/gevent/issues/1016
-eventlet.monkey_patch()
+#eventlet.monkey_patch()
 import requests
 
 def main():
@@ -95,6 +97,14 @@ def main():
     if args['-R']:
         cmd = "chmod -R 777 %s" %all_run_folder
         subprocess.call(cmd, shell=True)
+        return
+
+    if args['--installPWT']:
+        installing_pwt(args['--installPWT'])
+        return
+
+    if args['--uninstallPWT']:
+        uninstalling_pwt()
         return
 
     if args["--run"]:
@@ -419,6 +429,54 @@ def main():
                     if verbose:
                         print("\t%s's folder is empty" %study_name)
                     pass
+
+def installing_pwt(pwt_path):
+    """
+    Install silently Pathway-Tools in /programs.
+    After running this function you need to source the bashrc.
+    """
+    cmd_chmod = "chmod u+x %s" %pwt_path
+    cmd_install = "%s --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended" %pwt_path
+    cmd_echo = '''echo 'export PATH="$PATH:/programs/pathway-tools:"' >> ~/.bashrc'''
+    cmds = [cmd_chmod, cmd_install, cmd_echo]
+    for cmd in cmds:
+        print(cmd)
+        subprocess.call(cmd, shell=True)
+    print("Now you need to source your bash, run:")
+    print("source ~/.bashrc")
+    return
+
+def uninstalling_pwt():
+    """
+    Uninstall Pathway-Tools and can delete ptools-local folder.
+    """
+    def ask_delete_ptools():
+        yes_or_no = input('Delete ptools-local folder (y/n)?')
+        if yes_or_no == 'y':
+            subprocess.call("rm -r /root/ptools-local", shell=True)
+            print('Uninstallation of Pahtway-Tools and ptools-local done!')
+            return
+        elif yes_or_no == 'n':
+            print('Uninstallation of Pathway-Tools done!.')
+            return
+        else:
+            print('Wrong command')
+            ask_delete_ptools()
+
+    cmd_uninstall = "/programs/pathway-tools/uninstall --mode unattended"
+    cmd_clean_bash = '''grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc'''
+    cmds = [cmd_uninstall, cmd_clean_bash]
+
+    if os.path.isdir('/root/AIC-prefs'):
+        cmd_delete_AIC_pref = "rm -r /root/AIC-prefs"
+        cmds.append(cmd_delete_AIC_pref)
+
+    for cmd in cmds:
+        print(cmd)
+        subprocess.call(cmd, shell=True)
+
+    ask_delete_ptools()
+    return
 
 def checking_genbank(genbank_file_name):
     """

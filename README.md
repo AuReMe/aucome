@@ -23,7 +23,7 @@ From git repository:
 
 To run annotation based reconstruction, you need to install Pathway-Tools. This tool is available at the [Pathway-Tools website](http://bioinformatics.ai.sri.com/ptools/). Then run the command:
 
-        make -f ptools install PWT=path/to/pathway/tools/installer
+        compare --installPWT=path/to/pathway/tools/installer
 
 ## Architecture
 

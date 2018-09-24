@@ -1,8 +1,12 @@
 # Need a Pathway-tools installer in the same folder.
-# Use it with the command mpwt -f folder
 FROM ubuntu:16.04
+
+# To fix the issue with locale language.
+ENV LANG C.UTF-8
+ENV PYTHONIOENCODING=utf-8
+
 LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
-LABEL Version="0.2"
+LABEL Version="0.3"
 LABEL Description="Metabolic Network comparison dockerfile."
 
 # Install dependencies for Pathway-Tools and Orthofinder.
@@ -40,10 +44,8 @@ RUN mkdir /programs/ /shared/;\
 # Install padmet, mpwt and comparison script.
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
-    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/ptools_installer;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip3 install python-libsbml configparser;\ 
-    pip3 install padmet mpwt eventlet requests;\
+    pip3 install configparser padmet mpwt eventlet requests;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
