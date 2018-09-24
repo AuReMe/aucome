@@ -45,7 +45,7 @@ RUN mkdir /programs/ /shared/;\
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip3 install configparser padmet mpwt eventlet requests;\
+    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
