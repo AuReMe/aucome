@@ -21,6 +21,8 @@ RUN apt-get -y update && \
     mcl \
     libxm4 \ 
     vim \
+    r-base \
+    python3.5-dev \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
@@ -41,11 +43,12 @@ RUN mkdir /programs/ /shared/;\
     echo 'export PATH="$PATH:/programs/mmseqs2/bin/:"' >> ~/.bashrc
 
 
-# Install padmet, mpwt and comparison script.
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3;\
+# Install r upset for intervene, padmet, mpwt and comparison script.
+RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
+    curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster;\
+    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\
