@@ -450,10 +450,10 @@ def uninstalling_pwt():
     """
     Uninstall Pathway-Tools and can delete ptools-local folder.
     """
-    def ask_delete_ptools():
+    def ask_delete_ptools(ptools_path):
         yes_or_no = input('Delete ptools-local folder (y/n)?')
         if yes_or_no == 'y':
-            subprocess.call("rm -r /root/ptools-local", shell=True)
+            subprocess.call("rm -r " + ptools_path, shell=True)
             print('Uninstallation of Pahtway-Tools and ptools-local done!')
             return
         elif yes_or_no == 'n':
@@ -461,11 +461,13 @@ def uninstalling_pwt():
             return
         else:
             print('Wrong command')
-            ask_delete_ptools()
+            ask_delete_ptools(ptools_path)
 
     cmd_uninstall = "/programs/pathway-tools/uninstall --mode unattended"
     cmd_clean_bash = '''grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc'''
     cmds = [cmd_uninstall, cmd_clean_bash]
+
+    ptools_path = mpwt.ptools_path()
 
     if os.path.isdir('/root/AIC-prefs'):
         cmd_delete_AIC_pref = "rm -r /root/AIC-prefs"
@@ -475,7 +477,7 @@ def uninstalling_pwt():
         print(cmd)
         subprocess.call(cmd, shell=True)
 
-    ask_delete_ptools()
+    ask_delete_ptools(ptools_path)
     return
 
 def checking_genbank(genbank_file_name):
