@@ -485,8 +485,7 @@ def checking_genbank(genbank_file_name):
     Check if there is a special character in the genbank file.
     If yes exit and print an error.
 
-    Check gene ID in genbank.
-    < or > in gene location make Pathway-Tools reject this gene.
+    Check gene ID in genbank to find too long gene ID or invalid character in gene ID.
     """
     invalid_characters = ['-', '|', '/', '(', ')', '\'', '=', '#', '*',
                 '.', ':', '!', '+', '[', ']', ',', " "]
@@ -499,11 +498,8 @@ def checking_genbank(genbank_file_name):
 
     invalid_gene_ids = []
     too_long_ids = []
-    invalid_locations = []
     for record in SeqIO.parse(genbank_path, 'genbank'):
         for feature in record.features:
-            if '<' in str(feature.location.start) or '<' in str(feature.location.end) or '>' in str(feature.location.start) or '>' in str(feature.location.end):
-                invalid_locations.append(feature)
             if 'locus_tag' in feature.qualifiers:
                 locus_tag = feature.qualifiers['locus_tag'][0]
                 if any(char in invalid_characters for char in locus_tag):
@@ -516,20 +512,15 @@ def checking_genbank(genbank_file_name):
         print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
     if len(too_long_ids) > 0:
         print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(too_long_ids)) + ' genes have a gene id too long.')
-    if len(invalid_locations) > 0:
-        print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(invalid_locations)) + ' genes have < or > in their location.')
 
     if len(invalid_gene_ids) > 0 or len(too_long_ids) > 0:
         print('Gene ID in ' + genbank_file_name + ' must be renamed.')
         fix_name = True
     else:
-        fix_name = False                
-    if len(invalid_locations) > 0:
-        fix_location = True
-    else:
-        fix_location = False
-    if fix_name or fix_location:
-        fix_genbank_file(genbank_file_name, fix_name, fix_location)
+        fix_name = False
+
+    if fix_name:
+        fix_genbank_file(genbank_file_name, fix_name)
 
 def adapt_gene_id(gene_id, longest_gene_id):
     max_id_number = len(longest_gene_id.split('_')[-1])
@@ -541,7 +532,7 @@ def adapt_gene_id(gene_id, longest_gene_id):
     else:
         return gene_id
 
-def fix_genbank_file(genbank_file_name, fix_name, fix_location):
+def fix_genbank_file(genbank_file_name, fix_name):
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '.gbk'
     genbank_path_renamed = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_original.gbk'
@@ -552,14 +543,6 @@ def fix_genbank_file(genbank_file_name, fix_name, fix_location):
 
     # Create records that will be modified according to the issue: location or gene id.
     new_records = [record for record in SeqIO.parse(genbank_path, 'genbank')]
-
-    # Fix location (delete < or >).
-    if fix_location:
-        for record in new_records:
-            for feature in record.features:
-                new_start = int((str(feature.location.start).replace('<','').replace('>','')))
-                new_end = int(str(feature.location.end).replace('<', '').replace('>',''))
-                feature.location = FeatureLocation(new_start, new_end, feature.location.strand)
 
     if fix_name:
         # Dictionary wtih gene id as key and renamed id as value.
