@@ -23,6 +23,7 @@ RUN apt-get -y update && \
     vim \
     r-base \
     python3.5-dev \
+    iputils-ping \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
