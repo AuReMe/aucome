@@ -29,7 +29,7 @@ options:
     -v     Verbose.
 
 """
-__version__ = "0.3"
+__version__ = "0.4"
 
 import configparser
 import csv

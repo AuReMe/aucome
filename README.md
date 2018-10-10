@@ -2,7 +2,7 @@
 title:  compare_metabo - Documentation
 author: Meziane AITE & Arnaud BELCOUR
 date: 2018-07-13
-version: 0.1
+version: 0.4
 ---
 
 ################################################################################

@@ -6,7 +6,7 @@ ENV LANG C.UTF-8
 ENV PYTHONIOENCODING=utf-8
 
 LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
-LABEL Version="0.3"
+LABEL Version="0.4"
 LABEL Description="Metabolic Network comparison dockerfile."
 
 # Install dependencies for Pathway-Tools and Orthofinder.
