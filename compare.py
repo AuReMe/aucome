@@ -15,7 +15,7 @@ usage:
     compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
     compare.py -R
     compare.py --version
-    compare.py --installPWT=PWT_path
+    compare.py --installPWT=PWT_path [--ptools=ptools_path]
     compare.py --uninstallPWT
 
 options:
@@ -100,7 +100,7 @@ def main():
         return
 
     if args['--installPWT']:
-        installing_pwt(args['--installPWT'])
+        installing_pwt(args['--installPWT'], args['--ptools'])
         return
 
     if args['--uninstallPWT']:
@@ -430,13 +430,21 @@ def main():
                         print("\t%s's folder is empty" %study_name)
                     pass
 
-def installing_pwt(pwt_path):
+def installing_pwt(pwt_path, input_ptools_local_path):
     """
     Install silently Pathway-Tools in /programs.
     After running this function you need to source the bashrc.
     """
+    ptools_local_path = '/root'
+    if input_ptools_local_path:
+        if os.path.isdir(input_ptools_local_path):
+            ptools_local_path = input_ptools_local_path
+        else:
+            print(input_ptools_local_path + ' path does not exist, --ptools must be an existing path.')
+            return
+
     cmd_chmod = "chmod u+x %s" %pwt_path
-    cmd_install = "%s --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /root --InstallDesktopShortcuts 0 --mode unattended" %pwt_path
+    cmd_install = "{0} --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH {1} --InstallDesktopShortcuts 0 --mode unattended".format(pwt_path, ptools_local_path)
     cmd_echo = '''echo 'export PATH="$PATH:/programs/pathway-tools:"' >> ~/.bashrc'''
     cmds = [cmd_chmod, cmd_install, cmd_echo]
     for cmd in cmds:
