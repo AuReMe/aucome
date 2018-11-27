@@ -28,12 +28,12 @@ RUN apt-get -y update && \
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
 # Install OrthoFinder.
+# Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
 RUN mkdir /programs/ /shared/;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
     tar xzf OrthoFinder-2.2.7.tar.gz;\
     rm OrthoFinder-2.2.7.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"' >> ~/.bashrc;\
     wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
     tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
     mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
@@ -41,7 +41,7 @@ RUN mkdir /programs/ /shared/;\
     wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
     tar xvzf mmseqs-static_avx2.tar.gz;\
     rm mmseqs-static_avx2.tar.gz;\
-    echo 'export PATH="$PATH:/programs/mmseqs2/bin/:"' >> ~/.bashrc
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
 
 
 # Install r upset for intervene, padmet, mpwt and comparison script.
