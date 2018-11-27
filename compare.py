@@ -11,6 +11,7 @@ get all fasta in model_data/
 ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
+    compare.py --setWorkingFolder=DIR
     compare.py --init=ID [-v]
     compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
     compare.py -R
@@ -56,6 +57,16 @@ import requests
 
 def main():
     args = docopt.docopt(__doc__)
+
+    global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
+    sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
+    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab, verbose
+
+    release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
+
+    # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
+    all_run_folder = "/shared"
+
     """
     args = {"--run":"test", "-v":True}
     all_run_folder = "/home/maite/Forge/docker/comparison_workspace/workdir"
@@ -64,11 +75,6 @@ def main():
     mnx_rxn_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/MNX/reac_xref.tsv"
     mnx_cpd_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/MNX/chem_xref.tsv"
     """
-    global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
-    sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
-    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab, verbose
-
-    release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     #always_check_version
     online_version = get_version()
@@ -92,7 +98,11 @@ def main():
         else:
             print('No internet connection. Skip checking Compare version.')
         return
-    all_run_folder = "/shared"
+
+    if args["--setWorkingFolder"]:
+        modify_working_folder(args["--setWorkingFolder"])
+        return
+
     #add permission to all folder in all_run_folder, usefull because all cmd exec from container are root based
     if args['-R']:
         cmd = "chmod -R 777 %s" %all_run_folder
@@ -429,6 +439,28 @@ def main():
                     if verbose:
                         print("\t%s's folder is empty" %study_name)
                     pass
+
+def modify_working_folder(working_folder):
+    """
+    Read this script.
+    Search for the first line containing variable all_run_folder.
+    Modify it to add the new working folder.
+    Then rewrite the script.
+    """
+    with open(__file__, 'r') as compare_script:
+        compare_lines = compare_script.read().split('\n')
+
+        for index, compare_line in enumerate(compare_lines):
+            if '    all_run_folder = ' in compare_line:
+                compare_line = '    all_run_folder = "{0}"'.format(working_folder)
+                compare_lines[index] = compare_line
+                break
+        new_compare_script_string = '\n'.join(compare_lines)
+
+    with open(__file__, 'w') as new_compare_script:
+        new_compare_script.write(new_compare_script_string)
+
+    return
 
 def installing_pwt(pwt_path, input_ptools_local_path):
     """
