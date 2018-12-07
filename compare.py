@@ -293,7 +293,7 @@ def main():
                 print("\t[WARNING] No SBML found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
 
     if args["--cpu"]:
-        nb_cpu_to_use = args["--cpu"]
+        nb_cpu_to_use = int(args["--cpu"])
     else:
         nb_cpu_to_use = cpu_count()-1
 
