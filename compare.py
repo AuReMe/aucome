@@ -13,7 +13,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 usage:
     compare.py --setWorkingFolder=DIR
     compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-p] [-d] [-v] [--log=FILE]
+    compare.py --run=DIR [-c] [-o] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
     compare.py -R
     compare.py --version
     compare.py --installPWT=PWT_path [--ptools=ptools_path]
@@ -27,6 +27,7 @@ options:
     -o    Run Orthofinder
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
+    --cpu=INT     Number of cpu to use for the multiprocessing (if none use all cpu available -1).
     -v     Verbose.
 
 """
@@ -291,13 +292,18 @@ def main():
             else:
                 print("\t[WARNING] No SBML found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
 
+    if args["--cpu"]:
+        nb_cpu_to_use = args["--cpu"]
+    else:
+        nb_cpu_to_use = cpu_count()-1
+
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
         if verbose:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, verbose=True)
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, number_cpu=nb_cpu_to_use, verbose=True)
         else:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True)
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, number_cpu=nb_cpu_to_use)
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
@@ -324,7 +330,7 @@ def main():
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
                     cmd = "cp {0} {1}/".format(faa_path, orthofinder_wd_path)
                     subprocess.call(cmd, shell=True)
-            nb_cpu_to_use = cpu_count()-1
+
             if verbose:
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
