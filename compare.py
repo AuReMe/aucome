@@ -590,14 +590,11 @@ def fix_genbank_file(genbank_file_name, fix_name):
     # Create records that will be modified according to the issue: location or gene id.
     new_records = [record for record in SeqIO.parse(genbank_path, 'genbank')]
 
-    # Take the accession and version number from the first record.
+    # Use either the genbank accession or the genus + species as a prefix for new gene ID.
     try:
-        accession = new_records[0].annotations['accessions'][0] + '_' + str(new_records[0].annotations['sequence_version'])
+        new_prefix = new_records[0].annotations['accessions'][0] + '_' + str(new_records[0].annotations['sequence_version'])
     except:
-        if len(genbank_file_name) > 30:
-            accession = genbank_file_name
-        else:
-            accession = genbank_file_name[:30]
+        new_prefix = new_records[0].annotations['organism'].split(' ')[0][0] + '_' + new_records[0].annotations['organism'].split(' ')[1]
 
     if fix_name:
         # Dictionary wtih gene id as key and renamed id as value.
@@ -612,8 +609,8 @@ def fix_genbank_file(genbank_file_name, fix_name):
                 if 'locus_tag' in feature.qualifiers:
                     feature_id = feature.qualifiers['locus_tag'][0]
                     if feature_id not in feature_id_mappings:
-                        new_gene_id = accession + '_' + str(gene_number)
-                        new_feature_id = adapt_gene_id(new_gene_id, accession + '_' + str(number_genes_genbanks))
+                        new_gene_id = new_prefix + '_' + str(gene_number)
+                        new_feature_id = adapt_gene_id(new_gene_id, new_prefix + '_' + str(number_genes_genbanks))
                         feature_id_mappings[feature_id] = new_feature_id
                         feature.qualifiers['locus_tag'][0] = new_feature_id
                         feature.qualifiers['old_locus_tag'] = feature_id
