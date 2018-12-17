@@ -13,7 +13,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 usage:
     compare.py --setWorkingFolder=DIR
     compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
+    compare.py --run=DIR [-c] [-o] [-S=STR] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
     compare.py -R
     compare.py --version
     compare.py --installPWT=PWT_path [--ptools=ptools_path]
@@ -25,6 +25,8 @@ options:
     --run=ID    pathname to the comparison workspace
     -c    Check inputs validity
     -o    Run Orthofinder
+    -S=STR    Sequence search program for Orthofinder [Default: mmseqs].
+          Options: blast, mmseqs, blast_gz, diamond
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use all cpu available -1).
@@ -312,6 +314,7 @@ def main():
 
     #for each faa, check if already in ortho_based
     if args["-o"]:
+        sequence_search_prg = args['-S']
         #check if Orthofinder already run, if yes, get the last workdir
         try:
             last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups.csv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups.csv' in x[2]])
@@ -335,7 +338,7 @@ def main():
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
             chronoDepart = time.time()
-            cmd = "{0} -f {1} -t {2} -S mmseqs".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use)
+            cmd = "{0} -f {1} -t {2} -S {3}".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use, sequence_search_prg)
             subprocess.call(cmd, shell=True)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
@@ -568,15 +571,17 @@ def checking_genbank(genbank_file_name):
     if fix_name:
         fix_genbank_file(genbank_file_name, fix_name)
 
-def adapt_gene_id(gene_id, longest_gene_id):
-    max_id_number = len(longest_gene_id.split('_')[-1])
-    diff_gene_id = len(longest_gene_id) - len(gene_id)
-    adding_position = diff_gene_id - max_id_number
-    if diff_gene_id != 0:
-        gene_id = gene_id[:len(gene_id)+adding_position] + "0"*diff_gene_id + gene_id[len(gene_id)+adding_position:]
-        return gene_id
-    else:
-        return gene_id
+def adapt_gene_id(gene_id, longest_gene_number_length):
+    """
+    Input: a gene ID like g_1 and the longest_gene_number_length (5 if you have a gene like g_12356).
+    Return a new gene ID with a completion of 0 like: g_00001.
+    """
+    gene_prefix = '_'.join(gene_id.split('_')[:-1])
+    gene_number = gene_id.split('_')[-1]
+
+    new_gene_id = gene_prefix + '_' + gene_number.zfill(longest_gene_number_length)
+
+    return new_gene_id
 
 def fix_genbank_file(genbank_file_name, fix_name):
     # Path to the genbank file.
@@ -600,7 +605,7 @@ def fix_genbank_file(genbank_file_name, fix_name):
         # Dictionary wtih gene id as key and renamed id as value.
         feature_id_mappings = {}
 
-        number_genes_genbanks = len([feature  for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
+        number_genes_genbanks = len([feature for record in SeqIO.parse(genbank_path, 'genbank') for feature in record.features if feature.type == 'gene'])
         gene_number = 1
         # Renamed ID: genbank file name + '_' + gene_position_number.
         # Max ID len is 39 for Pathway-Tools.
@@ -610,7 +615,7 @@ def fix_genbank_file(genbank_file_name, fix_name):
                     feature_id = feature.qualifiers['locus_tag'][0]
                     if feature_id not in feature_id_mappings:
                         new_gene_id = new_prefix + '_' + str(gene_number)
-                        new_feature_id = adapt_gene_id(new_gene_id, new_prefix + '_' + str(number_genes_genbanks))
+                        new_feature_id = adapt_gene_id(new_gene_id, len(str(number_genes_genbanks)))
                         feature_id_mappings[feature_id] = new_feature_id
                         feature.qualifiers['locus_tag'][0] = new_feature_id
                         feature.qualifiers['old_locus_tag'] = feature_id
