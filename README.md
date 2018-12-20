@@ -78,7 +78,7 @@ annotation_based contains three sub-folders. The folder PGDBs will contain all t
 
 config.txt contains numerous paths used by the script.
 
-model_organisms contains the model organisms you want to use for the orthology. In this folder you put a new folder with the name of the species and in this folder you put the proteome and the sbml of the metabolic network of your species. The name of the proteome and of the metabolic network must the same than the name of the folder.
+model_organisms contains the model organisms you want to use for the orthology. In this folder you put a new folder with the name of the species and in this folder you put the proteome and the sbml of the metabolic network of your species. Proteome and metabolic network names must be the same than the name of the folder.
 
         ├── model_organisms
              ├── A_thaliana
