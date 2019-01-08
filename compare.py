@@ -68,7 +68,7 @@ def main():
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
-    all_run_folder = "/home/abelcour/Downloads/compare_metabo"
+    all_run_folder = "/shared"
 
     """
     args = {"--run":"test", "-v":True}
