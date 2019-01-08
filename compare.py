@@ -68,7 +68,7 @@ def main():
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
-    all_run_folder = "/shared"
+    all_run_folder = "/home/abelcour/Downloads/compare_metabo"
 
     """
     args = {"--run":"test", "-v":True}
@@ -545,6 +545,7 @@ def checking_genbank(genbank_file_name):
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '.gbk'
 
+    fix_dot_protein_seq = None
     invalid_gene_ids = []
     too_long_ids = []
     for record in SeqIO.parse(genbank_path, 'genbank'):
@@ -556,6 +557,9 @@ def checking_genbank(genbank_file_name):
                         invalid_gene_ids.append(feature)
                 if len(locus_tag) >= 40:
                         too_long_ids.append(feature)
+            if 'translation' in feature.qualifiers:
+                if '.' in feature.qualifiers['translation'][0]:
+                    fix_dot_protein_seq = True
 
     if len(invalid_gene_ids) > 0:
         print('Error of gene id in genbank ' + genbank_file_name + ', ' + str(len(invalid_gene_ids)) + ' genes have an invalid characters present: ' + ' '.join(invalid_characters) + '.')
@@ -568,8 +572,11 @@ def checking_genbank(genbank_file_name):
     else:
         fix_name = False
 
-    if fix_name:
-        fix_genbank_file(genbank_file_name, fix_name)
+    if fix_dot_protein_seq:
+        print('Dot in a protein sequence, Orthofinder will not work for this sequence. Dot will be deleted.')
+
+    if fix_name or fix_dot_protein_seq:
+        fix_genbank_file(genbank_file_name, fix_name, fix_dot_protein_seq)
 
 def adapt_gene_id(gene_id, longest_gene_number_length):
     """
@@ -583,7 +590,7 @@ def adapt_gene_id(gene_id, longest_gene_number_length):
 
     return new_gene_id
 
-def fix_genbank_file(genbank_file_name, fix_name):
+def fix_genbank_file(genbank_file_name, fix_name, fix_dot_protein_seq):
     # Path to the genbank file.
     genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '.gbk'
     genbank_path_renamed = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_original.gbk'
@@ -601,7 +608,7 @@ def fix_genbank_file(genbank_file_name, fix_name):
     except:
         new_prefix = new_records[0].annotations['organism'].split(' ')[0][0] + '_' + new_records[0].annotations['organism'].split(' ')[1]
 
-    if fix_name:
+    if fix_name or fix_dot_protein_seq:
         # Dictionary wtih gene id as key and renamed id as value.
         feature_id_mappings = {}
 
@@ -612,25 +619,30 @@ def fix_genbank_file(genbank_file_name, fix_name):
         for record in new_records:
             for feature in record.features:
                 if 'locus_tag' in feature.qualifiers:
-                    feature_id = feature.qualifiers['locus_tag'][0]
-                    if feature_id not in feature_id_mappings:
-                        new_gene_id = new_prefix + '_' + str(gene_number)
-                        new_feature_id = adapt_gene_id(new_gene_id, len(str(number_genes_genbanks)))
-                        feature_id_mappings[feature_id] = new_feature_id
-                        feature.qualifiers['locus_tag'][0] = new_feature_id
-                        feature.qualifiers['old_locus_tag'] = feature_id
-                        gene_number += 1
-                    else:
-                        feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
-                        feature.qualifiers['old_locus_tag'] = feature_id
+                    if fix_name:
+                        feature_id = feature.qualifiers['locus_tag'][0]
+                        if feature_id not in feature_id_mappings:
+                            new_gene_id = new_prefix + '_' + str(gene_number)
+                            new_feature_id = adapt_gene_id(new_gene_id, len(str(number_genes_genbanks)))
+                            feature_id_mappings[feature_id] = new_feature_id
+                            feature.qualifiers['locus_tag'][0] = new_feature_id
+                            feature.qualifiers['old_locus_tag'] = feature_id
+                            gene_number += 1
+                        else:
+                            feature.qualifiers['locus_tag'][0] = feature_id_mappings[feature_id]
+                            feature.qualifiers['old_locus_tag'] = feature_id
+                    if fix_dot_protein_seq:
+                        if 'translation' in feature.qualifiers:
+                            feature.qualifiers['translation'] = feature.qualifiers['translation'][0].replace('.', '')
 
-        # Create a TSV mapping file with original and renamed ids.
-        mapping_dic_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_dict.csv'
-        with open(mapping_dic_path, 'w') as csv_file:
-            writer = csv.writer(csv_file, delimiter='\t')
-            writer.writerow(["original_gene_id", "renamed_gene_id"])
-            for key, value in list(feature_id_mappings.items()):
-                writer.writerow([key, value])
+        if fix_name:
+            # Create a TSV mapping file with original and renamed ids.
+            mapping_dic_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_dict.csv'
+            with open(mapping_dic_path, 'w') as csv_file:
+                writer = csv.writer(csv_file, delimiter='\t')
+                writer.writerow(["original_gene_id", "renamed_gene_id"])
+                for key, value in list(feature_id_mappings.items()):
+                    writer.writerow([key, value])
 
     # Create genbank with renamed id.
     new_genbank_path = studied_organisms_path + '/' + genbank_file_name + '/' + genbank_file_name + '_tmp.gbk'
