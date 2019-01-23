@@ -24,12 +24,13 @@ RUN apt-get -y update && \
     r-base \
     python3.5-dev \
     iputils-ping \
+    screen \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
 # Install OrthoFinder.
 # Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
-RUN mkdir /programs/ /shared/;\
+RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
     tar xzf OrthoFinder-2.2.7.tar.gz;\
@@ -41,7 +42,10 @@ RUN mkdir /programs/ /shared/;\
     wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
     tar xvzf mmseqs-static_avx2.tar.gz;\
     rm mmseqs-static_avx2.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
+    cd diamond;\
+    wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
+    tar xzf diamond-linux64.tar.gz;\
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
 
 
 # Install r upset for intervene, padmet, mpwt and comparison script.
@@ -49,7 +53,7 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene;\
+    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene lxml;\
     cd /usr/bin;\
     wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
     mv compare.py compare;\

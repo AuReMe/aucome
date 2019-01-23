@@ -25,7 +25,7 @@ options:
     --run=ID    pathname to the comparison workspace
     -c    Check inputs validity
     -o    Run Orthofinder
-    -S=STR    Sequence search program for Orthofinder [Default: mmseqs].
+    -S=STR    Sequence search program for Orthofinder [Default: diamond].
           Options: blast, mmseqs, blast_gz, diamond
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
@@ -79,6 +79,19 @@ def main():
     mnx_cpd_path = "/home/maite/Forge/docker/comparison_workspace/folder_git/compare_metabo/database/MNX/chem_xref.tsv"
     """
 
+    if args["--version"]:
+        online_version = get_version()
+        current_version = __version__
+        if online_version:
+            print("You are using the version %s, the latest is %s" %(current_version, online_version))
+        else:
+            print('No internet connection. Skip checking Compare version.')
+        return
+
+    if args["--setWorkingFolder"]:
+        modify_working_folder(args["--setWorkingFolder"])
+        return
+
     #always_check_version
     online_version = get_version()
     current_version = __version__
@@ -92,19 +105,6 @@ def main():
             print("\tCreate a new container with the new image:")
             print("\t\t$sudo docker run -ti -v /PATH/TO/COMPARE_WORKSPACE:/shared --name=compare docker.io/dyliss/compare-img bash")
             print("\tObviously change /PATH/TO/COMPARE_WORKSPACE to the real path of you Compare workspace")
-
-    if args["--version"]:
-        online_version = get_version()
-        current_version = __version__
-        if online_version:
-            print("You are using the version %s, the latest is %s" %(current_version, online_version))
-        else:
-            print('No internet connection. Skip checking Compare version.')
-        return
-
-    if args["--setWorkingFolder"]:
-        modify_working_folder(args["--setWorkingFolder"])
-        return
 
     #add permission to all folder in all_run_folder, usefull because all cmd exec from container are root based
     if args['-R']:
@@ -831,8 +831,8 @@ def get_version():
             first_line = response.text.split('\n')[0]
             version = re.match(reg_version,first_line).group(1)
         except eventlet.timeout.Timeout:
-            print('No internet connection. Skip checking Compare version.')
             version = None
+
     return version
 
 if __name__ == "__main__":
