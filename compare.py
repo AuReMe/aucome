@@ -62,8 +62,8 @@ def main():
     args = docopt.docopt(__doc__)
 
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
-    sbml_from_annotation_path, networks_path, orthofinder_bin_path,\
-    sbml_study_prefix, all_study_name, all_mode_name, dict_orthogroup, padmet_utils_path, release_on_gitlab, verbose
+    sbml_from_annotation_path, networks_path, orthofinder_bin_path, mnx_rxn_path, mnx_cpd_path,\
+    sbml_study_prefix, all_study_name, all_study_padmet, all_mode_name, padmet_utils_path, release_on_gitlab, verbose
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
@@ -303,15 +303,16 @@ def main():
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
         if verbose:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, number_cpu=nb_cpu_to_use, verbose=True)
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, patho_inference=True, dat_extraction=True, number_cpu=nb_cpu_to_use, verbose=True)
         else:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, dat_extraction=True, number_cpu=nb_cpu_to_use)
+            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, patho_inference=True, dat_extraction=True, number_cpu=nb_cpu_to_use)
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
         if verbose:
             print("Pathway-Tools done in: %ss" %chrono)
 
+    compare_pool = Pool(processes=cpu_count())
     #for each faa, check if already in ortho_based
     if args["-o"]:
         sequence_search_prg = args['-S']
@@ -377,77 +378,78 @@ def main():
                 except KeyError:
                     sbml_template = all_study_sbml[to_compare_name]
                 if sbml_template:
-                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':verbose}
+                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':verbose, 'ortho': dict_orthogroup}
                     all_dict_data.append(dict_data)
-            chronoDepart = time.time()
-            """
-            p = Pool(processes=cpu_count())
-            p.map_async(orthogroup_to_sbml, all_dict_data)
-            p.close()
-            p.join()
-            """
-            for dict_data in all_dict_data:
-                orthogroup_to_sbml(dict_data)
-            chrono = (time.time() - chronoDepart)
-            partie_entiere, partie_decimale = str(chrono).split('.')
-            chrono = ".".join([partie_entiere, partie_decimale[:3]])
-            if verbose:
-                print("Orthofinder output parsed in: %ss" %chrono)
-            #check database, mapping to metacyc ???
+
+        chronoDepart = time.time()
+        compare_pool.map(orthogroup_to_sbml, all_dict_data)
+        chrono = (time.time() - chronoDepart)
+        partie_entiere, partie_decimale = str(chrono).split('.')
+        chrono = ".".join([partie_entiere, partie_decimale[:3]])
+        if verbose:
+            print("Orthofinder output parsed in: %ss" %chrono)
+        #check database, mapping to metacyc ???
         all_sbml_from_ortho = [dict_data['output'] for dict_data in all_dict_data]
-        for sbml_file in all_sbml_from_ortho:
-            if os.path.isfile(sbml_file):
-                dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
-                if not os.path.exists(dict_file):
-                    cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
-                    db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
-                    if verbose:
-                        print("%s: %s" %(os.path.basename(sbml_file), db_ref))
-                    if db_ref.lower() != "metacyc":
-                        if verbose:
-                            print("Creating id mapping file: %s" %dict_file)
-                        cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
-                        padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
-                        subprocess.call(cmd, shell=True)
-                    
+        compare_pool.map(convert_sbml_db, all_sbml_from_ortho)
 
     if args["-d"]:
-        for study_name in all_study_name:
-            output = "{0}/{1}.padmet".format(networks_path, study_name)
-            if os.path.exists(output):
+        compare_pool.map(create_draft, all_study_name)
+
+    compare_pool.close()
+    compare_pool.join()
+
+def convert_sbml_db(all_sbml_from_ortho):
+    for sbml_file in all_sbml_from_ortho:
+        if os.path.isfile(sbml_file):
+            dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
+            if not os.path.exists(dict_file):
+                cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
+                db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                 if verbose:
-                    print("%s already exist, skip" %os.path.basename(output))
-                    pass
-            else:
-                ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
-                source_tool = "ORTHOFINDER"
-                source_category = "ORTHOLOGY"
-                if verbose:
-                    print("Creating %s" %os.path.basename(output))
-                if os.path.exists(all_study_padmet[study_name]):
+                    print("%s: %s" %(os.path.basename(sbml_file), db_ref))
+                if db_ref.lower() != "metacyc":
                     if verbose:
-                        print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
-                    padmet_path = all_study_padmet[study_name]
-                    if os.path.exists(ortho_sbml_folder):
-                        cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
-                        padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
-                    else:
-                        if verbose:
-                            print("\tNo orthology folder.")
-                            print(("\tMove {0} in {1}".format(study_name, output)))
-                        subprocess.call("cp " + padmet_path + " " + output, shell=True)
-                        pass
-                else:
-                    if verbose:
-                        print("\tStarting from an empty PADMET")
-                    cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
-                    padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
-                if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
+                        print("Creating id mapping file: %s" %dict_file)
+                    cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
+                    padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
                     subprocess.call(cmd, shell=True)
-                else:
-                    if verbose:
-                        print("\t%s's folder is empty" %study_name)
-                    pass
+
+def create_draft(study_name):
+    output = "{0}/{1}.padmet".format(networks_path, study_name)
+    if os.path.exists(output):
+        if verbose:
+            print("%s already exist, skip" %os.path.basename(output))
+            return
+    else:
+        ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
+        source_tool = "ORTHOFINDER"
+        source_category = "ORTHOLOGY"
+        if verbose:
+            print("Creating %s" %os.path.basename(output))
+        if os.path.exists(all_study_padmet[study_name]):
+            if verbose:
+                print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
+            padmet_path = all_study_padmet[study_name]
+            if os.path.exists(ortho_sbml_folder):
+                cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
+                padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
+            else:
+                if verbose:
+                    print("\tNo orthology folder.")
+                    print(("\tMove {0} in {1}".format(study_name, output)))
+                subprocess.call("cp " + padmet_path + " " + output, shell=True)
+                return
+        else:
+            if verbose:
+                print("\tStarting from an empty PADMET")
+            cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
+            padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
+        if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
+            subprocess.call(cmd, shell=True)
+        else:
+            if verbose:
+                print("\t%s's folder is empty" %study_name)
+            return
 
 def modify_working_folder(working_folder):
     """
@@ -667,6 +669,7 @@ def orthogroup_to_sbml(dict_data):
     sbml_template = dict_data['sbml_template']
     output = dict_data['output']
     verbose = dict_data.get('verbose')
+    dict_orthogroup = dict_data.get('ortho')
     if os.path.isfile(output):
         if verbose:
             print("*{0} is already created, skip".format(os.path.basename(output)))
