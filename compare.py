@@ -312,7 +312,7 @@ def main():
         if verbose:
             print("Pathway-Tools done in: %ss" %chrono)
 
-    compare_pool = Pool(processes=cpu_count())
+    compare_pool = Pool(nb_cpu_to_use)
     #for each faa, check if already in ortho_based
     if args["-o"]:
         sequence_search_prg = args['-S']
