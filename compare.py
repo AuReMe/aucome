@@ -302,10 +302,15 @@ def main():
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
-        if verbose:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, patho_inference=True, dat_extraction=True, number_cpu=nb_cpu_to_use, verbose=True)
-        else:
-            mpwt.multiprocess_pwt(input_folder=studied_organisms_path, output_folder=pgdb_from_annotation_path, patho_inference=True, dat_extraction=True, number_cpu=nb_cpu_to_use)
+
+        mpwt.multiprocess_pwt(input_folder=studied_organisms_path,
+                                output_folder=pgdb_from_annotation_path,
+                                patho_inference=True,
+                                dat_creation=True,
+                                dat_extraction=True,
+                                number_cpu=nb_cpu_to_use,
+                                verbose=verbose)
+
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
@@ -518,7 +523,7 @@ def uninstalling_pwt():
     cmd_clean_bash = '''grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc'''
     cmds = [cmd_uninstall, cmd_clean_bash]
 
-    ptools_path = mpwt.ptools_path()
+    ptools_path = mpwt.find_ptools_path()
 
     if os.path.isdir('/root/AIC-prefs'):
         cmd_delete_AIC_pref = "rm -r /root/AIC-prefs"
