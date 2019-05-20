@@ -11,13 +11,13 @@ get all fasta in model_data/
 ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
-    compare.py --setWorkingFolder=DIR
-    compare.py --init=ID [-v]
-    compare.py --run=DIR [-c] [-o] [-S=STR] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
-    compare.py -R
-    compare.py --version
-    compare.py --installPWT=PWT_path [--ptools=ptools_path]
-    compare.py --uninstallPWT
+    aucome.py --setWorkingFolder=DIR
+    aucome.py --init=ID [-v]
+    aucome.py --run=DIR [-c] [-o] [-S=STR] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
+    aucome.py -R
+    aucome.py --version
+    aucome.py --installPWT=PWT_path [--ptools=ptools_path]
+    aucome.py --uninstallPWT
 
 options:
     -h --help     Show help.
@@ -29,7 +29,7 @@ options:
           Options: blast, mmseqs, blast_gz, diamond
     -p    Run Pathway-Tools
     -d    Run Orthofinder, Pathway and merge all networks
-    --cpu=INT     Number of cpu to use for the multiprocessing (if none use all cpu available -1).
+    --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
 
 """
@@ -51,6 +51,7 @@ from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation
 from multiprocessing import Pool, cpu_count
 from padmet.utils import sbmlPlugin as sp
+from padmet.utils import gbr
 from padmet.classes import PadmetSpec, PadmetRef
 
 # Monkey patch before requests import to avoid RecursionError.
@@ -85,7 +86,7 @@ def main():
         if online_version:
             print("You are using the version %s, the latest is %s" %(current_version, online_version))
         else:
-            print('No internet connection. Skip checking Compare version.')
+            print('No internet connection. Skip checking AuCoMe version.')
         return
 
     if args["--setWorkingFolder"]:
@@ -97,9 +98,9 @@ def main():
     current_version = __version__
     if online_version:
         if online_version != current_version:
-            print("/!\ WARNING, your Compare_metabo is not up-to-date. You are using the version %s, the latest is %s" %(current_version, online_version))
+            print("/!\ WARNING, your AuCoMe is not up-to-date. You are using the version %s, the latest is %s" %(current_version, online_version))
             print("Check the Changelog here %s" %release_on_gitlab.replace("/raw/","/blob/"))
-            print("To update Compare_metabo:")
+            print("To update AuCoMe:")
             print("\tRemove your compare-img and the container created from this image:")
             print("\t\t$sudo docker rmi -f docker.io/dyliss/compare-img")
             print("\tCreate a new container with the new image:")
@@ -188,7 +189,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %study_name)
-                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/padmet_utils/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in studied_org_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -204,7 +205,7 @@ def main():
             if not os.path.isfile(faa_path) and gbk_file:
                 if verbose:
                     print("Creating faa from gbk for %s" %model_name)
-                cmd = "python3 {0}/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
+                cmd = "python3 {0}/padmet_utils/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
                 subprocess.call(cmd, shell=True)
 
     #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
@@ -220,8 +221,8 @@ def main():
             if not os.path.isfile(padmet_file) and pgdb_folder:
                 if verbose:
                     print("Creating padmet from pgdb for %s" %study_name)
-                cmd = "python3 {0}/connection/pgdb_to_padmet.py --output={1} --directory={2} --padmetRef={3} --source=genome -g {4}".\
-                format(padmet_utils_path, padmet_file, pgdb_folder, database_path, verbose)
+                cmd = "python3 {0}/padmet_utils/connection/pgdb_to_padmet.py --pgdb={1} --output={2} --padmetRef={3} --source=genome --extract-gene --no-orphan {4}".\
+                format(padmet_utils_path, pgdb_folder, padmet_file, database_path, verbose)
                 subprocess.call(cmd, shell=True)
 
     all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
@@ -236,7 +237,7 @@ def main():
             if not os.path.isfile(sbml_file) and padmet_file:
                 if verbose:
                     print("Creating sbml from padmet for %s" %study_name)
-                cmd = "python3 {0}/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
+                cmd = "python3 {0}/padmet_utils/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
                 subprocess.call(cmd, shell=True)
 
     #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
@@ -297,7 +298,7 @@ def main():
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
     else:
-        nb_cpu_to_use = cpu_count()-1
+        nb_cpu_to_use = 1
 
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
@@ -317,7 +318,7 @@ def main():
         if verbose:
             print("Pathway-Tools done in: %ss" %chrono)
 
-    compare_pool = Pool(nb_cpu_to_use)
+    aucome_pool = Pool(nb_cpu_to_use)
     #for each faa, check if already in ortho_based
     if args["-o"]:
         sequence_search_prg = args['-S']
@@ -387,7 +388,7 @@ def main():
                     all_dict_data.append(dict_data)
 
         chronoDepart = time.time()
-        compare_pool.map(orthogroup_to_sbml, all_dict_data)
+        aucome_pool.map(orthogroup_to_sbml, all_dict_data)
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
@@ -395,27 +396,27 @@ def main():
             print("Orthofinder output parsed in: %ss" %chrono)
         #check database, mapping to metacyc ???
         all_sbml_from_ortho = [dict_data['output'] for dict_data in all_dict_data]
-        compare_pool.map(convert_sbml_db, all_sbml_from_ortho)
+        aucome_pool.map(convert_sbml_db, all_sbml_from_ortho)
 
     if args["-d"]:
-        compare_pool.map(create_draft, all_study_name)
+        aucome_pool.map(create_draft, all_study_name)
 
-    compare_pool.close()
-    compare_pool.join()
+    aucome_pool.close()
+    aucome_pool.join()
 
 def convert_sbml_db(all_sbml_from_ortho):
     for sbml_file in all_sbml_from_ortho:
         if os.path.isfile(sbml_file):
             dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
             if not os.path.exists(dict_file):
-                cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
+                cmd = "python3 {0}/padmet_utils/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
                 db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                 if verbose:
                     print("%s: %s" %(os.path.basename(sbml_file), db_ref))
                 if db_ref.lower() != "metacyc":
                     if verbose:
                         print("Creating id mapping file: %s" %dict_file)
-                    cmd = "python3 {0}/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
+                    cmd = "python3 {0}/padmet_utils/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
                     padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
                     subprocess.call(cmd, shell=True)
 
@@ -436,7 +437,7 @@ def create_draft(study_name):
                 print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
             padmet_path = all_study_padmet[study_name]
             if os.path.exists(ortho_sbml_folder):
-                cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
+                cmd = "python3 {0}/padmet_utils/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
                 padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
             else:
                 if verbose:
@@ -447,7 +448,7 @@ def create_draft(study_name):
         else:
             if verbose:
                 print("\tStarting from an empty PADMET")
-            cmd = "python3 {0}/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
+            cmd = "python3 {0}/padmet_utils/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
             padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
         if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
             subprocess.call(cmd, shell=True)
@@ -463,18 +464,18 @@ def modify_working_folder(working_folder):
     Modify it to add the new working folder.
     Then rewrite the script.
     """
-    with open(__file__, 'r') as compare_script:
-        compare_lines = compare_script.read().split('\n')
+    with open(__file__, 'r') as aucome_script:
+        aucome_lines = aucome_script.read().split('\n')
 
-        for index, compare_line in enumerate(compare_lines):
-            if '    all_run_folder = ' in compare_line:
-                compare_line = '    all_run_folder = "{0}"'.format(working_folder)
-                compare_lines[index] = compare_line
+        for index, aucome_line in enumerate(aucome_lines):
+            if '    all_run_folder = ' in aucome_line:
+                aucome_line = '    all_run_folder = "{0}"'.format(working_folder)
+                aucome_lines[index] = aucome_line
                 break
-        new_compare_script_string = '\n'.join(compare_lines)
+        new_aucome_script_string = '\n'.join(aucome_lines)
 
-    with open(__file__, 'w') as new_compare_script:
-        new_compare_script.write(new_compare_script_string)
+    with open(__file__, 'w') as new_aucome_script:
+        new_aucome_script.write(new_aucome_script_string)
 
     return
 
@@ -695,12 +696,12 @@ def orthogroup_to_sbml(dict_data):
                     sub_dict_orth[to_compare_gene] = set(all_study_genes)
         except KeyError:
             pass
-                    
+
     if not sub_dict_orth:
         if verbose:
             print("\t{0} and {1} don't share any ortholgue".format(study_name, to_compare_name))
         return
-
+    print(sbml_template)
     reader = libsbml.SBMLReader()
     document_to_compare = reader.readSBML(sbml_template)
     for i in range(document_to_compare.getNumErrors()):
@@ -716,13 +717,12 @@ def orthogroup_to_sbml(dict_data):
         ga_for_gbr = re.sub(r" or " , "|", ga)
         ga_for_gbr = re.sub(r" and " , "&", ga_for_gbr)
         ga_for_gbr = re.sub(r"\s" , "", ga_for_gbr)
-        ga_for_gbr = "\"" + ga_for_gbr + "\""
+        #ga_for_gbr = "\"" + ga_for_gbr + "\""
         #ga_subsets = eval(subprocess.check_output("python3 grammar-boolean-rapsody.py "+ga_for_gbr, shell=True))
         if re.findall("\||&", ga_for_gbr):
-            cmd = "python3 {0}/connection/grammar-boolean-rapsody.py {1}".format(padmet_utils_path, ga_for_gbr)
-            to_compare_ga_subsets = eval(subprocess.check_output(cmd, shell=True))
+            to_compare_ga_subsets = [_ for _ in gbr.compile_input(ga_for_gbr)]
         else:
-            to_compare_ga_subsets = [(re.sub(r'\(|\)|\"', "", ga_for_gbr),)]            
+            to_compare_ga_subsets = [(re.sub(r'\(|\)|\"', "", ga_for_gbr),)]     
         study_ga_subsets = []
         """
         to_compare_ga_subsets = [('a','c','d'),('c',)]

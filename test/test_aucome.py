@@ -6,25 +6,25 @@ import subprocess
 
 from padmet.classes import PadmetSpec
 
-def test_compare():
+def test_aucome():
     # Set working folder.
-    compare_set_working_folder = ['compare', '--setWorkingFolder', os.getcwd()]
-    subprocess.call(compare_set_working_folder)
+    aucome_set_working_folder = ['aucome', '--setWorkingFolder', os.getcwd()]
+    subprocess.call(aucome_set_working_folder)
     # Check genbank and create fasta.
-    compare_cmd_check = ['compare', '--run=test', '-c']
-    subprocess.call(compare_cmd_check)
+    aucome_cmd_check = ['aucome', '--run=test', '-c']
+    subprocess.call(aucome_cmd_check)
     # Run Pathway-Tools.
-    compare_cmd_pwt = ['compare', '--run=test', '-p']
-    subprocess.call(compare_cmd_pwt)
+    aucome_cmd_pwt = ['aucome', '--run=test', '-p']
+    subprocess.call(aucome_cmd_pwt)
     # Create padmet from PGDB.
-    compare_cmd_check = ['compare', '--run=test', '-c']
-    subprocess.call(compare_cmd_check)
+    aucome_cmd_check = ['aucome', '--run=test', '-c']
+    subprocess.call(aucome_cmd_check)
     # Run Orthofinder.
-    compare_cmd_ortho = ['compare', '--run=test', '-o']
-    subprocess.call(compare_cmd_ortho)
+    aucome_cmd_ortho = ['aucome', '--run=test', '-o']
+    subprocess.call(aucome_cmd_ortho)
     # Merge all networks.
-    compare_cmd_merge = ['compare', '--run=test', '-d']
-    subprocess.call(compare_cmd_merge)
+    aucome_cmd_merge = ['aucome', '--run=test', '-d']
+    subprocess.call(aucome_cmd_merge)
 
     padmetSpec = PadmetSpec('test/networks/fatty_acid_beta_oxydation_I_1.padmet')
     expected_fabo_reactions = [node.id for node in padmetSpec.dicOfNode.values() if node.type == "reaction"]

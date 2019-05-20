@@ -55,8 +55,8 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
     pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene lxml;\
     cd /usr/bin;\
-    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
-    mv compare.py compare;\
-    chmod u+x compare
+    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/aucome.py;\
+    mv aucome.py aucome;\
+    chmod u+x aucome
 
 COPY database /home/database/
