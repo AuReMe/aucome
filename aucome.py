@@ -72,7 +72,7 @@ def main():
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
-    all_run_folder = "/shared/data-metage_theo_combe"
+    all_run_folder = "/shared"
 
     """
     args = {"--run":"test", "-v":True}
@@ -112,8 +112,8 @@ def main():
 
     #add permission to all folder in all_run_folder, usefull because all cmd exec from container are root based
     if args['-R']:
-        cmd = "chmod -R 777 %s" %all_run_folder
-        subprocess.call(cmd, shell=True)
+        chmod_cmds = ["chmod", "-R", "777", all_run_folder]
+        subprocess.call(chmod_cmds)
         return
 
     if args['--installPWT']:
@@ -130,11 +130,13 @@ def main():
         run_id = args["--init"]
         
     config_file_path = "{0}/{1}/config.txt".format(all_run_folder, run_id)
+
     if args["--init"]:
         create_run(run_id)
-        cmd = "chmod -R 777 %s" %all_run_folder
-        subprocess.call(cmd, shell=True)
+        chmod_cmds = ["chmod", "-R", "777", all_run_folder]
+        subprocess.call(chmod_cmds)
         return
+
     config = configparser.ConfigParser()
     config.read(config_file_path)
     #config.read('/home/maite/Forge/docker/comparison_workspace/template/config.txt')
@@ -299,21 +301,22 @@ def main():
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
-                    cmd = "cp {0} {1}/".format(faa_path, orthofinder_wd_path)
-                    subprocess.call(cmd, shell=True)
+                    cmds = ["cp",faa_path, orthofinder_wd_path]
+                    subprocess.call(cmds)
             for name, faa_path in list(all_model_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
-                    cmd = "cp {0} {1}/".format(faa_path, orthofinder_wd_path)
-                    subprocess.call(cmd, shell=True)
+                    cmds = ["cp",faa_path, orthofinder_wd_path]
+                    subprocess.call(cmds)
 
             if verbose:
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
             chronoDepart = time.time()
-            cmd = "{0} -f {1} -t {2} -S {3}".format(orthofinder_bin_path, orthofinder_wd_path, nb_cpu_to_use, sequence_search_prg)
-            subprocess.call(cmd, shell=True)
+            cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", nb_cpu_to_use,
+                    "-S", sequence_search_prg]
+            subprocess.call(cmds)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
             chrono = ".".join([partie_entiere, partie_decimale[:3]])
@@ -421,16 +424,16 @@ def convert_sbml_db(all_sbml_from_ortho):
         if os.path.isfile(sbml_file):
             dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
             if not os.path.exists(dict_file):
-                cmd = "python3 {0}/padmet_utils/exploration/convert_sbml_db.py --mnx_rxn={1} --sbml={2}".format(padmet_utils_path, mnx_rxn_path, sbml_file)
-                db_ref = [line.split(":")[1] for line in subprocess.check_output(cmd, shell=True, universal_newlines=True).splitlines() if line.startswith("Database")][0]
+                cmds = ["python3", padmet_utils_path + "/padmet_utils/exploration/convert_sbml_db.py", "--mnx_rxn", mnx_rxn_path, "--sbml", sbml_file]
+                db_ref = [line.split(":")[1] for line in subprocess.check_output(cmds, universal_newlines=True).splitlines() if line.startswith("Database")][0]
                 if verbose:
                     print("%s: %s" %(os.path.basename(sbml_file), db_ref))
                 if db_ref.lower() != "metacyc":
                     if verbose:
                         print("Creating id mapping file: %s" %dict_file)
-                    cmd = "python3 {0}/padmet_utils/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
-                    padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
-                    subprocess.call(cmd, shell=True)
+                    cmds = ["python3",  padmet_utils_path+ "/padmet_utils/exploration/convert_sbml_db.py", "--mnx_rxn", mnx_rxn_path, "--mnx_cpd", mnx_cpd_path,
+                            "--sbml", sbml_file, "--output", dict_file, "--db_out", "metacyc", verbose]
+                    subprocess.call(cmds)
 
 
 def create_draft(study_name):
@@ -456,15 +459,15 @@ def create_draft(study_name):
                 if verbose:
                     print("\tNo orthology folder.")
                     print(("\tMove {0} in {1}".format(study_name, output)))
-                subprocess.call("cp " + padmet_path + " " + output, shell=True)
+                subprocess.call(["cp", padmet_path, output])
                 return
         else:
             if verbose:
                 print("\tStarting from an empty PADMET")
-            cmd = "python3 {0}/padmet_utils/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --source_tool={5} --source_category={6}".format(\
-            padmet_utils_path, database_path, ortho_sbml_folder, verbose, output, source_tool, source_category)
+            cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/sbml_to_padmet.py", "--padmetRef", database_path, "--sbml", ortho_sbml_folder,
+                    "--padmetSpec", output, "--source_tool", source_tool, "--source_category", source_category, verbose]
         if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
-            subprocess.call(cmd, shell=True)
+            subprocess.call(cmds)
         else:
             if verbose:
                 print("\t%s's folder is empty" %study_name)
@@ -507,13 +510,14 @@ def installing_pwt(pwt_path, input_ptools_local_path):
             print(input_ptools_local_path + ' path does not exist, --ptools must be an existing path.')
             return
 
-    cmd_chmod = "chmod u+x %s" %pwt_path
-    cmd_install = "{0} --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH {1} --InstallDesktopShortcuts 0 --mode unattended".format(pwt_path, ptools_local_path)
-    cmd_echo = '''echo 'export PATH="$PATH:/programs/pathway-tools:"' >> ~/.bashrc'''
-    cmds = [cmd_chmod, cmd_install, cmd_echo]
+    cmd_chmods = ["chmod", "u+x", pwt_path]
+    cmd_installs = [pwt_path, "--InstallDir", "/programs/pathway-tools", "--PTOOLS_LOCAL_PATH", ptools_local_path,
+                    "--InstallDesktopShortcuts", "0", "--mode unattended"]
+    cmd_echos = ["echo", 'export PATH="$PATH:/programs/pathway-tools:"', ">>", "~/.bashrc"]
+    cmds = [cmd_chmods, cmd_installs, cmd_echos]
     for cmd in cmds:
         print(cmd)
-        subprocess.call(cmd, shell=True)
+        subprocess.call(cmd)
     print("Now you need to source your bash, run:")
     print("source ~/.bashrc")
     return
@@ -526,7 +530,7 @@ def uninstalling_pwt():
     def ask_delete_ptools(ptools_path):
         yes_or_no = input('Delete ptools-local folder (y/n)?')
         if yes_or_no == 'y':
-            subprocess.call("rm -r " + ptools_path, shell=True)
+            subprocess.call(["rm",  "-r", ptools_path])
             print('Uninstallation of Pahtway-Tools and ptools-local done!')
             return
         elif yes_or_no == 'n':
@@ -536,19 +540,19 @@ def uninstalling_pwt():
             print('Wrong command')
             ask_delete_ptools(ptools_path)
 
-    cmd_uninstall = "/programs/pathway-tools/uninstall --mode unattended"
-    cmd_clean_bash = '''grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc'''
+    cmd_uninstall = ["/programs/pathway-tools/uninstall", "--mode unattended"]
+    cmd_clean_bash = ["grep", "-v", """'export PATH="$PATH:/programs/pathway-tools:"'""", "~/.bashrc", ">", "~/temp.bashrc;", "mv", "~/temp.bashrc", "~/.bashrc"]
     cmds = [cmd_uninstall, cmd_clean_bash]
 
     ptools_path = mpwt.find_ptools_path()
 
     if os.path.isdir('/root/AIC-prefs'):
-        cmd_delete_AIC_pref = "rm -r /root/AIC-prefs"
+        cmd_delete_AIC_pref = ["rm", "-r" "/root/AIC-prefs"]
         cmds.append(cmd_delete_AIC_pref)
 
     for cmd in cmds:
         print(cmd)
-        subprocess.call(cmd, shell=True)
+        subprocess.call(cmd)
 
     ask_delete_ptools(ptools_path)
     return
