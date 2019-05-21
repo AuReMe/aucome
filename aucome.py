@@ -59,17 +59,20 @@ from padmet.classes import PadmetSpec, PadmetRef
 #eventlet.monkey_patch()
 import requests
 
+
 def main():
     args = docopt.docopt(__doc__)
 
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path, mnx_rxn_path, mnx_cpd_path,\
-    sbml_study_prefix, all_study_name, all_study_padmet, all_mode_name, padmet_utils_path, release_on_gitlab, verbose
+    sbml_study_prefix, all_study_name, all_study_padmet, all_mode_name, padmet_utils_path, release_on_gitlab, verbose,\
+    all_study_gbk, model_organisms_path, all_model_gbk, padmet_from_annotation_path, study_from_annot_prefix,\
+    all_study_pgdb
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
-    all_run_folder = "/shared"
+    all_run_folder = "/shared/data-metage_theo_combe"
 
     """
     args = {"--run":"test", "-v":True}
@@ -177,69 +180,21 @@ def main():
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
-
-    if args["-c"]:
-        if verbose:
-            print('Checking genbank file.')
-        for study_name in all_study_name:
-            checking_genbank(study_name)
-            #create Faa from gbk if no faa found
-            faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
-            gbk_file = all_study_gbk[study_name]
-            if not os.path.isfile(faa_path) and gbk_file:
-                if verbose:
-                    print("Creating faa from gbk for %s" %study_name)
-                cmd = "python3 {0}/padmet_utils/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
-                subprocess.call(cmd, shell=True)
-
     #k = folder_name in studied_org_path, v = path to faa in this folder, faa name should be folder_name.faa
     all_study_faa = dict([(study_name, "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    if args["-c"]:
-        for model_name in all_model_name:
-            faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
-            gbk_file = all_model_gbk[model_name]
-            if not os.path.isfile(faa_path) and gbk_file:
-                if verbose:
-                    print("Creating faa from gbk for %s" %model_name)
-                cmd = "python3 {0}/padmet_utils/connection/gbk_to_faa.py --gbk={1} --output={2}".format(padmet_utils_path, gbk_file, faa_path)
-                subprocess.call(cmd, shell=True)
-
     #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
     all_model_faa = dict([(model_name, "{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
                           if os.path.isfile("{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
 
-    if args["-c"]:
-        for study_name in all_study_name:
-            padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
-            pgdb_folder = all_study_pgdb[study_name]
-            if not os.path.isfile(padmet_file) and pgdb_folder:
-                if verbose:
-                    print("Creating padmet from pgdb for %s" %study_name)
-                cmd = "python3 {0}/padmet_utils/connection/pgdb_to_padmet.py --pgdb={1} --output={2} --padmetRef={3} --source=genome --extract-gene --no-orphan {4}".\
-                format(padmet_utils_path, pgdb_folder, padmet_file, database_path, verbose)
-                subprocess.call(cmd, shell=True)
-
     all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
                           if os.path.isfile("{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    if args["-c"]:
-        for study_name in all_study_name:
-            sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
-            padmet_file = all_study_padmet[study_name]
-            if not os.path.isfile(sbml_file) and padmet_file:
-                if verbose:
-                    print("Creating sbml from padmet for %s" %study_name)
-                cmd = "python3 {0}/padmet_utils/connection/sbmlGenerator.py --padmet={1} --output={2} --sbml_lvl=2 {3}".format(padmet_utils_path, padmet_file, sbml_file, verbose)
-                subprocess.call(cmd, shell=True)
-
     #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
     #k = study_name (== folder_name in studied_org_path or obtained from sbml name), v = path to sbml, sbml_study_prefi+study_name+.sbml
     all_study_sbml = dict([(study_name, "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
@@ -257,6 +212,24 @@ def main():
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
+
+    if args["--cpu"]:
+        nb_cpu_to_use = int(args["--cpu"])
+    else:
+        nb_cpu_to_use = 1
+
+    aucome_pool = Pool(nb_cpu_to_use)
+
+    if args["-c"]:
+        if verbose:
+            print('Checking genbank file.')
+        aucome_pool.map(check_create_faa, all_study_name)
+
+        aucome_pool.map(create_faa_model, all_model_name)
+
+        aucome_pool.map(create_padmet_from_pgdb, all_study_name)
+
+        aucome_pool.map(create_sbml, all_study_padmet)
 
     if verbose:
         print("Input summary:")
@@ -295,11 +268,6 @@ def main():
             else:
                 print("\t[WARNING] No SBML found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
 
-    if args["--cpu"]:
-        nb_cpu_to_use = int(args["--cpu"])
-    else:
-        nb_cpu_to_use = 1
-
     if args["-p"]:
         #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
         chronoDepart = time.time()
@@ -318,7 +286,6 @@ def main():
         if verbose:
             print("Pathway-Tools done in: %ss" %chrono)
 
-    aucome_pool = Pool(nb_cpu_to_use)
     #for each faa, check if already in ortho_based
     if args["-o"]:
         sequence_search_prg = args['-S']
@@ -404,6 +371,51 @@ def main():
     aucome_pool.close()
     aucome_pool.join()
 
+
+def check_create_faa(study_name):
+    checking_genbank(study_name)
+    #create Faa from gbk if no faa found
+    faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
+    gbk_file = all_study_gbk[study_name]
+    if not os.path.isfile(faa_path) and gbk_file:
+        if verbose:
+            print("Creating faa from gbk for %s" %study_name)
+        cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/gbk_to_faa.py", "--gbk", gbk_file, "--output", faa_path]
+        subprocess.call(cmds)
+
+
+def create_faa_model(model_name):
+    faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
+    gbk_file = all_model_gbk[model_name]
+    if not os.path.isfile(faa_path) and gbk_file:
+        if verbose:
+            print("Creating faa from gbk for %s" %model_name)
+        cmds = ["python3", padmet_utils_path + "/padmet_utils/connection/gbk_to_faa.py", "--gbk", gbk_file, "--output", faa_path]
+        subprocess.call(cmds)
+
+
+def create_padmet_from_pgdb(study_name):
+    padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
+    pgdb_folder = all_study_pgdb[study_name]
+    if not os.path.isfile(padmet_file) and pgdb_folder:
+        if verbose:
+            print("Creating padmet from pgdb for %s" %study_name)
+        cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/pgdb_to_padmet.py", "--pgdb", pgdb_folder, "--output", padmet_file,
+                "--padmetRef", database_path, "--source=genome", "--extract-gene", "--no-orphan", verbose]
+        subprocess.call(cmds)
+
+
+def create_sbml(study_name):
+    sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
+    padmet_file = all_study_padmet[study_name]
+    if not os.path.isfile(sbml_file) and padmet_file:
+        if verbose:
+            print("Creating sbml from padmet for %s" %study_name)
+        cmds = ["python3", padmet_utils_path + "/padmet_utils/connection/sbmlGenerator.py", "--padmet", padmet_file,
+                "--output", sbml_file, "--sbml_lvl", "3", verbose]
+        subprocess.call(cmds)
+
+
 def convert_sbml_db(all_sbml_from_ortho):
     for sbml_file in all_sbml_from_ortho:
         if os.path.isfile(sbml_file):
@@ -419,6 +431,7 @@ def convert_sbml_db(all_sbml_from_ortho):
                     cmd = "python3 {0}/padmet_utils/exploration/convert_sbml_db.py --mnx_rxn={1} --mnx_cpd={2} --sbml={3} --output={4} --db_out='metacyc' {5}".format(\
                     padmet_utils_path, mnx_rxn_path, mnx_cpd_path, sbml_file, dict_file, verbose)
                     subprocess.call(cmd, shell=True)
+
 
 def create_draft(study_name):
     output = "{0}/{1}.padmet".format(networks_path, study_name)
@@ -457,6 +470,7 @@ def create_draft(study_name):
                 print("\t%s's folder is empty" %study_name)
             return
 
+
 def modify_working_folder(working_folder):
     """
     Read this script.
@@ -478,6 +492,7 @@ def modify_working_folder(working_folder):
         new_aucome_script.write(new_aucome_script_string)
 
     return
+
 
 def installing_pwt(pwt_path, input_ptools_local_path):
     """
@@ -502,6 +517,7 @@ def installing_pwt(pwt_path, input_ptools_local_path):
     print("Now you need to source your bash, run:")
     print("source ~/.bashrc")
     return
+
 
 def uninstalling_pwt():
     """
@@ -536,6 +552,7 @@ def uninstalling_pwt():
 
     ask_delete_ptools(ptools_path)
     return
+
 
 def checking_genbank(genbank_file_name):
     """
@@ -586,6 +603,7 @@ def checking_genbank(genbank_file_name):
     if fix_name or fix_dot_protein_seq:
         fix_genbank_file(genbank_file_name, fix_name, fix_dot_protein_seq)
 
+
 def adapt_gene_id(gene_id, longest_gene_number_length):
     """
     Input: a gene ID like g_1 and the longest_gene_number_length (5 if you have a gene like g_12356).
@@ -597,6 +615,7 @@ def adapt_gene_id(gene_id, longest_gene_number_length):
     new_gene_id = gene_prefix + '_' + gene_number.zfill(longest_gene_number_length)
 
     return new_gene_id
+
 
 def fix_genbank_file(genbank_file_name, fix_name, fix_dot_protein_seq):
     # Path to the genbank file.
@@ -664,6 +683,7 @@ def fix_genbank_file(genbank_file_name, fix_name, fix_dot_protein_seq):
 
     if verbose:
         print(genbank_file_name + ' ids have been renamed.')
+
 
 def orthogroup_to_sbml(dict_data):
     """
@@ -778,8 +798,6 @@ def orthogroup_to_sbml(dict_data):
     libsbml.writeSBMLToFile(document_to_compare, output)   
         
 
-
-    
 def create_config_file(config_file_path, run_id):
     config = configparser.RawConfigParser()
     config.add_section('DATABASE_PATHS')
@@ -807,6 +825,7 @@ def create_config_file(config_file_path, run_id):
     with open(config_file_path, 'w') as configfile:
         config.write(configfile)
 
+
 def create_run(run_id):
     """
     create a run folder
@@ -826,6 +845,7 @@ def create_run(run_id):
             os.mkdir("{0}/{1}/{2}".format(all_run_folder, run_id, folder))
         config_file_path = "{0}/{1}/config.txt".format(all_run_folder, run_id)
         create_config_file(config_file_path, run_id)
+
 
 def get_version():
     '''
