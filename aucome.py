@@ -301,13 +301,13 @@ def main():
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
-                    cmds = ["cp",faa_path, orthofinder_wd_path]
+                    cmds = ["cp", faa_path, orthofinder_wd_path]
                     subprocess.call(cmds)
             for name, faa_path in list(all_model_faa.items()):
                 if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                     if verbose:
                         print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
-                    cmds = ["cp",faa_path, orthofinder_wd_path]
+                    cmds = ["cp", faa_path, orthofinder_wd_path]
                     subprocess.call(cmds)
 
             if verbose:
@@ -315,7 +315,7 @@ def main():
 
             chronoDepart = time.time()
             cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", nb_cpu_to_use,
-                    "-S", sequence_search_prg]
+                    "-S", sequence_search_prg, "-og"]
             subprocess.call(cmds)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
