@@ -285,6 +285,9 @@ def main():
         chrono = (time.time() - chronoDepart)
         partie_entiere, partie_decimale = str(chrono).split('.')
         chrono = ".".join([partie_entiere, partie_decimale[:3]])
+        if os.listdir(pgdb_from_annotation_path) == []:
+            print('Pathway-Tools inference failed!')
+            return
         if verbose:
             print("Pathway-Tools done in: %ss" %chrono)
 
