@@ -249,7 +249,7 @@ def main():
             if all_study_padmet[study_name]:
                 print("\tPADMET: OK")
             else:
-                print("\t[WARNING] No PADMET found, should be in {1}/{2}{0}.padmet".format(study_name, sbml_from_annotation_path, study_from_annot_prefix))
+                print("\t[WARNING] No PADMET found, should be in {1}/{2}{0}.padmet".format(study_name, padmet_from_annotation_path, study_from_annot_prefix))
             if all_study_faa[study_name]:
                 print("\tFAA: OK")
             else:
