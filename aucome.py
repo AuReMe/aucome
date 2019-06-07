@@ -318,7 +318,7 @@ def main():
 
             chronoDepart = time.time()
             cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", nb_cpu_to_use,
-                    "-S", sequence_search_prg, "-og"]
+                    "-S", sequence_search_prg]
             subprocess.call(cmds)
             chrono = (time.time() - chronoDepart)
             partie_entiere, partie_decimale = str(chrono).split('.')
