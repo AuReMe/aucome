@@ -5,13 +5,13 @@ Created on Thu Apr 26 16:32:23 2018
 
 @author: Meziane AITE, meziane.aite@inria.fr
 
-1./ get all fasta in studied_orgnisms/ in dict_faa_paths['study']
+1./ get all fasta in studied_organisms/ in dict_faa_paths['study']
 ex dict_faa_paths['study'] = [studied_organisms_path/study_1/faa_study_name, ...]
 get all fasta in model_data/
 ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 
 usage:
-    aucome.py --setWorkingFolder=DIR
+    aucome.py --setWD=DIR
     aucome.py --init=ID [-v]
     aucome.py --run=DIR [-c] [-o] [-S=STR] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
     aucome.py -R
@@ -71,8 +71,8 @@ def main():
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
-    # Variable of the working directory modified by setWorkingFolder arguments (modify_working_folder function).
-    all_run_folder = "/shared"
+    # Variable of the working directory modified by setWD arguments (modify_working_folder function).
+    all_run_folder = "/shared/compare_metabo/orthofinder/"
 
     """
     args = {"--run":"test", "-v":True}
@@ -92,8 +92,8 @@ def main():
             print('No internet connection. Skip checking AuCoMe version.')
         return
 
-    if args["--setWorkingFolder"]:
-        modify_working_folder(args["--setWorkingFolder"])
+    if args["--setWD"]:
+        modify_working_folder(args["--setWD"])
         return
 
     #always_check_version
@@ -296,7 +296,8 @@ def main():
         sequence_search_prg = args['-S']
         #check if Orthofinder already run, if yes, get the last workdir
         try:
-            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups.csv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups.csv' in x[2]])
+            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            last_orthologue_folder = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
         except ValueError:
             if verbose:
                 print("Enable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
@@ -317,7 +318,7 @@ def main():
                 print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
             chronoDepart = time.time()
-            cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", nb_cpu_to_use,
+            cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", str(nb_cpu_to_use),
                     "-S", sequence_search_prg]
             subprocess.call(cmds)
             chrono = (time.time() - chronoDepart)
@@ -325,40 +326,18 @@ def main():
             chrono = ".".join([partie_entiere, partie_decimale[:3]])
             if verbose:
                 print("Orthofinder done in: %ss" %chrono)
-            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups.csv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups.csv' in x[2]])
+            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            last_orthologue_folder = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
         if verbose:
             print("Parsing Orthofinder output %s" %last_orthogroup_file)
-        #k=orthogroup_id, v = {k = name, v = set of genes}
-        dict_orthogroup = {}
-        with open(last_orthogroup_file, 'r') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter = "\t")
-            for row in reader:
-                orth_id = row['']
-                row.pop('')
-                new_dict = dict([(name, set(genes.split(","))) for (name, genes) in list(row.items()) if genes])
-                dict_orthogroup[orth_id] = new_dict
 
         if verbose:
             print("Start sbml creation...")
         all_dict_data = []
         for study_name in all_study_name:
-            if verbose:
-                print("%s:" %study_name)
-            ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
-            if not os.path.exists(ortho_sbml_folder):
-                if verbose:
-                    print("\tCreating folder %s" %ortho_sbml_folder)
-                os.makedirs(ortho_sbml_folder)
-            all_to_compare = all_study_name.union(all_model_name) - set([study_name])
-            for to_compare_name in all_to_compare:
-                output = "{0}/{1}/output_orthofinder_{1}_from_{2}.sbml".format(orthology_based_path, study_name, to_compare_name)
-                try:
-                    sbml_template = all_model_sbml[to_compare_name]
-                except KeyError:
-                    sbml_template = all_study_sbml[to_compare_name]
-                if sbml_template:
-                    dict_data = {'study_name': study_name, 'to_compare_name': to_compare_name, 'sbml_template': sbml_template, 'output': output, 'verbose':verbose, 'ortho': dict_orthogroup}
-                    all_dict_data.append(dict_data)
+            dict_data = {'sbml': all_run_folder + '/' + run_id, 'orthologues': last_orthologue_folder, 'study_name': study_name,
+                        'output': orthology_based_path + '/' + study_name, 'verbose':verbose}
+            all_dict_data.append(dict_data)
 
         chronoDepart = time.time()
         aucome_pool.map(orthogroup_to_sbml, all_dict_data)
@@ -456,8 +435,8 @@ def create_draft(study_name):
                 print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
             padmet_path = all_study_padmet[study_name]
             if os.path.exists(ortho_sbml_folder):
-                cmd = "python3 {0}/padmet_utils/connection/sbml_to_padmet.py --padmetRef={1} --sbml={2} {3} --padmetSpec={4} --output={5} --source_tool={6} --source_category={7}".format(\
-                padmet_utils_path, database_path, ortho_sbml_folder, verbose, padmet_path, output, source_tool, source_category)
+                cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/sbml_to_padmet.py", "--padmetRef", database_path, "--sbml", ortho_sbml_folder,
+                        "--padmetSpec", padmet_path, "--output", output, "--source_tool", source_tool, "--source_category", source_category, verbose]
             else:
                 if verbose:
                     print("\tNo orthology folder.")
@@ -697,112 +676,15 @@ def orthogroup_to_sbml(dict_data):
     dict_orthogroup: global var
     """
     #dict_data = {'study_name':'', 'o_compare_name': '', sbml_template':'', 'output':''}
+    sbml = dict_data['sbml']
+    last_orthologues_folder = dict_data['orthologues']
     study_name = dict_data['study_name']
-    to_compare_name = dict_data['to_compare_name']
-    sbml_template = dict_data['sbml_template']
     output = dict_data['output']
-    verbose = dict_data.get('verbose')
-    dict_orthogroup = dict_data.get('ortho')
-    if os.path.isfile(output):
-        if verbose:
-            print("*{0} is already created, skip".format(os.path.basename(output)))
-        return
-    if verbose:
-        print("*Extracting orthology data to create sbml of {0} from {1}".format(study_name, to_compare_name))
+    verbose = dict_data['verbose']
 
-    #k = gene_id from to_compare, v = list of genes id of study
-    sub_dict_orth = {}
-    for k in list(dict_orthogroup.values()):
-        try:
-            all_to_compare_genes = k[to_compare_name]
-            all_study_genes = k[study_name]
-            for to_compare_gene in all_to_compare_genes:
-                try:
-                    sub_dict_orth[to_compare_gene].update(all_study_genes)
-                except KeyError:
-                    sub_dict_orth[to_compare_gene] = set(all_study_genes)
-        except KeyError:
-            pass
-
-    if not sub_dict_orth:
-        if verbose:
-            print("\t{0} and {1} don't share any ortholgue".format(study_name, to_compare_name))
-        return
-    print(sbml_template)
-    reader = libsbml.SBMLReader()
-    document_to_compare = reader.readSBML(sbml_template)
-    for i in range(document_to_compare.getNumErrors()):
-        print(document_to_compare.getError(i).getMessage())
-    model_to_compare = document_to_compare.getModel()
-    listOfReactions_with_genes = [rxn for rxn in model_to_compare.getListOfReactions()
-                                  if sp.parseNotes(rxn).get("GENE_ASSOCIATION",[None])[0]]
-    if verbose:
-        print("\tSbml of {0} contains {1}/{2} reactions with genes assocation".format(to_compare_name, len(listOfReactions_with_genes), len(model_to_compare.getListOfReactions())))
-    dict_rxn_ga = {}
-    for rxn in listOfReactions_with_genes:
-        ga = sp.parseNotes(rxn)['GENE_ASSOCIATION'][0]
-        ga_for_gbr = re.sub(r" or " , "|", ga)
-        ga_for_gbr = re.sub(r" and " , "&", ga_for_gbr)
-        ga_for_gbr = re.sub(r"\s" , "", ga_for_gbr)
-        #ga_for_gbr = "\"" + ga_for_gbr + "\""
-        #ga_subsets = eval(subprocess.check_output("python3 grammar-boolean-rapsody.py "+ga_for_gbr, shell=True))
-        if re.findall("\||&", ga_for_gbr):
-            to_compare_ga_subsets = [_ for _ in gbr.compile_input(ga_for_gbr)]
-        else:
-            to_compare_ga_subsets = [(re.sub(r'\(|\)|\"', "", ga_for_gbr),)]     
-        study_ga_subsets = []
-        """
-        to_compare_ga_subsets = [('a','c','d'),('c',)]
-        sub_dict_orth = {'a':['a_a'],'c':['c_c'], 'd':['d_d']}
-        """
-        for to_compare_subset in to_compare_ga_subsets:
-            study_subset = set()
-            for gene in to_compare_subset:
-                if gene in list(sub_dict_orth.keys()):
-                    study_subset.update(sub_dict_orth[gene])
-                else:
-                    study_subset = set()
-                    break
-            if study_subset:
-                """
-                if verbose:
-                    print("\t\t{0} == {1}".format(tuple(to_compare_subset), tuple(study_subset)))
-                """
-                study_ga_subsets.append(study_subset)
-        if study_ga_subsets:
-            study_ga = " or ".join(["("+" and ".join(subset)+")" for subset in study_ga_subsets])
-            if verbose:
-                print("\t\tAdding %s" %rxn.id)
-                print("\t\tGENE_ASSOCIATION: %s" %(study_ga))
-            dict_rxn_ga[rxn.id] = study_ga
-    if not dict_rxn_ga:
-        if verbose:
-            print("\tNo reaction added from {0} to {1} because of missing orthologues".format(to_compare_name, study_name))
-        return
-    rxn_id_to_remove = set([rxn.id for rxn in model_to_compare.getListOfReactions()]).difference(list(dict_rxn_ga.keys()))
-    if verbose:
-        print("\tRemoving %s unused reactions" %len(rxn_id_to_remove))
-    [model_to_compare.removeReaction(rxn_id) for rxn_id in rxn_id_to_remove]
-    cpd_id_to_preserve = set()
-    for rxn_id, study_ga in list(dict_rxn_ga.items()):
-        rxn = model_to_compare.getElementBySId(rxn_id)
-        #update notes
-        notes_in_dict = sp.parseNotes(rxn)
-        notes_in_dict["GENE_ASSOCIATION"] = [study_ga]
-        notes = "<body xmlns=\"http://www.w3.org/1999/xhtml\">"
-        for k,v_list in list(notes_in_dict.items()):
-            for v in v_list:
-                notes += "<p>"+k+": "+v+"</p>"
-        notes += "</body>"
-        rxn.setNotes(notes)
-        cpd_in_rxn = set([p.getSpecies() for p in rxn.getListOfProducts()]).union(\
-                         set([r.getSpecies() for r in rxn.getListOfReactants()]))
-        cpd_id_to_preserve.update(cpd_in_rxn)
-    all_species = [cpd.id for cpd in model_to_compare.getListOfSpecies()]
-    [model_to_compare.removeSpecies(cpd_id ) for cpd_id in all_species if cpd_id not in cpd_id_to_preserve]
-    new_id = os.path.basename(os.path.splitext(output)[0])    
-    model_to_compare.setId(new_id)
-    libsbml.writeSBMLToFile(document_to_compare, output)   
+    cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
+            '--orthologues', last_orthologues_folder, '--study_id' , study_name, '--output', output, '--workflow', 'aucome', verbose]
+    subprocess.call(cmds)
         
 
 def create_config_file(config_file_path, run_id):
@@ -823,7 +705,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'networks_path', '%(run_id)s/networks')
     config.add_section('TOOL_PATHS')
-    config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.2.7/orthofinder')
+    config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')
     config.set('TOOL_PATHS', 'padmet_utils_path', '/programs/padmet-utils')
     config.add_section('VAR')
     config.set('VAR', 'study_from_annot_prefix', 'output_pathwaytools_')
