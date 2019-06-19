@@ -72,7 +72,7 @@ def main():
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
     # Variable of the working directory modified by setWD arguments (modify_working_folder function).
-    all_run_folder = "/shared/compare_metabo/orthofinder/"
+    all_run_folder = "/shared/compare_metabo/"
 
     """
     args = {"--run":"test", "-v":True}
@@ -153,6 +153,7 @@ def main():
     pgdb_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('PATHS_IN_RUN','pgdb_from_annotation_path'))
     padmet_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('PATHS_IN_RUN','padmet_from_annotation_path'))
     sbml_from_annotation_path = "{0}/{1}".format(all_run_folder, config.get('PATHS_IN_RUN','sbml_from_annotation_path'))
+    log_path = "{0}/{1}".format(all_run_folder, config.get('PATHS_IN_RUN','log_path'))
     networks_path = "{0}/{1}".format(all_run_folder, config.get('PATHS_IN_RUN','networks_path'))
     #TOOL_PATHS
     orthofinder_bin_path = config.get('TOOL_PATHS','orthofinder_bin_path')
@@ -280,6 +281,7 @@ def main():
                                 dat_creation=True,
                                 dat_extraction=True,
                                 number_cpu=nb_cpu_to_use,
+                                patho_log=log_path,
                                 verbose=verbose)
 
         chrono = (time.time() - chronoDepart)
@@ -704,6 +706,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'padmet_from_annotation_path', '%(annotation_based_path)s/PADMETs')
     config.set('PATHS_IN_RUN', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'networks_path', '%(run_id)s/networks')
+    config.set('PATHS_IN_RUN', 'log_path', '%(run_id)s/logs')
     config.add_section('TOOL_PATHS')
     config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')
     config.set('TOOL_PATHS', 'padmet_utils_path', '/programs/padmet-utils')
@@ -728,7 +731,7 @@ def create_run(run_id):
         all_folders = ["studied_organisms", "model_organisms", "networks", "orthology_based",\
                        "orthology_based/Orthofinder_WD", "annotation_based",\
                        "annotation_based/PGDBs", "annotation_based/PADMETs",\
-                       "annotation_based/SBMLs", "analysis"]
+                       "annotation_based/SBMLs", "analysis", "logs"]
         for folder in all_folders:
             print("creating folder {0}/{1}/{2}".format(all_run_folder, run_id, folder))
             os.mkdir("{0}/{1}/{2}".format(all_run_folder, run_id, folder))
