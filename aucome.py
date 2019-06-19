@@ -65,9 +65,8 @@ def main():
 
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path, mnx_rxn_path, mnx_cpd_path,\
-    sbml_study_prefix, all_study_name, all_study_padmet, all_mode_name, padmet_utils_path, release_on_gitlab, verbose,\
-    all_study_gbk, model_organisms_path, all_model_gbk, padmet_from_annotation_path, study_from_annot_prefix,\
-    all_study_pgdb
+    sbml_study_prefix, padmet_utils_path, release_on_gitlab, verbose,\
+    model_organisms_path, padmet_from_annotation_path, study_from_annot_prefix
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
 
@@ -183,21 +182,71 @@ def main():
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
+
+    if args["--cpu"]:
+        nb_cpu_to_use = int(args["--cpu"])
+    else:
+        nb_cpu_to_use = 1
+
+    aucome_pool = Pool(nb_cpu_to_use)
+
+    if args["-c"]:
+        if verbose:
+            print('Checking genbank file.')
+        study_faa_data = []
+        for study_name in all_study_name:
+            faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
+            tmp_faa_data = {'study_name': study_name, 'faa_path': faa_path, 'gbk_file': all_study_gbk[study_name],
+                            'padmet_utils_path': padmet_utils_path, 'verbose': verbose}
+            study_faa_data.append(tmp_faa_data)
+        aucome_pool.map(check_create_faa, study_faa_data)
+
     #k = folder_name in studied_org_path, v = path to faa in this folder, faa name should be folder_name.faa
     all_study_faa = dict([(study_name, "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
+
+    if args["-c"]:
+        study_model_data = []
+        for model_name in all_model_name:
+            faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
+            tmp_model_data = {'model_name': model_name, 'faa_path': faa_path, 'gbk_file': all_model_gbk[model_name],
+                                'verbose': verbose}
+            study_model_data.append(tmp_model_data)
+        aucome_pool.map(create_faa_model, study_model_data)
+
     #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
     all_model_faa = dict([(model_name, "{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
                           if os.path.isfile("{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
 
+    if args["-c"]:
+        study_padmet_data = []
+        for study_name in all_study_name:
+            padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
+            pgdb_folder = all_study_pgdb[study_name]
+            tmp_padmet_data = {'study_name': study_name, 'faa_path': faa_path, 'pgdb_folder': pgdb_folder,
+                                'verbose': verbose, 'padmet_file': padmet_file}
+            study_padmet_data.append(tmp_padmet_data)
+        aucome_pool.map(create_padmet_from_pgdb, study_padmet_data)
+
     all_study_padmet = dict([(study_name, "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
                           if os.path.isfile("{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
+
+    if args["-c"]:
+        study_sbml_data = []
+        for study_name in all_study_padmet:
+            sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
+            padmet_file = all_study_padmet[study_name]
+            tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file, 'study_name': study_name,
+                                'verbose': verbose}
+            study_sbml_data.append(tmp_sbml_data)
+        aucome_pool.map(create_sbml, study_sbml_data)
+
     #sbml of study are obtained from annotation, they should be in sbml_from_annotation_path
     #k = study_name (== folder_name in studied_org_path or obtained from sbml name), v = path to sbml, sbml_study_prefi+study_name+.sbml
     all_study_sbml = dict([(study_name, "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
@@ -215,24 +264,6 @@ def main():
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    if args["--cpu"]:
-        nb_cpu_to_use = int(args["--cpu"])
-    else:
-        nb_cpu_to_use = 1
-
-    aucome_pool = Pool(nb_cpu_to_use)
-
-    if args["-c"]:
-        if verbose:
-            print('Checking genbank file.')
-        aucome_pool.map(check_create_faa, all_study_name)
-
-        aucome_pool.map(create_faa_model, all_model_name)
-
-        aucome_pool.map(create_padmet_from_pgdb, all_study_name)
-
-        aucome_pool.map(create_sbml, all_study_padmet)
 
     if verbose:
         print("Input summary:")
@@ -338,7 +369,7 @@ def main():
         all_dict_data = []
         for study_name in all_study_name:
             dict_data = {'sbml': all_run_folder + '/' + run_id, 'orthologues': last_orthologue_folder, 'study_name': study_name,
-                        'output': orthology_based_path + '/' + study_name, 'verbose':verbose}
+                        'output': orthology_based_path + '/' + study_name}
             all_dict_data.append(dict_data)
 
         chronoDepart = time.time()
@@ -353,17 +384,24 @@ def main():
         aucome_pool.map(convert_sbml_db, all_sbml_from_ortho)
 
     if args["-d"]:
-        aucome_pool.map(create_draft, all_study_name)
+        study_draft_data = []
+        for study_name in all_study_name:
+            tmp_study_data = {'study_name': study_name, 'study_padmet': all_study_padmet[study_name]}
+            study_draft_data.append(tmp_study_data)
+        aucome_pool.map(create_draft, study_draft_data)
 
     aucome_pool.close()
     aucome_pool.join()
 
 
-def check_create_faa(study_name):
+def check_create_faa(tmp_faa_data):
+    study_name = tmp_faa_data['study_name']
+    faa_path = tmp_faa_data['faa_path']
+    gbk_file = tmp_faa_data['gbk_file']
+    verbose = tmp_faa_data['verbose']
     checking_genbank(study_name)
+
     #create Faa from gbk if no faa found
-    faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
-    gbk_file = all_study_gbk[study_name]
     if not os.path.isfile(faa_path) and gbk_file:
         if verbose:
             print("Creating faa from gbk for %s" %study_name)
@@ -371,9 +409,12 @@ def check_create_faa(study_name):
         subprocess.call(cmds)
 
 
-def create_faa_model(model_name):
-    faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
-    gbk_file = all_model_gbk[model_name]
+def create_faa_model(tmp_model_data):
+    model_name = tmp_model_data['model_name']
+    gbk_file = tmp_model_data['gbk_file']
+    verbose = tmp_model_data['verbose']
+    faa_path = tmp_model_data['faa_path']
+
     if not os.path.isfile(faa_path) and gbk_file:
         if verbose:
             print("Creating faa from gbk for %s" %model_name)
@@ -381,9 +422,12 @@ def create_faa_model(model_name):
         subprocess.call(cmds)
 
 
-def create_padmet_from_pgdb(study_name):
-    padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
-    pgdb_folder = all_study_pgdb[study_name]
+def create_padmet_from_pgdb(tmp_padmet_data):
+    study_name = tmp_padmet_data['study_name']
+    pgdb_folder = tmp_padmet_data['pgdb_folder']
+    verbose = tmp_padmet_data['verbose']
+    padmet_file = tmp_padmet_data['padmet_file']
+
     if not os.path.isfile(padmet_file) and pgdb_folder:
         if verbose:
             print("Creating padmet from pgdb for %s" %study_name)
@@ -392,9 +436,12 @@ def create_padmet_from_pgdb(study_name):
         subprocess.call(cmds)
 
 
-def create_sbml(study_name):
-    sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
-    padmet_file = all_study_padmet[study_name]
+def create_sbml(tmp_sbml_data):
+    sbml_file = tmp_sbml_data['sbml_file']
+    padmet_file = tmp_sbml_data['padmet_file']
+    study_name = tmp_sbml_data['study_name']
+    verbose = tmp_sbml_data['verbose']
+
     if not os.path.isfile(sbml_file) and padmet_file:
         if verbose:
             print("Creating sbml from padmet for %s" %study_name)
@@ -420,7 +467,10 @@ def convert_sbml_db(all_sbml_from_ortho):
                     subprocess.call(cmds)
 
 
-def create_draft(study_name):
+def create_draft(tmp_study_data):
+    study_name = tmp_study_data['study_name']
+    study_padmet = tmp_study_data['study_padmet']
+
     output = "{0}/{1}.padmet".format(networks_path, study_name)
     if os.path.exists(output):
         if verbose:
@@ -432,10 +482,10 @@ def create_draft(study_name):
         source_category = "ORTHOLOGY"
         if verbose:
             print("Creating %s" %os.path.basename(output))
-        if os.path.exists(all_study_padmet[study_name]):
+        if os.path.exists(study_padmet):
             if verbose:
-                print("\tStarting from %s" %os.path.basename(all_study_padmet[study_name]))
-            padmet_path = all_study_padmet[study_name]
+                print("\tStarting from %s" %os.path.basename(study_padmet))
+            padmet_path = study_padmet
             if os.path.exists(ortho_sbml_folder):
                 cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/sbml_to_padmet.py", "--padmetRef", database_path, "--sbml", ortho_sbml_folder,
                         "--padmetSpec", padmet_path, "--output", output, "--source_tool", source_tool, "--source_category", source_category, verbose]
@@ -682,7 +732,6 @@ def orthogroup_to_sbml(dict_data):
     last_orthologues_folder = dict_data['orthologues']
     study_name = dict_data['study_name']
     output = dict_data['output']
-    verbose = dict_data['verbose']
 
     cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
             '--orthologues', last_orthologues_folder, '--study_id' , study_name, '--output', output, '--workflow', 'aucome', verbose]
