@@ -13,7 +13,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 usage:
     aucome.py --setWD=DIR
     aucome.py --init=ID [-v]
-    aucome.py --run=DIR [-c] [-o] [-S=STR] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
+    aucome.py --run=DIR [-c] [-o] [-S=STR] [-og] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
     aucome.py -R
     aucome.py --version
     aucome.py --installPWT=PWT_path [--ptools=ptools_path]
@@ -25,6 +25,7 @@ options:
     --run=ID    pathname to the comparison workspace
     -c    Check inputs validity
     -o    Run Orthofinder
+    -og    Use Orthogroups instead of Orthologues after Orthofinder.
     -S=STR    Sequence search program for Orthofinder [Default: diamond].
           Options: blast, mmseqs, blast_gz, diamond
     -p    Run Pathway-Tools
@@ -39,8 +40,6 @@ import configparser
 import csv
 import docopt
 import eventlet
-import itertools
-import libsbml
 import mpwt
 import os
 import re
@@ -48,8 +47,7 @@ import subprocess
 import time
 
 from Bio import SeqIO
-from Bio.SeqFeature import FeatureLocation
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 from padmet.utils import sbmlPlugin as sp
 from padmet.utils import gbr
 from padmet.classes import PadmetSpec, PadmetRef
@@ -65,7 +63,7 @@ def main():
 
     global all_run_folder, database_path, studied_organisms_path, model_data_path, orthology_based_path, annotation_based_path,\
     sbml_from_annotation_path, networks_path, orthofinder_bin_path, mnx_rxn_path, mnx_cpd_path,\
-    sbml_study_prefix, padmet_utils_path, release_on_gitlab, verbose,\
+    sbml_study_prefix, padmet_utils_path, release_on_gitlab, verbose, orthogroups,\
     model_organisms_path, padmet_from_annotation_path, study_from_annot_prefix
 
     release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
@@ -135,6 +133,11 @@ def main():
         chmod_cmds = ["chmod", "-R", "777", all_run_folder]
         subprocess.call(chmod_cmds)
         return
+
+    if args['-o']:
+        orthogroups = args['-o']
+    else:
+        orthogroups = ''
 
     config = configparser.ConfigParser()
     config.read(config_file_path)
@@ -329,8 +332,10 @@ def main():
         sequence_search_prg = args['-S']
         #check if Orthofinder already run, if yes, get the last workdir
         try:
-            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-            last_orthologue_folder = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+            if orthogroups:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            else:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
         except ValueError:
             if verbose:
                 print("Enable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
@@ -359,16 +364,18 @@ def main():
             chrono = ".".join([partie_entiere, partie_decimale[:3]])
             if verbose:
                 print("Orthofinder done in: %ss" %chrono)
-            last_orthogroup_file = max(["%s/%s" %(x[0], 'Orthogroups') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-            last_orthologue_folder = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+            if orthogroups:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            else:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
         if verbose:
-            print("Parsing Orthofinder output %s" %last_orthogroup_file)
+            print("Parsing Orthofinder output %s" %orthodata_path)
 
         if verbose:
             print("Start sbml creation...")
         all_dict_data = []
         for study_name in all_study_name:
-            dict_data = {'sbml': all_run_folder + '/' + run_id, 'orthologues': last_orthologue_folder, 'study_name': study_name,
+            dict_data = {'sbml': all_run_folder + '/' + run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
                         'output': orthology_based_path + '/' + study_name}
             all_dict_data.append(dict_data)
 
@@ -729,12 +736,20 @@ def orthogroup_to_sbml(dict_data):
     """
     #dict_data = {'study_name':'', 'o_compare_name': '', sbml_template':'', 'output':''}
     sbml = dict_data['sbml']
-    last_orthologues_folder = dict_data['orthologues']
+    orthodata_path = dict_data['orthodata_path']
     study_name = dict_data['study_name']
     output = dict_data['output']
 
-    cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
-            '--orthologues', last_orthologues_folder, '--study_id' , study_name, '--output', output, '--workflow', 'aucome', verbose]
+    if orthogroups:
+        cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
+                '--orthogroups', orthodata_path, '--study_id' , study_name, '--output', output, '--workflow', 'aucome']
+
+    else:
+        cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
+                '--orthologues', orthodata_path, '--study_id' , study_name, '--output', output, '--workflow', 'aucome']
+
+    if verbose:
+        cmds.append(verbose)
     subprocess.call(cmds)
         
 
@@ -803,6 +818,7 @@ def get_version():
             version = None
 
     return version
+
 
 if __name__ == "__main__":
     main()
