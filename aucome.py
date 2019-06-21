@@ -13,7 +13,7 @@ ex dict_faa_paths['model'] = [model_data_path/model_1/faa_model_name, ...]
 usage:
     aucome.py --setWD=DIR
     aucome.py --init=ID [-v]
-    aucome.py --run=DIR [-c] [-o] [-S=STR] [-og] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
+    aucome.py --run=DIR [-c] [-o] [-S=STR] [--orthogroups] [-p] [-d] [--cpu=INT] [-v] [--log=FILE]
     aucome.py -R
     aucome.py --version
     aucome.py --installPWT=PWT_path [--ptools=ptools_path]
@@ -25,7 +25,7 @@ options:
     --run=ID    pathname to the comparison workspace
     -c    Check inputs validity
     -o    Run Orthofinder
-    -og    Use Orthogroups instead of Orthologues after Orthofinder.
+    --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
     -S=STR    Sequence search program for Orthofinder [Default: diamond].
           Options: blast, mmseqs, blast_gz, diamond
     -p    Run Pathway-Tools
@@ -134,10 +134,10 @@ def main():
         subprocess.call(chmod_cmds)
         return
 
-    if args['-o']:
-        orthogroups = args['-o']
+    if args['--orthogroups']:
+        orthogroups = args['--orthogroups']
     else:
-        orthogroups = ''
+        orthogroups = None
 
     config = configparser.ConfigParser()
     config.read(config_file_path)
