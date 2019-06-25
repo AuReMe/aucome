@@ -15,6 +15,7 @@ padmet_from_annotation_path = %(annotation_based_path)s/PADMETs
 sbml_from_annotation_path = %(annotation_based_path)s/SBMLs
 networks_path = /networks
 log_path = /logs
+analysis_path = /analysis
 
 [TOOL_PATHS]
 orthofinder_bin_path = /programs/OrthoFinder-2.3.3/orthofinder

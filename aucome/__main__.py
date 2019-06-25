@@ -20,6 +20,7 @@ The subcommands are:
     orthology    Run Orthofinder
     draft    Merge all networks
     workflow    Run Orthofinder, Pathway and merge all networks
+    analysis    Analyze results
 
 See 'aucome <command> -h' for more information on a specific command.
 """
@@ -84,6 +85,7 @@ def main(args=None):
 
         # Add command to command_args to be parse by docopt.
         command_args.insert(0,command)
+
         if command == 'workflow':
             aucome.workflow.workflow_parse_args(command_args)
 
@@ -98,6 +100,9 @@ def main(args=None):
 
         elif command == 'draft':
             aucome.draft.draft_parse_args(command_args)
+
+        elif command == 'analysis':
+            aucome.analysis.analysis_parse_args(command_args)
 
         if '-h' in args:
             getattr(aucome, command).command_help()
@@ -141,6 +146,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'networks_path', '/networks')
     config.set('PATHS_IN_RUN', 'log_path', '/logs')
+    config.set('PATHS_IN_RUN', 'analysis_path', '/analysis')
     config.add_section('TOOL_PATHS')
     config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')
     config.set('TOOL_PATHS', 'padmet_utils_path', '/programs/padmet-utils')

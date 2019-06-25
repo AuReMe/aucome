@@ -34,6 +34,7 @@ def parse_config_file(run_id):
     padmet_from_annotation_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','padmet_from_annotation_path'))
     sbml_from_annotation_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','sbml_from_annotation_path'))
     log_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','log_path'))
+    analysis_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','analysis_path'))
     networks_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','networks_path'))
     #TOOL_PATHS
     orthofinder_bin_path = config.get('TOOL_PATHS','orthofinder_bin_path')
@@ -48,6 +49,6 @@ def parse_config_file(run_id):
                     'padmet_from_annotation_path': padmet_from_annotation_path, 'sbml_from_annotation_path': sbml_from_annotation_path,
                     'sbml_from_annotation_path': sbml_from_annotation_path, 'log_path': log_path,
                     'networks_path': networks_path, 'orthofinder_bin_path': orthofinder_bin_path,
-                    'padmet_utils_path': padmet_utils_path, 'study_from_annot_prefix': study_from_annot_prefix}
+                    'padmet_utils_path': padmet_utils_path, 'study_from_annot_prefix': study_from_annot_prefix, 'analysis_path': analysis_path}
 
     return config_data

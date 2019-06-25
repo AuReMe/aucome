@@ -1,1 +1,1 @@
-from aucome import check, draft, reconstruction, orthology, utils, workflow
+from aucome import analysis, check, draft, reconstruction, orthology, utils, workflow

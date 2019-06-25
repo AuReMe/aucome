@@ -32,10 +32,12 @@ setup(name='aucome',
       install_requires=[
             'docopt',
             'eventlet',
+            'lxml',
+            'matplotlib',
             'mpwt',
             'padmet',
             'requests'
-
+            'seaborn'
       ],
       entry_points={
           'console_scripts': [
