@@ -32,9 +32,9 @@ RUN apt-get -y update && \
 # Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
 RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/v2.2.7/OrthoFinder-2.2.7.tar.gz;\
-    tar xzf OrthoFinder-2.2.7.tar.gz;\
-    rm OrthoFinder-2.2.7.tar.gz;\
+    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.3/OrthoFinder-2.3.3.tar.gz;\
+    tar xzf OrthoFinder-2.3.3.tar.gz;\
+    rm OrthoFinder-2.3.3.tar.gz;\
     wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
     tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
     mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
@@ -45,7 +45,7 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd diamond;\
     wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
     tar xzf diamond-linux64.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.2.7:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
 
 
 # Install r upset for intervene, padmet, mpwt and comparison script.
@@ -55,8 +55,8 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
     pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene lxml;\
     cd /usr/bin;\
-    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/compare.py;\
-    mv compare.py compare;\
-    chmod u+x compare
+    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/aucome.py;\
+    mv aucome.py aucome;\
+    chmod u+x aucome
 
 COPY database /home/database/
