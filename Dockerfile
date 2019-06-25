@@ -22,11 +22,16 @@ RUN apt-get -y update && \
     libxm4 \ 
     vim \
     r-base \
-    python3.5-dev \
+    software-properties-common \
     iputils-ping \
     screen \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
+
+RUN add-apt-repository ppa:deadsnakes/ppa ;\
+    apt-get -y update && \
+    apt-get install -y \
+    python3.6
 
 # Install OrthoFinder.
 # Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
@@ -54,9 +59,8 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     cd /programs;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
     pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene lxml;\
-    cd /usr/bin;\
-    wget https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/aucome.py;\
-    mv aucome.py aucome;\
-    chmod u+x aucome
+    git clone https://github.com/AuReMe/aucome.git;\
+    cd aucome;\
+    python3 setup.py develop
 
 COPY database /home/database/
