@@ -28,6 +28,7 @@ import docopt
 import eventlet
 import mpwt
 import os
+import pkg_resources
 import re
 import requests
 import subprocess
@@ -35,8 +36,7 @@ import sys
 
 import aucome
 
-__version__ = "0.4"
-release_on_gitlab = "https://gitlab.inria.fr/DYLISS/compare_metabo/raw/master/release.txt"
+release_on_gitlab = "https://raw.githubusercontent.com/AuReMe/aucome/master/release.txt"
 
 
 def main(args=None):
@@ -70,7 +70,7 @@ def main(args=None):
 
     if args["--version"]:
         online_version = get_version()
-        current_version = __version__
+        current_version = pkg_resources.get_distribution("metage2metabo").version
         if online_version:
             print("You are using the version %s, the latest is %s" %(current_version, online_version))
         else:
@@ -151,6 +151,7 @@ def create_config_file(config_file_path, run_id):
     with open(config_file_path, 'w') as configfile:
         config.write(configfile)
 
+
 def get_version():
     '''
     Get version from Gitlab.
@@ -228,14 +229,6 @@ def uninstalling_pwt():
     ask_delete_ptools(ptools_path)
     return
 
-def main_workflow(run_id, orthofidner_sequence_tool, orthogroups_option, cpu_number, verbose, log):
-    a = 411
-def main_check(run_id, cpu_number, verbose):
-    a = 411
-def main_reconstruction(run_id, number_cpu, verbose, log_folder):
-    a = 411
-def main_orthology(run_id, orthofidner_sequence_tool, orthogroups_option, cpu_number, verbose):
-    a = 411
 
 if __name__ == "__main__":
     main()

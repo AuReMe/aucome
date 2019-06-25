@@ -1,3 +1,6 @@
+.. image:: https://img.shields.io/pypi/v/aucome.svg
+	:target: https://pypi.python.org/pypi/aucome
+
 AuCoMe: Automatic Comparison of Metabolism
 ==========================================
 
