@@ -11,19 +11,16 @@ def test_aucome():
     aucome_set_working_folder = ['aucome', '--setWorkingFolder', os.getcwd()]
     subprocess.call(aucome_set_working_folder)
     # Check genbank and create fasta.
-    aucome_cmd_check = ['aucome', '--run=test', '-c']
+    aucome_cmd_check = ['aucome', 'check', '--run=test']
     subprocess.call(aucome_cmd_check)
     # Run Pathway-Tools.
-    aucome_cmd_pwt = ['aucome', '--run=test', '-p']
+    aucome_cmd_pwt = ['aucome', 'reconstruction', '--run=test']
     subprocess.call(aucome_cmd_pwt)
-    # Create padmet from PGDB.
-    aucome_cmd_check = ['aucome', '--run=test', '-c']
-    subprocess.call(aucome_cmd_check)
     # Run Orthofinder.
-    aucome_cmd_ortho = ['aucome', '--run=test', '-o']
+    aucome_cmd_ortho = ['aucome', 'orthology', '--run=test']
     subprocess.call(aucome_cmd_ortho)
     # Merge all networks.
-    aucome_cmd_merge = ['aucome', '--run=test', '-d']
+    aucome_cmd_merge = ['aucome', 'draft', '--run=test']
     subprocess.call(aucome_cmd_merge)
 
     padmetSpec = PadmetSpec('test/networks/fatty_acid_beta_oxydation_I_1.padmet')

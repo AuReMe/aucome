@@ -1,22 +1,23 @@
 [DATABASE_PATHS]
-database_ref_path = /home/database/BIOCYC/METACYC/22.0_enhanced/metacyc_22.0_enhanced.padmet
+database_ref_path = /home/database/BIOCYC/METACYC/23.0_enhanced/metacyc_23.0_enhanced.padmet
 mnx_rxn_path = /home/database/MNX/reac_xref.tsv
 mnx_cpd_path = /home/database/MNX/chem_xref.tsv
 
 [PATHS_IN_RUN]
 run_id = test
-studied_organisms_path = %(run_id)s/studied_organisms
-model_organisms_path = %(run_id)s/model_organisms
-orthology_based_path = %(run_id)s/orthology_based
-orthofinder_wd_path = %(run_id)s/orthology_based/Orthofinder_WD
-annotation_based_path = %(run_id)s/annotation_based
+studied_organisms_path = /studied_organisms
+model_organisms_path = /model_organisms
+orthology_based_path = /orthology_based
+orthofinder_wd_path = /orthology_based/Orthofinder_WD
+annotation_based_path = /annotation_based
 pgdb_from_annotation_path = %(annotation_based_path)s/PGDBs
 padmet_from_annotation_path = %(annotation_based_path)s/PADMETs
 sbml_from_annotation_path = %(annotation_based_path)s/SBMLs
-networks_path = %(run_id)s/networks
+networks_path = /networks
+log_path = /logs
 
 [TOOL_PATHS]
-orthofinder_bin_path = /programs/OrthoFinder-2.2.7/orthofinder
+orthofinder_bin_path = /programs/OrthoFinder-2.3.3/orthofinder
 padmet_utils_path = /programs/padmet-utils
 
 [VAR]
