@@ -30,13 +30,16 @@ setup(name='aucome',
       ],
       packages=['aucome'],
       install_requires=[
+            'configparser',
             'docopt',
             'eventlet',
+            'intervene',
             'lxml',
             'matplotlib',
             'mpwt',
             'padmet',
             'requests',
+            'scipy',
             'seaborn'
       ],
       entry_points={

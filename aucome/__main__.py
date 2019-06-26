@@ -188,16 +188,15 @@ def installing_pwt(pwt_path, input_ptools_local_path):
             print(input_ptools_local_path + ' path does not exist, --ptools must be an existing path.')
             return
 
-    cmd_chmods = ["chmod", "u+x", pwt_path]
-    cmd_installs = [pwt_path, "--InstallDir", "/programs/pathway-tools", "--PTOOLS_LOCAL_PATH", ptools_local_path,
-                    "--InstallDesktopShortcuts", "0", "--mode unattended"]
-    cmd_echos = ["echo", 'export PATH="$PATH:/programs/pathway-tools:"', ">>", "~/.bashrc"]
+    cmd_chmods = ['chmod', 'u+x', pwt_path]
+    cmd_installs = [pwt_path, '--InstallDir', '/programs/pathway-tools', '--PTOOLS_LOCAL_PATH', ptools_local_path,
+                    '--InstallDesktopShortcuts', '0', '--mode', 'unattended']
+    cmd_echos = ['echo', 'export PATH="$PATH:/programs/pathway-tools:"', '>>', '~/.bashrc']
     cmds = [cmd_chmods, cmd_installs, cmd_echos]
     for cmd in cmds:
-        print(cmd)
         subprocess.call(cmd)
-    print("Now you need to source your bash, run:")
-    print("source ~/.bashrc")
+    print('Now you need to source your bash, run:')
+    print('source ~/.bashrc')
     return
 
 

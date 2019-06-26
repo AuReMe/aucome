@@ -12,7 +12,8 @@ LABEL Version="0.4"
 LABEL Description="Metabolic Network comparison dockerfile."
 
 # Install dependencies for Pathway-Tools and Orthofinder.
-RUN apt-get install -y \
+RUN apt-get -y update && \
+    apt-get install -y \
     curl \
     make \
     wget \
@@ -54,7 +55,7 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
-    pip3 install configparser padmet mpwt eventlet requests seaborn sklearn fastcluster intervene lxml;\
+    pip3 install configparser padmet mpwt eventlet requests seaborn scipy intervene lxml;\
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
     python3 setup.py develop
