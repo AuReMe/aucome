@@ -36,7 +36,7 @@ setup(name='aucome',
             'matplotlib',
             'mpwt',
             'padmet',
-            'requests'
+            'requests',
             'seaborn'
       ],
       entry_points={

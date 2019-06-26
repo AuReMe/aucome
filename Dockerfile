@@ -1,17 +1,18 @@
 # Need a Pathway-tools installer in the same folder.
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # To fix the issue with locale language.
 ENV LANG C.UTF-8
 ENV PYTHONIOENCODING=utf-8
+# No interactive debian (like tzdata)
+ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
 LABEL Version="0.4"
 LABEL Description="Metabolic Network comparison dockerfile."
 
 # Install dependencies for Pathway-Tools and Orthofinder.
-RUN apt-get -y update && \
-    apt-get install -y \
+RUN apt-get install -y \
     curl \
     make \
     wget \
@@ -22,16 +23,11 @@ RUN apt-get -y update && \
     libxm4 \ 
     vim \
     r-base \
-    software-properties-common \
+    python3.6-dev \
     iputils-ping \
     screen \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
-
-RUN add-apt-repository ppa:deadsnakes/ppa ;\
-    apt-get -y update && \
-    apt-get install -y \
-    python3.6
 
 # Install OrthoFinder.
 # Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
@@ -62,5 +58,3 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
     python3 setup.py develop
-
-COPY database /home/database/
