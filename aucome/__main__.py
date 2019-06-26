@@ -192,11 +192,14 @@ def installing_pwt(pwt_path, input_ptools_local_path):
     cmd_installs = [pwt_path, '--InstallDir', '/programs/pathway-tools', '--PTOOLS_LOCAL_PATH', ptools_local_path,
                     '--InstallDesktopShortcuts', '0', '--mode', 'unattended']
 
+    print(' '.join(cmd_chmods))
     subprocess.call(cmd_chmods)
+    print(' '.join(cmd_installs))
     subprocess.call(cmd_installs)
 
     # Add Pathway-Tools in the PATH.
     cmd_echo = '''echo 'export PATH="$PATH:/programs/pathway-tools:"' >> ~/.bashrc'''
+    print(cmd_echo)
     subprocess.call(cmd_echo, shell=True)
 
     print('Now you need to source your bash, run:')

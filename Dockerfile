@@ -41,20 +41,17 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
     mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
     rm -rf fastme-2.1.5*;\
-    wget https://mmseqs.com/latest/mmseqs-static_avx2.tar.gz;\
-    tar xvzf mmseqs-static_avx2.tar.gz;\
-    rm mmseqs-static_avx2.tar.gz;\
     cd diamond;\
     wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
     tar xzf diamond-linux64.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/mmseqs2/bin/:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
 
 
 # Install r upset for intervene, padmet, mpwt and comparison script.
 RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
-    git clone https://gitlab.inria.fr/maite/padmet-utils.git;\
+    git clone https://github.com/AuReMe/padmet-utils.git;\
     pip3 install configparser padmet mpwt eventlet requests seaborn scipy intervene lxml;\
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
