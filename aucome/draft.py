@@ -85,7 +85,7 @@ def create_draft(tmp_study_data):
     sbml_from_networks_path = tmp_study_data['sbml_from_networks_path']
 
     padmet_output = "{0}/{1}.padmet".format(padmet_from_networks_path, study_name)
-    sbml_output = "{0}/{1}.padmet".format(sbml_from_networks_path, study_name)
+    sbml_output = "{0}/{1}.sbml".format(sbml_from_networks_path, study_name)
     if os.path.exists(padmet_output):
         if verbose:
             print("%s already exist, skip" %os.path.basename(padmet_output))
