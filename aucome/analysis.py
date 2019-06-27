@@ -49,10 +49,10 @@ def run_analysis(run_id, nb_cpu_to_use, verbose):
 
     padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
-    networks_path = config_data['networks_path']
+    padmet_from_networks_path = config_data['padmet_from_networks_path']
     analysis_path = config_data['analysis_path']
 
-    cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", networks_path,
+    cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
             "--output", analysis_path, "--padmetRef", database_path]
 
     if verbose:

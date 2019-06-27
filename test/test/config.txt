@@ -14,6 +14,8 @@ pgdb_from_annotation_path = %(annotation_based_path)s/PGDBs
 padmet_from_annotation_path = %(annotation_based_path)s/PADMETs
 sbml_from_annotation_path = %(annotation_based_path)s/SBMLs
 networks_path = /networks
+padmet_from_networks_path = %(networks_path)s/PADMETs
+sbml_from_networks_path = %(networks_path)s/SBMLs
 log_path = /logs
 analysis_path = /analysis
 

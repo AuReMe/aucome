@@ -54,6 +54,8 @@ def run_draft(run_id, nb_cpu_to_use, verbose):
     orthology_based_path = config_data['orthology_based_path']
     padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
+    padmet_from_networks_path = config_data['padmet_from_networks_path']
+    sbml_from_networks_path = config_data['sbml_from_networks_path']
 
     all_study_name = set(next(os.walk(studied_organisms_path))[1])
 
@@ -66,7 +68,7 @@ def run_draft(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         tmp_study_data = {'study_name': study_name, 'study_padmet': all_study_padmet[study_name], 'networks_path': networks_path,
                             'orthology_based_path': orthology_based_path, 'padmet_utils_path': padmet_utils_path, 'database_path': database_path,
-                            'verbose': verbose}
+                            'padmet_from_networks_path': padmet_from_networks_path, 'sbml_from_networks_path': sbml_from_networks_path, 'verbose': verbose}
         study_draft_data.append(tmp_study_data)
     aucome_pool.map(create_draft, study_draft_data)
 
@@ -79,43 +81,66 @@ def create_draft(tmp_study_data):
     orthology_based_path = tmp_study_data['orthology_based_path']
     padmet_utils_path = tmp_study_data['padmet_utils_path']
     database_path = tmp_study_data['database_path']
+    padmet_from_networks_path = tmp_study_data['padmet_from_networks_path']
+    sbml_from_networks_path = tmp_study_data['sbml_from_networks_path']
 
-    output = "{0}/{1}.padmet".format(networks_path, study_name)
-    if os.path.exists(output):
+    padmet_output = "{0}/{1}.padmet".format(padmet_from_networks_path, study_name)
+    sbml_output = "{0}/{1}.padmet".format(sbml_from_networks_path, study_name)
+    if os.path.exists(padmet_output):
         if verbose:
-            print("%s already exist, skip" %os.path.basename(output))
+            print("%s already exist, skip" %os.path.basename(padmet_output))
             return
     else:
         ortho_sbml_folder = "{0}/{1}".format(orthology_based_path, study_name)
         source_tool = "ORTHOFINDER"
         source_category = "ORTHOLOGY"
         if verbose:
-            print("Creating %s" %os.path.basename(output))
+            print("Creating %s" %os.path.basename(padmet_output))
         if os.path.exists(study_padmet):
             if verbose:
                 print("\tStarting from %s" %os.path.basename(study_padmet))
             padmet_path = study_padmet
             if os.path.exists(ortho_sbml_folder):
                 cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/sbml_to_padmet.py", "--padmetRef", database_path, "--sbml", ortho_sbml_folder,
-                        "--padmetSpec", padmet_path, "--output", output, "--source_tool", source_tool, "--source_category", source_category]
+                        "--padmetSpec", padmet_path, "--output", padmet_output, "--source_tool", source_tool, "--source_category", source_category]
 
                 if verbose:
                     cmds.append('-v')
             else:
                 if verbose:
                     print("\tNo orthology folder.")
-                    print(("\tMove {0} in {1}".format(study_name, output)))
-                subprocess.call(["cp", padmet_path, output])
+                    print(("\tMove {0} in {1}".format(study_name, padmet_output)))
+                subprocess.call(["cp", padmet_path, padmet_output])
                 return
         else:
             if verbose:
                 print("\tStarting from an empty PADMET")
             cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/sbml_to_padmet.py", "--padmetRef", database_path, "--sbml", ortho_sbml_folder,
-                    "--padmetSpec", output, "--source_tool", source_tool, "--source_category", source_category]
+                    "--padmetSpec", padmet_output, "--source_tool", source_tool, "--source_category", source_category]
             if verbose:
                 cmds.append('-v')
         if os.path.exists(ortho_sbml_folder) and next(os.walk(ortho_sbml_folder))[2]:
             subprocess.call(cmds)
+            if not os.path.isfile(sbml_output):
+                if os.path.isfile(padmet_output):
+                    if verbose:
+                        print("Creating sbml from padmet for %s" %study_name)
+
+                    cmds = ["python3", padmet_utils_path + "/padmet_utils/connection/sbmlGenerator.py", "--padmet", padmet_output,
+                            "--output", sbml_output, "--sbml_lvl", "3"]
+                    if verbose:
+                        cmds.append('-v')
+                    subprocess.call(cmds)
+                else:
+                    if verbose:
+                        print("\tNo padmet file to create sbml for %s'" %study_name)
+                    return
+
+            else:
+                if verbose:
+                    print("\t%s's sbml alreayd exists" %study_name)
+                return
+
         else:
             if verbose:
                 print("\t%s's folder is empty" %study_name)

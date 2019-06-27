@@ -19,7 +19,7 @@ The subcommands are:
     reconstruction    Run Pathway-Tools
     orthology    Run Orthofinder
     draft    Merge all networks
-    workflow    Run Orthofinder, Pathway and merge all networks
+    workflow    Run Check, Pathway Tools, Orthofinder and Merging of all networks
     analysis    Analyze results
 
 See 'aucome <command> -h' for more information on a specific command.
@@ -120,7 +120,8 @@ def create_run(run_id):
         all_folders = ["studied_organisms", "model_organisms", "networks", "orthology_based",\
                        "orthology_based/Orthofinder_WD", "annotation_based",\
                        "annotation_based/PGDBs", "annotation_based/PADMETs",\
-                       "annotation_based/SBMLs", "analysis", "logs"]
+                       "annotation_based/SBMLs", "analysis", "logs",\
+                       "networks/PADMETs", "networks/SBMLs"]
         for folder in all_folders:
             print("creating folder {0}/{1}".format(run_id, folder))
             os.mkdir("{0}/{1}".format(run_id, folder))
@@ -145,6 +146,8 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'padmet_from_annotation_path', '%(annotation_based_path)s/PADMETs')
     config.set('PATHS_IN_RUN', 'sbml_from_annotation_path', '%(annotation_based_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'networks_path', '/networks')
+    config.set('PATHS_IN_RUN', 'padmet_from_networks_path', '%(networks_path)s/PADMETs')
+    config.set('PATHS_IN_RUN', 'sbml_from_networks_path', '%(networks_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'log_path', '/logs')
     config.set('PATHS_IN_RUN', 'analysis_path', '/analysis')
     config.add_section('TOOL_PATHS')

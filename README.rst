@@ -70,10 +70,15 @@ This command will create a folder name "run_ID" inside the working folder. In th
 		├── SBMLs
 			├──
 	├── config.txt
+	├── logs
+		├──
 	├── model_organisms
 		├──
 	├── networks
-		├──
+		├── PADMETs
+			├──
+		├── SBMLs
+			├──
 	├── orthology_based
 		├── Orthofinder_WD
 			├──
@@ -126,6 +131,26 @@ A run of Pathway-Tools can be launched using the command:
 
     aucome reconstruction --run=run_ID [--cpu=INT] [-v]
 
+.. code-block:: text
+
+	├── annotation_based
+		├── PADMETs
+			├── output_pathwaytools_species_1.padmet
+			├── output_pathwaytools_species_2.padmet
+		├── PGDBs
+			├── species_1
+				├── PGDB dat files
+				├── ...
+			├── species_2
+				├── PGDB dat files
+				├── ...
+		├── SBMLs
+			├── output_pathwaytools_species_1.sbml
+			├── output_pathwaytools_species_2.sbml
+	├── logs
+		├── log_error.txt
+		├── resume_inference.tsv
+
 Using the package mpwt, it will create the input file for Pathway-Tools inside studied_organisms and if there is no error, it will create for each species inside this folder a folder inside PGDBs containing all the dat files ofthe draft metabolic network.
 
 Orthofinder can be launched using:
@@ -134,6 +159,23 @@ Orthofinder can be launched using:
 
 	aucome orthology --run=run_ID [-S=STR] [--orthogroups] [--cpu=INT] [-v]
 
+.. code-block:: text
+
+	├── orthology_based
+		├── Orthofinder_WD
+			├── species_1
+				├── output_orthofinder_from_species_2.sbml
+			├── species_2
+				├── output_orthofinder_from_species_1.sbml
+			├── Orthofinder_WD
+				├── species_1.faa
+				├── species_2.faa
+				├── OrthoFinder
+					├── Results_MonthDay
+						├── Orthogroups
+						├── Orthologues
+						├── ..
+
 Then the proteome from the studied organisms and from the models will be moved to the Orthofinder_WD folder and orthofinder will be launch on them. Orthofinder result will be in this folder and in orthology_based, there will be all the metabolic network reconstructed from orthology.
 
 Then you can merge all the metabolic network with:
@@ -141,6 +183,16 @@ Then you can merge all the metabolic network with:
 .. code:: sh
 
     aucome draft --run=run_ID [--cpu=INT] [-v]
+
+.. code-block:: text
+
+	├── networks
+		├── PADMETs
+			├── species_1.padmet
+			├── species_2.padmet
+		├── SBMLs
+			├── species_1.sbml
+			├── species_2.sbml
 
 This will output the result inside the networks folder.
 
