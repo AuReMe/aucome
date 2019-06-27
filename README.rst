@@ -212,13 +212,13 @@ You can launch group analysis with the command:
 For this you msut specify the group in which you are interested in the analysis/group_template.tsv file:
 The first line of the fiel contains always the all group. Then you can add another group and a species in each column (at least you must give 2 species):
 
-+--------------+----------+---------------+--------------+
++--------------+------------+-------------+--------------+
 |   all        |            |             |              |
-+==============+==========+===============+==============+
++==============+============+=============+==============+
 |   group_1    | species_1  | species_2   |              |
-+--------------+----------+---------------+--------------+
++--------------+------------+-------------+--------------+
 |   group_2    | species_1  | species_2   | species_4    |
-+--------------+----------+---------------+--------------+
++--------------+------------+-------------+--------------+
 
 This script will create one folder for each group:
 
