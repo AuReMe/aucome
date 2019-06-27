@@ -61,6 +61,7 @@ This command will create a folder name "run_ID" inside the working folder. In th
 
 	run_ID
 	├── analysis
+		├── group_template.tsv
 		├──
 	├── annotation_based
 		├── PADMETs
@@ -201,3 +202,33 @@ You can launch the all workflow with the command:
 .. code:: sh
 
     aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v]
+
+You can launch group analysis with the command:
+
+.. code:: sh
+
+    aucome analysis --run=ID [--cpu=INT] [-v]
+
+For this you msut specify the group in which you are interested in the analysis/group_template.tsv file:
+The first line of the fiel contains always the all group. Then you can add another group and a species in each column (at least you must give 2 species):
+
++--------------+----------+---------------+--------------+
+|   all        |            |             |              |
++==============+==========+===============+==============+
+|   group_1    | species_1  | species_2   |              |
++--------------+----------+---------------+--------------+
+|   group_2    | species_1  | species_2   | species_4    |
++--------------+----------+---------------+--------------+
+
+This script will create one folder for each group:
+
+.. code-block:: text
+
+	├── analysis
+		├── group_template.tsv
+		├── all
+			├──
+		├── group_1
+			├──
+		├── group_2
+			├──
