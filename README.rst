@@ -209,7 +209,7 @@ You can launch group analysis with the command:
 
     aucome analysis --run=ID [--cpu=INT] [-v]
 
-For this you msut specify the group of species that you want to analyze in the analysis/group_template.tsv file:
+You must write the groups of species that you want to analyze in the analysis/group_template.tsv file:
 The first line of the file contains 'all' (it will launch the analysis on all the species).
 
 Then you can create a new row to add another group. The name of the group is in the first column. Then for each species you add a column with the species name.
