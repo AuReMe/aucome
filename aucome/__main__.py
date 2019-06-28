@@ -25,6 +25,7 @@ The subcommands are:
 See 'aucome <command> -h' for more information on a specific command.
 """
 import configparser
+import csv
 import docopt
 import eventlet
 import mpwt
@@ -112,20 +113,24 @@ def create_run(run_id):
     """
     Create a run folder
     """
-    if os.path.isdir("{0}".format(run_id)):
+    if os.path.isdir('{0}'.format(run_id)):
         print("Run '%s' already exist, remove this folder manually before" %run_id)
     else:
-        print("creating Run %s" %run_id)
-        os.mkdir("{0}".format(run_id))
-        all_folders = ["studied_organisms", "model_organisms", "networks", "orthology_based",\
-                       "orthology_based/Orthofinder_WD", "annotation_based",\
-                       "annotation_based/PGDBs", "annotation_based/PADMETs",\
-                       "annotation_based/SBMLs", "analysis", "logs",\
-                       "networks/PADMETs", "networks/SBMLs"]
+        print('creating Run %s' %run_id)
+        os.mkdir('{0}'.format(run_id))
+        all_folders = ['studied_organisms', 'model_organisms', 'networks', 'orthology_based',\
+                       'orthology_based/Orthofinder_WD', 'annotation_based',\
+                       'annotation_based/PGDBs', 'annotation_based/PADMETs',\
+                       'annotation_based/SBMLs', 'analysis', 'logs',\
+                       'networks/PADMETs', 'networks/SBMLs']
         for folder in all_folders:
-            print("creating folder {0}/{1}".format(run_id, folder))
+            print('creating folder {0}/{1}'.format(run_id, folder))
             os.mkdir("{0}/{1}".format(run_id, folder))
-        config_file_path = "{0}/config.txt".format(run_id)
+
+        with open('{0}/{1}/group_template.tsv'.format(run_id, 'analysis'), 'w') as group_file:
+            group_writer = csv.writer(group_file, delimiter='\t')
+            group_writer.writerow(['all', *os.listdir('{0}/{1}'.format(run_id, 'studied_organisms'))])
+        config_file_path = '{0}/config.txt'.format(run_id)
         create_config_file(config_file_path, run_id)
 
 
@@ -150,6 +155,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'sbml_from_networks_path', '%(networks_path)s/SBMLs')
     config.set('PATHS_IN_RUN', 'log_path', '/logs')
     config.set('PATHS_IN_RUN', 'analysis_path', '/analysis')
+    config.set('PATHS_IN_RUN', 'analysis_group_file_path', '%(analysis_path)s/group_template.tsv')
     config.add_section('TOOL_PATHS')
     config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')
     config.set('TOOL_PATHS', 'padmet_utils_path', '/programs/padmet-utils')

@@ -18,6 +18,7 @@ padmet_from_networks_path = %(networks_path)s/PADMETs
 sbml_from_networks_path = %(networks_path)s/SBMLs
 log_path = /logs
 analysis_path = /analysis
+analysis_group_file_path = %(analysis_path)s/group_template.tsv
 
 [TOOL_PATHS]
 orthofinder_bin_path = /programs/OrthoFinder-2.3.3/orthofinder

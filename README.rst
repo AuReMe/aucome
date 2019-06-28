@@ -122,7 +122,9 @@ Once you have put your species in the studied_organisms folder and teh model in 
 
     aucome check --run=run_ID [--cpu=INT] [-v]
 
-This command will check if there is no character that will make some scritp crashed later in the analysis. It will also create the proteome fasta file from the genbank.
+This command will check if there is no character that will cause trouble. It will also create the proteome fasta file from the genbank.
+
+Also, this command will fill the 'all' row of analysis/group_template.tsv, with all the species from the studied_organisms folder.
 
 And for the annotation_based folder, if PGDBs contains folder, it will create the padmet and the sbml corresponding to these draft in PADMETs and SBMLs.
 
@@ -212,18 +214,30 @@ You can launch group analysis with the command:
 You must write the groups of species that you want to analyze in the analysis/group_template.tsv file:
 The first line of the file contains 'all' (it will launch the analysis on all the species).
 
+When you create the repository with --init, the file will only contain 'all' row:
+
++--------------+------------+-------------+--------------+--------------+
+|   all        |            |             |              |              |
++==============+============+=============+==============+==============+
+
+After the check (with check or workflow command), it will add all the species that you have in your studied_organisms folder:
+
++--------------+------------+-------------+--------------+--------------+
+|   all        | species_1  | species_2   | species_3    | species_4    |
++==============+============+=============+==============+==============+
+
 Then you can create a new row to add another group. The name of the group is in the first column. Then for each species you add a column with the species name.
 You must at least give 2 species.
 
 Example:
 
-+--------------+------------+-------------+--------------+
-|   all        |            |             |              |
-+==============+============+=============+==============+
-|   group_1    | species_1  | species_2   |              |
-+--------------+------------+-------------+--------------+
-|   group_2    | species_1  | species_2   | species_4    |
-+--------------+------------+-------------+--------------+
++--------------+------------+-------------+--------------+--------------+
+|   all        |species_1   | species_2   | species_3    | species_4    |
++==============+============+=============+==============+==============+
+|   group_1    | species_1  | species_2   |              |              |
++--------------+------------+-------------+--------------+--------------+
+|   group_2    | species_1  | species_2   | species_4    |              |
++--------------+------------+-------------+--------------+--------------+
 
 This script will create one folder for each group:
 

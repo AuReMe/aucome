@@ -31,7 +31,6 @@ def command_help():
 
 
 def check_parse_args(command_args):
-    print(command_args)
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
@@ -56,6 +55,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
     studied_organisms_path = config_data['studied_organisms_path']
     model_organisms_path = config_data['model_organisms_path']
+    analysis_group_file_path = config_data['analysis_group_file_path']
 
     #create dict for ortho data
     all_study_name = set(next(os.walk(studied_organisms_path))[1])
@@ -73,6 +73,11 @@ def run_check(run_id, nb_cpu_to_use, verbose):
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
                           else (model_name, '')
                           for model_name in all_model_name])
+
+    # Update group file in analysis
+    with open(analysis_group_file_path, 'w') as group_file:
+        group_writer = csv.writer(group_file, delimiter='\t')
+        group_writer.writerow(['all', *all_study_name])
 
     aucome_pool = Pool(nb_cpu_to_use)
 
@@ -187,6 +192,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
 
     aucome_pool.close()
     aucome_pool.join()
+
 
 def check_create_faa(tmp_faa_data):
     study_name = tmp_faa_data['study_name']

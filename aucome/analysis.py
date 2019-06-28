@@ -52,20 +52,17 @@ def run_analysis(run_id, nb_cpu_to_use, verbose):
     config_data = parse_config_file(run_id)
 
     analysis_path = config_data['analysis_path']
+    analysis_group_file_path = config_data['analysis_group_file_path']
 
     group_data = []
-    with open(analysis_path + '/group_template.tsv', 'r') as group_file:
+    with open(analysis_group_file_path, 'r') as group_file:
         group_reader = csv.reader(group_file, delimiter='\t')
         for row in group_reader:
-            group_name = row[0]
             tmp_data = {'padmet_utils_path': config_data['padmet_utils_path'], 'database_path': config_data['database_path'],
                         'padmet_from_networks_path': config_data['padmet_from_networks_path'], 'analysis_path': analysis_path,
-                        'studied_organisms_path': config_data['studied_organisms_path'], 'verbose': verbose, 'group_name': group_name}
-            if group_name == 'all':
-                tmp_data['groups'] = 'all'
-            else:
-                groups = row[1:]
-                tmp_data['groups'] = groups
+                        'studied_organisms_path': config_data['studied_organisms_path'], 'verbose': verbose, 'group_name': row[0],
+                        'groups': row[1:]}
+
             group_data.append(tmp_data)
 
     aucome_pool.map(analysis_on_group, group_data)
@@ -87,52 +84,35 @@ def analysis_on_group(group_data):
     group_analysis_path = analysis_path + '/' + group_name
 
     if not os.path.isdir(group_analysis_path):
-        if group_name == 'all':
-            cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
-                    "--output", group_analysis_path, "--padmetRef", database_path]
-            if verbose:
-                cmds.append('-v')
+        if len(groups) == 1:
+            sys.exit('A group must contain more than one member.')
 
-            subprocess.call(cmds)
+        for species in groups:
+            if species not in os.listdir(studied_organisms_path):
+                sys.exit(species + ' not a valid species name from :' + '\n'.join(os.listdir(studied_organisms_path)))
 
-            cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", group_analysis_path + '/reactions.csv',
-                    "--output", group_analysis_path + '/dendrogram_output', "--padmetRef", database_path]
+        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
+                "--output", group_analysis_path, "--padmetRef", database_path]
 
-            if verbose:
-                cmds.append('-v')
+        if verbose:
+            cmds.append('-v')
 
-            subprocess.call(cmds)
+        subprocess.call(cmds)
 
-        else:
-            if len(groups) == 1:
-                sys.exit('A group must contain more than one member.')
+        for csv_file in os.listdir(group_analysis_path):
+            tmp_df = pa.read_csv(group_analysis_path + '/' + csv_file, sep='\t')
+            new_columns = [column for column in tmp_df.columns
+                            if 'reaction' == column or any([species in column for species in groups])]
+            tmp_df = tmp_df[new_columns]
+            tmp_df.to_csv(group_analysis_path + '/' + csv_file, sep='\t', index=False)
 
-            for species in groups:
-                if species not in os.listdir(studied_organisms_path):
-                    sys.exit(species + ' not a valid species name from :' + '\n'.join(os.listdir(studied_organisms_path)))
+        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", group_analysis_path + '/reactions.csv',
+                "--output", group_analysis_path + '/dendrogram_output', "--padmetRef", database_path]
 
-                cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
-                        "--output", group_analysis_path, "--padmetRef", database_path]
+        if verbose:
+            cmds.append('-v')
 
-                if verbose:
-                    cmds.append('-v')
-
-                subprocess.call(cmds)
-
-                for csv_file in os.listdir(group_analysis_path):
-                    tmp_df = pa.read_csv(group_analysis_path + '/' + csv_file, sep='\t')
-                    new_columns = [column for column in tmp_df.columns
-                                    if 'reaction' == column or any([species in column for species in groups])]
-                    tmp_df = tmp_df[new_columns]
-                    tmp_df.to_csv(group_analysis_path + '/' + csv_file, sep='\t', index=False)
-
-                cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", group_analysis_path + '/reactions.csv',
-                        "--output", group_analysis_path + '/dendrogram_output', "--padmetRef", database_path]
-
-                if verbose:
-                    cmds.append('-v')
-
-                subprocess.call(cmds)
+        subprocess.call(cmds)
 
     else:
         print(group_analysis_path + ' already exists. Delete it if you want to relaunch the analysis.')
