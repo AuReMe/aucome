@@ -47,12 +47,13 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
 
 
-# Install r upset for intervene, padmet, mpwt and comparison script.
+# Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
 RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
+    R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://github.com/AuReMe/padmet-utils.git;\
-    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml;\
+    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml rpy2;\
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
     python3 setup.py develop

@@ -38,6 +38,7 @@ setup(name='aucome',
             'mpwt',
             'padmet',
             'requests',
+            'rpy2',
             'scipy',
             'seaborn'
       ],
