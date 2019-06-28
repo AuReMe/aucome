@@ -218,13 +218,13 @@ When you create the repository with --init, the file will only contain 'all' row
 
 +--------------+------------+-------------+--------------+--------------+
 |   all        |            |             |              |              |
-+==============+============+=============+==============+==============+
++--------------+------------+-------------+--------------+--------------+
 
 After the check (with check or workflow command), it will add all the species that you have in your studied_organisms folder:
 
 +--------------+------------+-------------+--------------+--------------+
 |   all        | species_1  | species_2   | species_3    | species_4    |
-+==============+============+=============+==============+==============+
++--------------+------------+-------------+--------------+--------------+
 
 Then you can create a new row to add another group. The name of the group is in the first column. Then for each species you add a column with the species name.
 You must at least give 2 species.
@@ -233,7 +233,7 @@ Example:
 
 +--------------+------------+-------------+--------------+--------------+
 |   all        |species_1   | species_2   | species_3    | species_4    |
-+==============+============+=============+==============+==============+
++--------------+------------+-------------+--------------+--------------+
 |   group_1    | species_1  | species_2   |              |              |
 +--------------+------------+-------------+--------------+--------------+
 |   group_2    | species_1  | species_2   | species_4    |              |
