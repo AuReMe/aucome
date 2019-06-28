@@ -14,6 +14,53 @@ Workflow to reconstruct multiple metabolic networks in order to compare them.
 Installation
 ------------
 
+Dependencies
+~~~~~~~~~~~~
+
+This tool needs:
+
+	- `Orthofinder <https://github.com/davidemms/OrthoFinder>`__ (which needs `Diamond <https://github.com/bbuchfink/diamond>`__ and `FastME <https://gite.lirmm.fr/atgc/FastME/>`__)
+
+	- `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ (which needs Blast)
+
+And some python package:
+
+	- `biopython <https://github.com/biopython/biopython>`__
+
+	- `docopt <https://github.com/docopt/docopt>`__
+
+	- `eventlet <https://github.com/eventlet/eventlet>`__
+
+	- `intervene <https://github.com/asntech/intervene>`__ (which needs R package `UpSetR <https://github.com/hms-dbmi/UpSetR>`__
+
+	- `lxml <https://github.com/lxml/lxml>`__
+
+	- `matplotlib <https://github.com/matplotlib/matplotlib>`__
+
+	- `mpwt <https://github.com/AuReMe/mpwt>`__
+
+	- `pandas <https://github.com/pandas-dev/pandas>`__
+
+	- `padmet <https://github.com/AuReMe/padmet>`__
+
+	- `padmet-utils <https://github.com/AuReMe/padmet-utils>`__
+
+	- `requests <https://github.com/kennethreitz/requests>`__
+
+	- `seaborn <https://github.com/mwaskom/seaborn>`__
+
+
+To run annotation based reconstruction, you need to install Pathway Tools. This tool is available at the `Pathway Tools website <http://bioinformatics.ai.sri.com/ptools/>`__. A command in the package install the tools:
+
+.. code:: sh
+
+        aucome --installPWT=path/to/pathway/tools/installer
+
+You can also provide an option to this commande: --ptools=ptools_path
+
+This option let you choose the path where the ptools-local folder will be installed. PGDBs created by Pathway-Tools are stored in this folder.
+
+
 Docker
 ~~~~~~
 
@@ -25,17 +72,8 @@ From git repository:
 
 	cd aucome
 
-	docker build .
+	docker build -t "my_image".
 
-To run annotation based reconstruction, you need to install Pathway-Tools. This tool is available at the [Pathway-Tools website](http://bioinformatics.ai.sri.com/ptools/). A command in the package install the tools:
-
-.. code:: sh
-
-        aucome --installPWT=path/to/pathway/tools/installer
-
-You can also provide an option to this commande: --ptools=ptools_path
-
-This option let you choose the path where the ptools-local folder will be installed. PGDBs created by Pathway-Tools are stored in this folder.
 
 pip
 ~~~
@@ -49,7 +87,10 @@ If you have installed all the dependencies, you can just install acuome with:
 Usage
 -----
 
-You have to create the working folder for AuCoMe, with teh --init argument:
+Initialization
+~~~~~~~~~~~~~~
+
+You have to create the working folder for AuCoMe, with the --init argument:
 
 .. code:: sh
 
@@ -86,13 +127,13 @@ This command will create a folder name "run_ID" inside the working folder. In th
 	├── studied_organisms
 		├──
 
-analysis will store the result of padmet analysis.
+**analysis** will store the result of padmet analysis.
 
-annotation_based contains three sub-folders. The folder PGDBs will contain all the results from Pathway-Tools (in dat format). These results will be stored in padmet and sbml inside PADMETs and SBMLs.
+**annotation_based** contains three sub-folders. The folder PGDBs will contain all the results from Pathway-Tools (in dat format). These results will be stored in padmet and sbml inside PADMETs and SBMLs.
 
-config.txt contains numerous paths used by the script.
+**config.txt** contains numerous paths used by the script.
 
-model_organisms contains the model organisms you want to use for the orthology. In this folder you put a new folder with the name of the species and in this folder you put the proteome and the sbml of the metabolic network of your species. Proteome and metabolic network names must be the same than the name of the folder.
+**model_organisms** contains the model organisms you want to use for the orthology. In this folder you put a new folder with the name of the species and in this folder you put the proteome and the sbml of the metabolic network of your species. Proteome and metabolic network names must be the same than the name of the folder.
 
 .. code-block:: text
 
@@ -101,11 +142,11 @@ model_organisms contains the model organisms you want to use for the orthology. 
 			├── A_thaliana.fasta
 			├── A_thaliana.sbml
 
-networks will contain all the metabolic network created by aucome in padmet format.
+**networks** will contain all the metabolic network created by aucome in padmet format.
 
-orthology_based contains one folder Orthofinder_WD. This folder will contain all the run of Orthofinder.
+**orthology_based** contains one folder Orthofinder_WD. This folder will contain all the run of Orthofinder.
 
-studied_organisms: you put all the species that you want to studies in this folder. For each species you create a folder and in this folder you put the genbank file of this species. Like for model_organisms, file and folder must have the same name. And the genbank file must end with a '.gbk'.
+**studied_organisms**: you put all the species that you want to studies in this folder. For each species you create a folder and in this folder you put the genbank file of this species. Like for model_organisms, file and folder must have the same name. And the genbank file must end with a '.gbk'.
 
 .. code-block:: text
 
@@ -116,7 +157,10 @@ studied_organisms: you put all the species that you want to studies in this fold
 			├── species_2.gbk
 
 
-Once you have put your species in the studied_organisms folder and teh model in model_organisms, a check must be done on the data using:
+Once you have put your species in the studied_organisms folder and the model in model_organisms, a check must be done on the data using:
+
+Check command
+~~~~~~~~~~~~~
 
 .. code:: sh
 
@@ -127,6 +171,9 @@ This command will check if there is no character that will cause trouble. It wil
 Also, this command will fill the 'all' row of analysis/group_template.tsv, with all the species from the studied_organisms folder.
 
 And for the annotation_based folder, if PGDBs contains folder, it will create the padmet and the sbml corresponding to these draft in PADMETs and SBMLs.
+
+Renconstruction command
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A run of Pathway-Tools can be launched using the command:
 
@@ -156,6 +203,9 @@ A run of Pathway-Tools can be launched using the command:
 
 Using the package mpwt, it will create the input file for Pathway-Tools inside studied_organisms and if there is no error, it will create for each species inside this folder a folder inside PGDBs containing all the dat files ofthe draft metabolic network.
 
+Orthology command
+~~~~~~~~~~~~~~~~~
+
 Orthofinder can be launched using:
 
 .. code:: sh
@@ -181,6 +231,9 @@ Orthofinder can be launched using:
 
 Then the proteome from the studied organisms and from the models will be moved to the Orthofinder_WD folder and orthofinder will be launch on them. Orthofinder result will be in this folder and in orthology_based, there will be all the metabolic network reconstructed from orthology.
 
+Draft command
+~~~~~~~~~~~~~
+
 Then you can merge all the metabolic network with:
 
 .. code:: sh
@@ -199,11 +252,17 @@ Then you can merge all the metabolic network with:
 
 This will output the result inside the networks folder.
 
+Workflow command
+~~~~~~~~~~~~~~~~
+
 You can launch the all workflow with the command:
 
 .. code:: sh
 
     aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v]
+
+Analysis command
+~~~~~~~~~~~~~~~~
 
 You can launch group analysis with the command:
 

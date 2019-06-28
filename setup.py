@@ -30,7 +30,6 @@ setup(name='aucome',
       ],
       packages=['aucome'],
       install_requires=[
-            'configparser',
             'docopt',
             'eventlet',
             'intervene',
