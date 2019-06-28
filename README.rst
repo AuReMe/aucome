@@ -31,7 +31,7 @@ And some python package:
 
 	- `eventlet <https://github.com/eventlet/eventlet>`__
 
-	- `intervene <https://github.com/asntech/intervene>`__ (which needs R package `UpSetR <https://github.com/hms-dbmi/UpSetR>`__
+	- `intervene <https://github.com/asntech/intervene>`__ (which needs R package `UpSetR <https://github.com/hms-dbmi/UpSetR>`__)
 
 	- `lxml <https://github.com/lxml/lxml>`__
 
