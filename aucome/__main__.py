@@ -82,6 +82,9 @@ def main(args=None):
         return
 
     if command:
+        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'draft', 'analysis', 'compare']:
+            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, draft, analysis, compare.')
+
         if '-h' in command_args:
             getattr(aucome, command).command_help()
             sys.exit()
@@ -109,9 +112,6 @@ def main(args=None):
 
         elif command == 'compare':
             aucome.compare.compare_parse_args(command_args)
-
-        if '-h' in args:
-            getattr(aucome, command).command_help()
 
 
 def create_run(run_id):

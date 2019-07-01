@@ -335,3 +335,4 @@ This script will read the group_template.tsv file and create a folder containing
 			├── pathways.csv
 			├── reactions.csv
 			├── tmp_data
+				├──

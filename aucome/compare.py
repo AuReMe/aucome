@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome compare --run=ID [--group=STR] [--cpu=INT] [-v]
+    aucome compare --run=ID [--cpu=INT] [-v]
 
 options:
     --run=ID    Pathname to the comparison workspace.
-    --group=STR    Group to compare.
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
 
@@ -35,7 +34,6 @@ def command_help():
 def compare_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
-    group_to_compares = args['--group']
     verbose = args['-v']
 
     if args["--cpu"]:
@@ -43,10 +41,10 @@ def compare_parse_args(command_args):
     else:
         nb_cpu_to_use = 1
 
-    run_compare(run_id, nb_cpu_to_use, group_to_compares, verbose)
+    run_compare(run_id, nb_cpu_to_use, verbose)
 
 
-def run_compare(run_id, nb_cpu_to_use, group_to_compares, verbose):
+def run_compare(run_id, nb_cpu_to_use, verbose):
 
     config_data = parse_config_file(run_id)
 
@@ -108,13 +106,14 @@ def run_compare(run_id, nb_cpu_to_use, group_to_compares, verbose):
             reactions_temp.extend(species_reactions_dataframe.index.tolist())
         cluster_reactions[group_name] = set(reactions_temp)
 
-
         df = pa.DataFrame({group_name: list(cluster_reactions[group_name])})
         df.to_csv(upset_tmp_data_path+'/'+group_name+'.tsv', sep='\t', index=None, header=None)
 
-    cmd = 'intervene upset -i  {0}/*.tsv --type list -o {1} --figtype svg'.format(upset_tmp_data_path, upset_path)
+    upset_data_path = [upset_tmp_data_path + '/' + tsv_file for tsv_file in os.listdir(upset_tmp_data_path) if tsv_file.endswith('.tsv')]
+    cmds = ['intervene', 'upset', '-i', *upset_data_path, '--type', 'list', '-o', upset_path, '--figtype', 'svg']
+
     if verbose:
-        subprocess.call(cmd, shell=True)
+        subprocess.call(cmds)
     else:
         FNULL = open(os.devnull, 'w')
-        subprocess.call(cmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+        subprocess.call(cmds, stdout=FNULL, stderr=subprocess.STDOUT)
