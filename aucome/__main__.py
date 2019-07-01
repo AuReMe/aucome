@@ -228,7 +228,7 @@ def uninstalling_pwt():
     def ask_delete_ptools(ptools_path):
         yes_or_no = input('Delete ptools-local folder (y/n)?')
         if yes_or_no == 'y':
-            subprocess.call(["rm",  "-r", ptools_path])
+            os.removedirs(ptools_path)
             print('Uninstallation of Pahtway-Tools and ptools-local done!')
             return
         elif yes_or_no == 'n':
@@ -238,19 +238,18 @@ def uninstalling_pwt():
             print('Wrong command')
             ask_delete_ptools(ptools_path)
 
-    cmd_uninstall = ["/programs/pathway-tools/uninstall", "--mode unattended"]
-    cmd_clean_bash = ["grep", "-v", """'export PATH="$PATH:/programs/pathway-tools:"'""", "~/.bashrc", ">", "~/temp.bashrc;", "mv", "~/temp.bashrc", "~/.bashrc"]
-    cmds = [cmd_uninstall, cmd_clean_bash]
+    cmd_uninstall = ['/programs/pathway-tools/uninstall', '--mode', 'unattended']
+    cmd_clean_bash = '''grep -v 'export PATH="$PATH:/programs/pathway-tools:"' ~/.bashrc > ~/temp.bashrc; mv ~/temp.bashrc ~/.bashrc'''
+    print(' '.join(cmd_uninstall))
+    subprocess.call(cmd_uninstall)
+
+    print(cmd_clean_bash)
+    subprocess.call(cmd_clean_bash, shell=True)
 
     ptools_path = mpwt.find_ptools_path()
 
     if os.path.isdir('/root/AIC-prefs'):
-        cmd_delete_AIC_pref = ["rm", "-r" "/root/AIC-prefs"]
-        cmds.append(cmd_delete_AIC_pref)
-
-    for cmd in cmds:
-        print(cmd)
-        subprocess.call(cmd)
+        os.removedirs('/root/AIC-prefs')
 
     ask_delete_ptools(ptools_path)
     return

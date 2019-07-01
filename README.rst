@@ -311,7 +311,7 @@ This script will create one folder for each group:
 		├── group_2
 			├──
 
-Analysis command
+Compare command
 ~~~~~~~~~~~~~~~~
 
 You can launch group analysis with the command:
