@@ -310,3 +310,28 @@ This script will create one folder for each group:
 			├──
 		├── group_2
 			├──
+
+Analysis command
+~~~~~~~~~~~~~~~~
+
+You can launch group analysis with the command:
+
+.. code:: sh
+
+    aucome analysis --run=ID [--cpu=INT] [-v]
+
+This script will read the group_template.tsv file and create a folder containing an upset graph comparing the group that you selected:
+
+.. code-block:: text
+
+	├── analysis
+		├── group_template.tsv
+		├── upgset_graph
+			├── genes.csv
+			├── Intervene_upset.R
+			├── Intervene_upset.svg
+			├── Intervene_upset_combinations.txt
+			├── metabolites.csv
+			├── pathways.csv
+			├── reactions.csv
+			├── tmp_data

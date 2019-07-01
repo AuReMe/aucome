@@ -16,11 +16,13 @@ options:
 
 The subcommands are:
     check    Check inputs validity
-    reconstruction    Run Pathway-Tools
-    orthology    Run Orthofinder
-    draft    Merge all networks
+    reconstruction    Run Pathway Tools
+    orthology    Run Orthofinder for crossing orthology between species
+    draft    Merge all networks (from Pathway Tools and Orthology)
+
     workflow    Run Check, Pathway Tools, Orthofinder and Merging of all networks
     analysis    Analyze results
+    compare    Compare group of species
 
 See 'aucome <command> -h' for more information on a specific command.
 """
@@ -104,6 +106,9 @@ def main(args=None):
 
         elif command == 'analysis':
             aucome.analysis.analysis_parse_args(command_args)
+
+        elif command == 'compare':
+            aucome.compare.compare_parse_args(command_args)
 
         if '-h' in args:
             getattr(aucome, command).command_help()
