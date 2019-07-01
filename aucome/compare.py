@@ -51,7 +51,8 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     analysis_path = config_data['analysis_path']
     analysis_group_file_path = config_data['analysis_group_file_path']
     upset_path = analysis_path + '/upset_graph'
-    upset_tmp_data_path = analysis_path + '/upset_graph/tmp_data'
+    upset_tmp_data_path = upset_path + '/tmp_data'
+    upset_tmp_reaction_path = upset_tmp_data_path + '/tmp'
 
     padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
@@ -59,18 +60,20 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
     if not os.path.isdir(upset_path):
         os.mkdir(upset_path)
+    if not os.path.isdir(upset_tmp_data_path):
+        os.mkdir(upset_tmp_data_path)
+        if not os.path.isdir(upset_tmp_reaction_path):
+            os.mkdir(upset_tmp_reaction_path)
 
         cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
-                "--output", upset_path, "--padmetRef", database_path]
+                "--output", upset_tmp_reaction_path, "--padmetRef", database_path]
 
         if verbose:
             cmds.append('-v')
 
         subprocess.call(cmds)
 
-    os.mkdir(upset_tmp_data_path)
-
-    reactions_dataframe = pa.read_csv(upset_path + '/' + 'reactions.csv', sep='\t')
+    reactions_dataframe = pa.read_csv(upset_tmp_reaction_path + '/' + 'reactions.csv', sep='\t')
     columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column]
     columns = [column for column in columns if '_formula' not in column]
     reactions_dataframe = reactions_dataframe[columns].copy()
