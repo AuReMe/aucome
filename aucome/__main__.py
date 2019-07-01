@@ -35,6 +35,7 @@ import os
 import pkg_resources
 import re
 import requests
+import shutil
 import subprocess
 import sys
 
@@ -228,7 +229,7 @@ def uninstalling_pwt():
     def ask_delete_ptools(ptools_path):
         yes_or_no = input('Delete ptools-local folder (y/n)?')
         if yes_or_no == 'y':
-            os.removedirs(ptools_path)
+            shutil.rmtree(ptools_path)
             print('Uninstallation of Pahtway-Tools and ptools-local done!')
             return
         elif yes_or_no == 'n':
@@ -250,7 +251,7 @@ def uninstalling_pwt():
     subprocess.call(cmd_clean_bash, shell=True)
 
     if os.path.isdir('/root/AIC-prefs'):
-        os.removedirs('/root/AIC-prefs')
+        shutil.rmtree('/root/AIC-prefs')
 
     ask_delete_ptools(ptools_path)
     return
