@@ -53,7 +53,7 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     cd /programs;\
     git clone https://github.com/AuReMe/padmet-utils.git;\
-    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml rpy2;\
+    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml rpy2 tzlocal;\
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
     python3 setup.py develop
