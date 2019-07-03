@@ -58,6 +58,19 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     database_path = config_data['database_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
 
+    group_data = {}
+    padmets = []
+    with open(analysis_group_file_path, 'r') as group_file:
+        group_reader = csv.reader(group_file, delimiter='\t')
+        cluster_reactions = {}
+        for row in group_reader:
+            group_name = row[0]
+            groups = row[1:]
+            group_data[group_name] = groups
+            padmets.extend([padmet_from_networks_path + '/' + species + '.padmet' for species in groups])
+
+    padmets = list(set(padmets))
+
     if not os.path.isdir(upset_path):
         os.mkdir(upset_path)
     if not os.path.isdir(upset_tmp_data_path):
@@ -65,7 +78,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
         if not os.path.isdir(upset_tmp_reaction_path):
             os.mkdir(upset_tmp_reaction_path)
 
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", padmet_from_networks_path,
+        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", ','.join(padmets),
                 "--output", upset_tmp_reaction_path, "--padmetRef", database_path]
 
         if verbose:
@@ -73,7 +86,8 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
         subprocess.call(cmds)
 
-    reactions_dataframe = pa.read_csv(upset_tmp_reaction_path + '/' + 'reactions.csv', sep='\t')
+    reactions_file = upset_tmp_reaction_path + '/' + 'reactions.csv'
+    reactions_dataframe = pa.read_csv(reactions_file, sep='\t')
     columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column]
     columns = [column for column in columns if '_formula' not in column]
     reactions_dataframe = reactions_dataframe[columns].copy()
@@ -83,34 +97,17 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     for column in reactions_dataframe.columns.tolist():
         reactions_dataframe[column] = [True if data == 'present' else False for data in reactions_dataframe[column]]
 
-    group_data = {}
-    with open(analysis_group_file_path, 'r') as group_file:
-        group_reader = csv.reader(group_file, delimiter='\t')
-        cluster_reactions = {}
-        for row in group_reader:
-            group_name = row[0]
-            groups = row[1:]
-            group_data[group_name] = groups
-
-    intersect_species = []
     for group_name in group_data:
         if group_name != 'all':
-            intersect_species.extend(group_data[group_name])
-
-    for group_name in group_data:
-        if group_name == 'all':
-            groups = list(set(group_data[group_name]) - set(intersect_species))
-            group_name = 'other_species'
-        else:
             groups = group_data[group_name]
-        reactions_temp = []
-        for species in groups:
-            species_reactions_dataframe = reactions_dataframe[reactions_dataframe[species] == True]
-            reactions_temp.extend(species_reactions_dataframe.index.tolist())
-        cluster_reactions[group_name] = set(reactions_temp)
+            reactions_temp = []
+            for species in groups:
+                species_reactions_dataframe = reactions_dataframe[reactions_dataframe[species] == True]
+                reactions_temp.extend(species_reactions_dataframe.index.tolist())
+            cluster_reactions[group_name] = set(reactions_temp)
 
-        df = pa.DataFrame({group_name: list(cluster_reactions[group_name])})
-        df.to_csv(upset_tmp_data_path+'/'+group_name+'.tsv', sep='\t', index=None, header=None)
+            df = pa.DataFrame({group_name: list(cluster_reactions[group_name])})
+            df.to_csv(upset_tmp_data_path+'/'+group_name+'.tsv', sep='\t', index=None, header=None)
 
     upset_data_path = [upset_tmp_data_path + '/' + tsv_file for tsv_file in os.listdir(upset_tmp_data_path) if tsv_file.endswith('.tsv')]
     cmds = ['intervene', 'upset', '-i', *upset_data_path, '--type', 'list', '-o', upset_path, '--figtype', 'svg']
@@ -120,3 +117,11 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     else:
         FNULL = open(os.devnull, 'w')
         subprocess.call(cmds, stdout=FNULL, stderr=subprocess.STDOUT)
+
+    cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", reactions_file,
+            "--output", upset_path + '/dendrogram_output', "--padmetRef", database_path]
+
+    if verbose:
+        cmds.append('-v')
+
+    subprocess.call(cmds)
