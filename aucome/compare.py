@@ -67,7 +67,8 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             group_name = row[0]
             groups = [species for species in row[1:] if species != '']
             group_data[group_name] = groups
-            padmets.extend([padmet_from_networks_path + '/' + species + '.padmet' for species in groups])
+            if group_name != 'all':
+                padmets.extend([padmet_from_networks_path + '/' + species + '.padmet' for species in groups])
 
     padmets = list(set(padmets))
 
