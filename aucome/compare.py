@@ -65,7 +65,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
         cluster_reactions = {}
         for row in group_reader:
             group_name = row[0]
-            groups = row[1:]
+            groups = [species for species in row[1:] if species != '']
             group_data[group_name] = groups
             padmets.extend([padmet_from_networks_path + '/' + species + '.padmet' for species in groups])
 
