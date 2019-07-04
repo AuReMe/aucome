@@ -75,9 +75,26 @@ def run_check(run_id, nb_cpu_to_use, verbose):
                           for model_name in all_model_name])
 
     # Update group file in analysis
-    with open(analysis_group_file_path, 'w') as group_file:
-        group_writer = csv.writer(group_file, delimiter='\t')
-        group_writer.writerow(['all', *all_study_name])
+    if not os.path.exists(analysis_group_file_path):
+        with open(analysis_group_file_path, 'w') as group_file:
+            group_writer = csv.writer(group_file, delimiter='\t')
+            group_writer.writerow(['all', *all_study_name])
+    else:
+        groups_data = []
+        with open(analysis_group_file_path, 'r') as group_file:
+            group_reader = csv.reader(group_file, delimiter='\t')
+            for row in group_reader:
+                groups = [org_name for org_name in row[1:] if org_name]
+                groups_data.append((row[0], groups))
+
+        # Check if 'all' row matches species in study_organisms.
+        if sorted(groups_data[0][1]) != sorted(all_study_name):
+            with open(analysis_group_file_path, 'w') as group_file:
+                group_writer = csv.writer(group_file, delimiter='\t')
+                group_writer.writerow(['all', *all_study_name])
+                for group in groups_data:
+                    if group[0] != 'all':
+                        group_writer.writerow([group[0], *group[1]])
 
     aucome_pool = Pool(nb_cpu_to_use)
 
