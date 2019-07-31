@@ -6,32 +6,33 @@ usage:
 
 options:
     --run=ID    Pathname to the comparison workspace.
-    --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
+    --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu). [default: 1]
     -v     Verbose.
 
 """
 
-import configparser
 import csv
 import docopt
-import eventlet
-import mpwt
 import os
 import pandas as pa
-import re
 import subprocess
-import time
 
 from aucome.utils import parse_config_file
-from Bio import SeqIO
-from multiprocessing import Pool
 
 
 def command_help():
+    """
+    Show help for analysis command.
+    """
     print(docopt.docopt(__doc__))
 
 
 def compare_parse_args(command_args):
+    """ Parse args from __main__.py
+
+    Args:
+        command_args (list): command arguments
+    """
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
@@ -45,7 +46,13 @@ def compare_parse_args(command_args):
 
 
 def run_compare(run_id, nb_cpu_to_use, verbose):
+    """Compare the gorup specified by the user.
 
+    Args:
+        run_id (str): ID of the run
+        nb_cpu_to_use (int): number of CPU for multiprocessing
+        verbose (boolean): verbose
+    """
     config_data = parse_config_file(run_id)
 
     analysis_path = config_data['analysis_path']
@@ -58,6 +65,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     database_path = config_data['database_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
 
+    # Create a dictionary containing the group name and the species inside the group.
     group_data = {}
     padmets = []
     with open(analysis_group_file_path, 'r') as group_file:
@@ -79,6 +87,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
         if not os.path.isdir(upset_tmp_reaction_path):
             os.mkdir(upset_tmp_reaction_path)
 
+        # Create the reactions.csv file needed to create dendrogram.
         cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", ','.join(padmets),
                 "--output", upset_tmp_reaction_path, "--padmetRef", database_path]
 
@@ -87,6 +96,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
         subprocess.call(cmds)
 
+    # Read the reactions.csv file and remove the column unused.
     reactions_file = upset_tmp_reaction_path + '/' + 'reactions.csv'
     reactions_dataframe = pa.read_csv(reactions_file, sep='\t')
     columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column]
@@ -98,6 +108,8 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     for column in reactions_dataframe.columns.tolist():
         reactions_dataframe[column] = [True if data == 'present' else False for data in reactions_dataframe[column]]
 
+    # For each group, extract the reactions present in its species.
+    # Then create a tsv file containing these reactions..
     for group_name in group_data:
         if group_name != 'all':
             groups = group_data[group_name]
@@ -110,6 +122,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             df = pa.DataFrame({group_name: list(cluster_reactions[group_name])})
             df.to_csv(upset_tmp_data_path+'/'+group_name+'.tsv', sep='\t', index=None, header=None)
 
+    # Launch Intervene to create upset graph using each group file.
     upset_data_path = [upset_tmp_data_path + '/' + tsv_file for tsv_file in os.listdir(upset_tmp_data_path) if tsv_file.endswith('.tsv')]
     cmds = ['intervene', 'upset', '-i', *upset_data_path, '--type', 'list', '-o', upset_path, '--figtype', 'svg']
 
