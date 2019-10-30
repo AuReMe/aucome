@@ -17,6 +17,8 @@ import os
 import pandas as pa
 import subprocess
 
+from padmet.utils.exploration import compare_padmet, dendrogram_reactions_distance
+
 from aucome.utils import parse_config_file
 
 
@@ -61,7 +63,6 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     upset_tmp_data_path = upset_path + '/tmp_data'
     upset_tmp_reaction_path = upset_tmp_data_path + '/tmp'
 
-    padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
 
@@ -88,13 +89,8 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             os.mkdir(upset_tmp_reaction_path)
 
         # Create the reactions.csv file needed to create dendrogram.
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", ','.join(padmets),
-                "--output", upset_tmp_reaction_path, "--padmetRef", database_path]
-
-        if verbose:
-            cmds.append('-v')
-
-        subprocess.call(cmds)
+        padmet_path = ','.join(padmets)
+        compare_padmet.compare_padmet(padmet_path, upset_tmp_reaction_path, database_path, verbose)
 
     # Read the reactions.csv file and remove the column unused.
     reactions_file = upset_tmp_reaction_path + '/' + 'reactions.csv'
@@ -132,10 +128,5 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
         FNULL = open(os.devnull, 'w')
         subprocess.call(cmds, stdout=FNULL, stderr=subprocess.STDOUT)
 
-    cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", reactions_file,
-            "--output", upset_path + '/dendrogram_output', "--padmetRef", database_path]
+    dendrogram_reactions_distance.reaction_figure_creation(reactions_file, os.path.join(upset_path, "dendrogram_output"), padmet_ref_file=database_path, verbose=verbose)
 
-    if verbose:
-        cmds.append('-v')
-
-    subprocess.call(cmds)
