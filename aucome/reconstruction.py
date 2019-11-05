@@ -75,7 +75,6 @@ def create_padmet_sbml_from_pgdb(run_id, nb_cpu_to_use, verbose):
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
     study_from_annot_prefix = config_data['study_from_annot_prefix']
     sbml_from_annotation_path = config_data['sbml_from_annotation_path']
-    padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
 
@@ -92,7 +91,7 @@ def create_padmet_sbml_from_pgdb(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
         pgdb_folder = all_study_pgdb[study_name]
-        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'padmet_utils_path': padmet_utils_path,
+        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder,
                             'verbose': verbose, 'padmet_file': padmet_file, 'database_path': database_path}
         study_padmet_data.append(tmp_padmet_data)
     aucome_pool.map(create_padmet_from_pgdb, study_padmet_data)
@@ -106,7 +105,7 @@ def create_padmet_sbml_from_pgdb(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_padmet:
         sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
         padmet_file = all_study_padmet[study_name]
-        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file, 'padmet_utils_path': padmet_utils_path,
+        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file,
                          'study_name': study_name, 'verbose': verbose}
         study_sbml_data.append(tmp_sbml_data)
     aucome_pool.map(create_sbml, study_sbml_data)
