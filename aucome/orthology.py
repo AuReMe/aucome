@@ -13,13 +13,8 @@ options:
     -v     Verbose.
 """
 
-import configparser
-import csv
 import docopt
-import eventlet
-import mpwt
 import os
-import re
 import subprocess
 import time
 
