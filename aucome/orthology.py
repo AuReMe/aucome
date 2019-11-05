@@ -48,7 +48,6 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     orthofinder_wd_path = config_data['orthofinder_wd_path']
     orthofinder_bin_path = config_data['orthofinder_bin_path']
     orthology_based_path = config_data['orthology_based_path']
-    padmet_utils_path = config_data['padmet_utils_path']
     studied_organisms_path = config_data['studied_organisms_path']
     model_organisms_path = config_data['model_organisms_path']
     mnx_cpd_path = config_data['mnx_cpd_path']
@@ -113,7 +112,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     all_dict_data = []
     for study_name in all_study_name:
         dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
-                    'padmet_utils_path': padmet_utils_path, 'verbose': verbose, 'orthogroups': orthogroups,
+                    'verbose': verbose, 'orthogroups': orthogroups,
                     'output': orthology_based_path + '/' + study_name}
         all_dict_data.append(dict_data)
 
@@ -127,7 +126,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     #check database, mapping to metacyc ???
     data_convert_sbml_db = []
     for dict_data in all_dict_data:
-        tmp_dict_data = {'sbml': orthology_based_path + '/' + study_name, 'padmet_utils_path': padmet_utils_path,
+        tmp_dict_data = {'sbml': orthology_based_path + '/' + study_name, 
                          'mnx_rxn_path': mnx_rxn_path, 'mnx_cpd_path': mnx_cpd_path, 'verbose': verbose}
         data_convert_sbml_db.append(tmp_dict_data)
         
