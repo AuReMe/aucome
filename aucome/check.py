@@ -47,7 +47,6 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
     study_from_annot_prefix = config_data['study_from_annot_prefix']
     sbml_from_annotation_path = config_data['sbml_from_annotation_path']
-    padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
     studied_organisms_path = config_data['studied_organisms_path']
@@ -101,7 +100,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
         tmp_faa_data = {'study_name': study_name, 'faa_path': faa_path, 'gbk_file': all_study_gbk[study_name],
-                        'padmet_utils_path': padmet_utils_path, 'studied_organisms_path': studied_organisms_path,
+                        'studied_organisms_path': studied_organisms_path,
                         'verbose': verbose}
         study_faa_data.append(tmp_faa_data)
     aucome_pool.map(check_create_faa, study_faa_data)
@@ -116,7 +115,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for model_name in all_model_name:
         faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
         tmp_model_data = {'model_name': model_name, 'faa_path': faa_path, 'gbk_file': all_model_gbk[model_name],
-                            'padmet_utils_path': padmet_utils_path, 'verbose': verbose}
+                            'verbose': verbose}
         study_model_data.append(tmp_model_data)
     aucome_pool.map(create_faa_model, study_model_data)
 
@@ -130,8 +129,8 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
         pgdb_folder = all_study_pgdb[study_name]
-        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'padmet_utils_path': padmet_utils_path,
-                            'verbose': verbose, 'padmet_file': padmet_file, 'database_path': database_path}
+        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'verbose': verbose, 
+                           'padmet_file': padmet_file, 'database_path': database_path}
         study_padmet_data.append(tmp_padmet_data)
     aucome_pool.map(create_padmet_from_pgdb, study_padmet_data)
 
@@ -144,7 +143,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_padmet:
         sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
         padmet_file = all_study_padmet[study_name]
-        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file, 'padmet_utils_path': padmet_utils_path,
+        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file,
                          'study_name': study_name, 'verbose': verbose}
         study_sbml_data.append(tmp_sbml_data)
     aucome_pool.map(create_sbml, study_sbml_data)
