@@ -130,7 +130,7 @@ def create_run(run_id):
                        'annotation_based/SBMLs', 'analysis', 'logs',\
                        'networks/PADMETs', 'networks/SBMLs',
                        'prot2genome', 'prot2genome/blast_results','prot2genome/blast_results/analysis', 'prot2genome/blast_results/tmp', 
-                       'prot2genome/PADMETs', 'prot2genome/reactiosn_to_add', 'prot2genome/spec_reactions']
+                       'prot2genome/PADMETs', 'prot2genome/reactiosn_to_add', 'prot2genome/specifics_reactions']
         for folder in all_folders:
             print('creating folder {0}/{1}'.format(run_id, folder))
             os.mkdir("{0}/{1}".format(run_id, folder))
