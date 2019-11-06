@@ -107,7 +107,7 @@ def analysis_on_group(group_name, groups, config_data, verbose):
         # Compare the padmet to create the reactions.csv file needed to create the reaction dendrogram.
         compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose)
 
-        dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output', padmetRef=database_path, verbose=verbose)
+        dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output', padmetRef_file=database_path, verbose=verbose)
 
 
     else:
