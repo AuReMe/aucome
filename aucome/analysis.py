@@ -87,8 +87,8 @@ def analysis_on_group(group_name, groups, config_data, verbose):
         verbose (bool): Verbose.
     """
 
-    padmetRef = PadmetRef(config_data['database_path'])
-
+    database_path = config_data['database_path']
+    padmetRef = PadmetRef(database_path)
     padmet_from_networks_path = config_data['padmet_from_networks_path']
     analysis_path = config_data['analysis_path']
 
