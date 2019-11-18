@@ -19,6 +19,7 @@ The subcommands are:
     reconstruction    Run Pathway Tools
     orthology    Run Orthofinder for crossing orthology between species
     draft    Merge all networks (from Pathway Tools and Orthology)
+    prot2genome    #TODO
 
     workflow    Run Check, Pathway Tools, Orthofinder and Merging of all networks
     analysis    Analyze results
@@ -83,8 +84,8 @@ def main(args=None):
         return
 
     if command:
-        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'draft', 'analysis', 'compare']:
-            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, draft, analysis, compare.')
+        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'draft', 'prot2genome', 'analysis', 'compare']:
+            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, draft, prot2genome, analysis, compare.')
 
         if '-h' in command_args:
             getattr(aucome, command).command_help()
@@ -107,6 +108,9 @@ def main(args=None):
 
         elif command == 'draft':
             aucome.draft.draft_parse_args(command_args)
+
+        elif command == 'prot2genome':
+            aucome.prot2genome.prot2genome_parse_args(command_args)
 
         elif command == 'analysis':
             aucome.analysis.analysis_parse_args(command_args)
