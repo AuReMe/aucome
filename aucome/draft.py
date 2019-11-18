@@ -106,7 +106,7 @@ def create_draft(tmp_study_data):
                 if os.path.isfile(padmet_output):
                     if verbose:
                         print("Creating sbml from padmet for %s" %study_name)
-                    sbmlGenerator.padmet_to_sbml(padmet_file=padmet_output, output=sbml_output, verbose=verbose)
+                    sbmlGenerator.padmet_to_sbml(padmet=padmet_output, output=sbml_output, verbose=verbose)
                 else:
                     if verbose:
                         print("\tNo padmet file to create sbml for %s'" %study_name)
