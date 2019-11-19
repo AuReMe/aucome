@@ -11,17 +11,14 @@ options:
 
 """
 
-import configparser
 import csv
 import docopt
-import eventlet
-import mpwt
 import os
-import re
-import subprocess
-import time
+
+from padmet.utils.connection import gbk_to_faa, pgdb_to_padmet, sbmlGenerator
 
 from aucome.utils import parse_config_file
+
 from Bio import SeqIO
 from multiprocessing import Pool
 
@@ -50,7 +47,6 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
     study_from_annot_prefix = config_data['study_from_annot_prefix']
     sbml_from_annotation_path = config_data['sbml_from_annotation_path']
-    padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
     studied_organisms_path = config_data['studied_organisms_path']
@@ -104,7 +100,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         faa_path = "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name)
         tmp_faa_data = {'study_name': study_name, 'faa_path': faa_path, 'gbk_file': all_study_gbk[study_name],
-                        'padmet_utils_path': padmet_utils_path, 'studied_organisms_path': studied_organisms_path,
+                        'studied_organisms_path': studied_organisms_path,
                         'verbose': verbose}
         study_faa_data.append(tmp_faa_data)
     aucome_pool.map(check_create_faa, study_faa_data)
@@ -119,7 +115,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for model_name in all_model_name:
         faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
         tmp_model_data = {'model_name': model_name, 'faa_path': faa_path, 'gbk_file': all_model_gbk[model_name],
-                            'padmet_utils_path': padmet_utils_path, 'verbose': verbose}
+                            'verbose': verbose}
         study_model_data.append(tmp_model_data)
     aucome_pool.map(create_faa_model, study_model_data)
 
@@ -133,8 +129,8 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_name:
         padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
         pgdb_folder = all_study_pgdb[study_name]
-        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'padmet_utils_path': padmet_utils_path,
-                            'verbose': verbose, 'padmet_file': padmet_file, 'database_path': database_path}
+        tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'verbose': verbose, 
+                           'padmet_file': padmet_file, 'database_path': database_path}
         study_padmet_data.append(tmp_padmet_data)
     aucome_pool.map(create_padmet_from_pgdb, study_padmet_data)
 
@@ -147,7 +143,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     for study_name in all_study_padmet:
         sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
         padmet_file = all_study_padmet[study_name]
-        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file, 'padmet_utils_path': padmet_utils_path,
+        tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file,
                          'study_name': study_name, 'verbose': verbose}
         study_sbml_data.append(tmp_sbml_data)
     aucome_pool.map(create_sbml, study_sbml_data)
@@ -216,7 +212,6 @@ def check_create_faa(tmp_faa_data):
     faa_path = tmp_faa_data['faa_path']
     gbk_file = tmp_faa_data['gbk_file']
     verbose = tmp_faa_data['verbose']
-    padmet_utils_path = tmp_faa_data['padmet_utils_path']
     studied_organisms_path = tmp_faa_data['studied_organisms_path']
     checking_genbank(study_name, studied_organisms_path, verbose)
 
@@ -224,8 +219,7 @@ def check_create_faa(tmp_faa_data):
     if not os.path.isfile(faa_path) and gbk_file:
         if verbose:
             print("Creating faa from gbk for %s" %study_name)
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/gbk_to_faa.py", "--gbk", gbk_file, "--output", faa_path]
-        subprocess.call(cmds)
+        gbk_to_faa.gbk_to_faa(gbk_file=gbk_file, output=faa_path, verbose=verbose)
 
 
 def create_faa_model(tmp_model_data):
@@ -233,13 +227,11 @@ def create_faa_model(tmp_model_data):
     gbk_file = tmp_model_data['gbk_file']
     verbose = tmp_model_data['verbose']
     faa_path = tmp_model_data['faa_path']
-    padmet_utils_path = tmp_model_data['padmet_utils_path']
 
     if not os.path.isfile(faa_path) and gbk_file:
         if verbose:
             print("Creating faa from gbk for %s" %model_name)
-        cmds = ["python3", padmet_utils_path + "/padmet_utils/connection/gbk_to_faa.py", "--gbk", gbk_file, "--output", faa_path]
-        subprocess.call(cmds)
+        gbk_to_faa.gbk_to_faa(gbk_file=gbk_file, output=faa_path, verbose=verbose)
 
 
 def create_padmet_from_pgdb(tmp_padmet_data):
@@ -247,19 +239,13 @@ def create_padmet_from_pgdb(tmp_padmet_data):
     pgdb_folder = tmp_padmet_data['pgdb_folder']
     verbose = tmp_padmet_data['verbose']
     padmet_file = tmp_padmet_data['padmet_file']
-    padmet_utils_path = tmp_padmet_data['padmet_utils_path']
     database_path = tmp_padmet_data['database_path']
 
     if not os.path.isfile(padmet_file) and pgdb_folder:
         if verbose:
             print("Creating padmet from pgdb for %s" %study_name)
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/connection/pgdb_to_padmet.py", "--pgdb", pgdb_folder, "--output", padmet_file,
-                "--padmetRef", database_path, "--source=genome", "--extract-gene", "--no-orphan"]
+        pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, output=padmet_file, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=verbose)
 
-        if verbose:
-            cmds.append('-v')
-
-        subprocess.call(cmds)
 
 
 def create_sbml(tmp_sbml_data):
@@ -267,18 +253,12 @@ def create_sbml(tmp_sbml_data):
     padmet_file = tmp_sbml_data['padmet_file']
     study_name = tmp_sbml_data['study_name']
     verbose = tmp_sbml_data['verbose']
-    padmet_utils_path = tmp_sbml_data['padmet_utils_path']
 
     if not os.path.isfile(sbml_file) and padmet_file:
         if verbose:
             print("Creating sbml from padmet for %s" %study_name)
-        cmds = ["python3", padmet_utils_path + "/padmet_utils/connection/sbmlGenerator.py", "--padmet", padmet_file,
-                "--output", sbml_file, "--sbml_lvl", "3"]
+        sbmlGenerator.padmet_to_sbml(padmet_file=padmet_file, output=sbml_file, sbml_lvl=3, verbose=True)
 
-        if verbose:
-            cmds.append('-v')
-
-        subprocess.call(cmds)
 
 
 def checking_genbank(genbank_file_name, studied_organisms_path, verbose):

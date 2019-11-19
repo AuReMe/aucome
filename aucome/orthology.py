@@ -13,15 +13,13 @@ options:
     -v     Verbose.
 """
 
-import configparser
-import csv
 import docopt
-import eventlet
-import mpwt
 import os
-import re
 import subprocess
 import time
+
+from padmet.utils.exploration import convert_sbml_db
+from padmet.utils.connection import extract_orthofinder
 
 from aucome.utils import parse_config_file
 from multiprocessing import Pool
@@ -53,7 +51,6 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     orthofinder_wd_path = config_data['orthofinder_wd_path']
     orthofinder_bin_path = config_data['orthofinder_bin_path']
     orthology_based_path = config_data['orthology_based_path']
-    padmet_utils_path = config_data['padmet_utils_path']
     studied_organisms_path = config_data['studied_organisms_path']
     model_organisms_path = config_data['model_organisms_path']
     mnx_cpd_path = config_data['mnx_cpd_path']
@@ -118,7 +115,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     all_dict_data = []
     for study_name in all_study_name:
         dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
-                    'padmet_utils_path': padmet_utils_path, 'verbose': verbose, 'orthogroups': orthogroups,
+                    'verbose': verbose, 'orthogroups': orthogroups,
                     'output': orthology_based_path + '/' + study_name}
         all_dict_data.append(dict_data)
 
@@ -129,22 +126,23 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, verbo
     chrono = ".".join([integer_part, decimal_part[:3]])
     if verbose:
         print("Orthofinder output parsed in: %ss" %chrono)
+    """
     #check database, mapping to metacyc ???
     data_convert_sbml_db = []
     for dict_data in all_dict_data:
-        tmp_dict_data = {'sbml': orthology_based_path + '/' + study_name, 'padmet_utils_path': padmet_utils_path,
+        tmp_dict_data = {'sbml': orthology_based_path + '/' + study_name, 
                          'mnx_rxn_path': mnx_rxn_path, 'mnx_cpd_path': mnx_cpd_path, 'verbose': verbose}
         data_convert_sbml_db.append(tmp_dict_data)
         
-    aucome_pool.map(convert_sbml_db, data_convert_sbml_db)
+    aucome_pool.map(_convert_sbml_db, data_convert_sbml_db)
 
     aucome_pool.close()
     aucome_pool.join()
+    """
 
-def convert_sbml_db(data_convert_sbml_db):
+def _convert_sbml_db(data_convert_sbml_db):
     
     sbml_file = data_convert_sbml_db['sbml']
-    padmet_utils_path = data_convert_sbml_db['padmet_utils_path']
     verbose = data_convert_sbml_db['verbose']
     mnx_rxn_path = data_convert_sbml_db['mnx_rxn_path']
     mnx_cpd_path = data_convert_sbml_db['mnx_cpd_path']
@@ -152,20 +150,13 @@ def convert_sbml_db(data_convert_sbml_db):
     if os.path.isfile(sbml_file):
         dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
         if not os.path.exists(dict_file):
-            cmds = ["python3", padmet_utils_path + "/padmet_utils/exploration/convert_sbml_db.py", "--mnx_rxn", mnx_rxn_path, "--sbml", sbml_file]
-            db_ref = [line.split(":")[1] for line in subprocess.check_output(cmds, universal_newlines=True).splitlines() if line.startswith("Database")][0]
+            db_ref = convert_sbml_db.check_sbml_db(sbml_file, "reaction", mnx_reac_file=mnx_rxn_path, verbose=True)[0]
             if verbose:
                 print("%s: %s" %(os.path.basename(sbml_file), db_ref))
             if db_ref.lower() != "metacyc":
                 if verbose:
                     print("Creating id mapping file: %s" %dict_file)
-                cmds = ["python3",  padmet_utils_path+ "/padmet_utils/exploration/convert_sbml_db.py", "--mnx_rxn", mnx_rxn_path, "--mnx_cpd", mnx_cpd_path,
-                        "--sbml", sbml_file, "--output", dict_file, "--db_out", "metacyc"]
-
-                if verbose:
-                    cmds.append('-v')
-
-                subprocess.call(cmds)
+                convert_sbml_db.map_sbml(sbml_file, "reaction", "metacyc", dict_file, verbose=verbose, mnx_rxn_path=mnx_rxn_path, mnx_chem_path=mnx_cpd_path)
 
 
 def orthogroup_to_sbml(dict_data):
@@ -177,19 +168,11 @@ def orthogroup_to_sbml(dict_data):
     orthodata_path = dict_data['orthodata_path']
     study_name = dict_data['study_name']
     output = dict_data['output']
-    padmet_utils_path = dict_data['padmet_utils_path']
     verbose = dict_data['verbose']
     orthogroups = dict_data['orthogroups']
 
+    all_model_sbml = extract_orthofinder.get_sbml_files(sbml, workflow="aucome", verbose=verbose)
     if orthogroups:
-        cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
-                '--orthogroups', orthodata_path, '--study_id' , study_name, '--output', output, '--workflow', 'aucome']
-
+        extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)
     else:
-        cmds = ['python3', padmet_utils_path + '/padmet_utils/connection/extract_orthofinder.py', '--sbml', sbml,
-                '--orthologues', orthodata_path, '--study_id' , study_name, '--output', output, '--workflow', 'aucome']
- 
-    if verbose:
-        cmds.append('-v')
-
-    subprocess.call(cmds)
+        extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)

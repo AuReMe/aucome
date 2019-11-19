@@ -1,3 +1,10 @@
+###VERSION:0.5###
+19 November 2019
+Changelog:
+	- Update AuCoMe for padmet 4.0.
+	- Add new command prot2genome.
+	- New run structure.
+
 ###VERSION:0.4###
 Changelog:
 	- Add dependencies for dendrogram and intervene.

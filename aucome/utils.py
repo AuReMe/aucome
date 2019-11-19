@@ -5,14 +5,6 @@ Some utils function.
 """
 
 import configparser
-import csv
-import docopt
-import eventlet
-import mpwt
-import os
-import re
-import subprocess
-import time
 
 def parse_config_file(run_id):
     config_file_path = "{0}/config.txt".format(run_id)
@@ -42,7 +34,6 @@ def parse_config_file(run_id):
 
     #TOOL_PATHS
     orthofinder_bin_path = config.get('TOOL_PATHS','orthofinder_bin_path')
-    padmet_utils_path = config.get('TOOL_PATHS', 'padmet_utils_path')
     #VAR
     study_from_annot_prefix = config.get('VAR','study_from_annot_prefix')
 
@@ -53,7 +44,7 @@ def parse_config_file(run_id):
                     'padmet_from_annotation_path': padmet_from_annotation_path, 'sbml_from_annotation_path': sbml_from_annotation_path,
                     'sbml_from_annotation_path': sbml_from_annotation_path, 'log_path': log_path,
                     'networks_path': networks_path, 'orthofinder_bin_path': orthofinder_bin_path,
-                    'padmet_utils_path': padmet_utils_path, 'study_from_annot_prefix': study_from_annot_prefix, 'analysis_path': analysis_path,
+                    'study_from_annot_prefix': study_from_annot_prefix, 'analysis_path': analysis_path,
                     'padmet_from_networks_path': padmet_from_networks_path, 'sbml_from_networks_path': sbml_from_networks_path,
                     'analysis_group_file_path': analysis_group_file_path}
 

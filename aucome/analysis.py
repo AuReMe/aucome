@@ -14,11 +14,13 @@ options:
 import csv
 import docopt
 import os
-import subprocess
 import sys
+from multiprocessing import Pool
+
+from padmet.utils.exploration import compare_padmet, dendrogram_reactions_distance
+from padmet.classes import PadmetRef
 
 from aucome.utils import parse_config_file
-from multiprocessing import Pool
 
 
 def command_help():
@@ -85,9 +87,8 @@ def analysis_on_group(group_name, groups, config_data, verbose):
         verbose (bool): Verbose.
     """
 
-    padmet_utils_path = config_data['padmet_utils_path']
     database_path = config_data['database_path']
-
+    padmetRef = PadmetRef(database_path)
     padmet_from_networks_path = config_data['padmet_from_networks_path']
     analysis_path = config_data['analysis_path']
 
@@ -104,22 +105,10 @@ def analysis_on_group(group_name, groups, config_data, verbose):
                 sys.exit("Padmet file of organism %s from group %s not found in %s" %(org_name, group_name, padmet_from_networks_path))
 
         # Compare the padmet to create the reactions.csv file needed to create the reaction dendrogram.
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/compare_padmet.py", "--padmet", ",".join(all_padmet_path),
-                "--output", group_analysis_path, "--padmetRef", database_path]
+        compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose)
 
-        if verbose:
-            cmds.append('-v')
+        dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output', padmetRef_file=database_path, verbose=verbose)
 
-        subprocess.call(cmds)
-
-        # Create the reaction dendrogram and the absent/specific reactions file.
-        cmds = ["python3",  padmet_utils_path + "/padmet_utils/exploration/dendrogram_reactions_distance.py", "--reactions", group_analysis_path + '/reactions.csv',
-                "--output", group_analysis_path + '/dendrogram_output', "--padmetRef", database_path]
-
-        if verbose:
-            cmds.append('-v')
-
-        subprocess.call(cmds)
 
     else:
         print(group_analysis_path + ' already exists. Delete it if you want to relaunch the analysis.')

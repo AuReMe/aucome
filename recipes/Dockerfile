@@ -8,7 +8,7 @@ ENV PYTHONIOENCODING=utf-8
 ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
-LABEL Version="0.4"
+LABEL Version="0.5"
 LABEL Description="Metabolic Network comparison dockerfile."
 
 # Install dependencies for Pathway-Tools and Orthofinder.
@@ -24,14 +24,27 @@ RUN apt-get -y update && \
     libxm4 \ 
     vim \
     r-base \
-    python3-dev \
+    python3-pip \	
+    python3.7 \
+    python3.7-dev \
     iputils-ping \
     screen \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
+RUN cd tmp;\
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py;\
+    python3.7 get-pip.py
+
+#Install Python packages
+RUN python3.7 -m pip install requests \
+	mpwt \
+	eventlet \
+	padmet \
+	aucome
+
+
 # Install OrthoFinder.
-# Echo 'export LANG="C.UTF-8"' to resolve unicode error with Godocker.
 RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.3/OrthoFinder-2.3.3.tar.gz;\
@@ -44,16 +57,27 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd diamond;\
     wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
     tar xzf diamond-linux64.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"\nexport LANG="C.UTF-8"' >> ~/.bashrc
+    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"' >> ~/.bashrc
 
-
+#Change in future by curl only version, for now exonerate servers are down.
+#Install exonerate
+COPY exonerate-2.2.0 /bin/
+RUN echo 'export PATH="$PATH:/bin/exonerate-2.2.0"' >> ~/.bashrc
+ 
 # Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
 RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
-    R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
-    curl https://bootstrap.pypa.io/get-pip.py | python3;\
-    cd /programs;\
-    git clone https://github.com/AuReMe/padmet-utils.git;\
-    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml rpy2 tzlocal;\
-    git clone https://github.com/AuReMe/aucome.git;\
-    cd aucome;\
-    python3 setup.py develop
+    R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )"
+
+#Copy metacyc database
+RUN mkdir -p /home/data/database
+COPY database/* /home/data/database/
+
+#Change in future by python3.7 -m pip install aucome (need to update aucome pack)
+#clone depots
+RUN cd /programs;\
+    git clone https://github.com/AuReMe/padmet-utils.git
+
+ 
+
+	
+
