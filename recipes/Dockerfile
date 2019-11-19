@@ -39,7 +39,9 @@ RUN cd tmp;\
 #Install Python packages
 RUN python3.7 -m pip install requests \
 	mpwt \
-	eventlet
+	eventlet \
+	padmet \
+	aucome
 
 
 # Install OrthoFinder.
@@ -67,23 +69,13 @@ RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstud
     R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )"
 
 #Copy metacyc database
-COPY database /home/data/database
+RUN mkdir -p /home/data/database
+COPY database/* /home/data/database/
 
-#FOR DEV
+#Change in future by python3.7 -m pip install aucome (need to update aucome pack)
+#clone depots
 RUN cd /programs;\
-    git clone https://github.com/AuReMe/padmet.git;\
-    cd padmet;\
-    git checkout dev; \    
-    python3.7 setup.py develop;\
-    cd /programs;\
-    git clone https://github.com/AuReMe/aucome.git;\
-    cd aucome;\
-    git checkout dev;\
-    python3.7 setup.py develop;\
-    cd /programs;\
-    git clone https://github.com/AuReMe/padmet-utils.git;\
-    cd padmet-utils;\
-    git checkout dev    
+    git clone https://github.com/AuReMe/padmet-utils.git
 
  
 
