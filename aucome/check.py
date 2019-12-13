@@ -244,7 +244,8 @@ def create_padmet_from_pgdb(tmp_padmet_data):
     if not os.path.isfile(padmet_file) and pgdb_folder:
         if verbose:
             print("Creating padmet from pgdb for %s" %study_name)
-        pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, output=padmet_file, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=verbose)
+        padmet = pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=verbose)
+        padmet.generateFile(padmet_file)
 
 
 
@@ -257,7 +258,7 @@ def create_sbml(tmp_sbml_data):
     if not os.path.isfile(sbml_file) and padmet_file:
         if verbose:
             print("Creating sbml from padmet for %s" %study_name)
-        sbmlGenerator.padmet_to_sbml(padmet_file=padmet_file, output=sbml_file, sbml_lvl=3, verbose=True)
+        sbmlGenerator.padmet_to_sbml(padmet=padmet_file, output=sbml_file, sbml_lvl=3, verbose=True)
 
 
 
