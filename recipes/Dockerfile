@@ -29,6 +29,7 @@ RUN apt-get -y update && \
     python3.7-dev \
     iputils-ping \
     screen \
+    exonerate \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
@@ -59,11 +60,6 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     tar xzf diamond-linux64.tar.gz;\
     echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"' >> ~/.bashrc
 
-#Change in future by curl only version, for now exonerate servers are down.
-#Install exonerate
-COPY exonerate-2.2.0 /bin/
-RUN echo 'export PATH="$PATH:/bin/exonerate-2.2.0"' >> ~/.bashrc
- 
 # Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
 RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
     R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )"

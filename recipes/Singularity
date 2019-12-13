@@ -28,6 +28,7 @@ From: ubuntu:18.04
     python3-distutils \
     iputils-ping \
     screen \
+    exonerate \
     gnome-terminal;\
     apt-get clean; \
     apt-get purge; \
