@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome analysis --run=ID [--cpu=INT] [-v]
+    aucome analysis --run=ID [--cpu=INT] [--pvclust] [-v]
 
 options:
     --run=ID    Pathname to the comparison workspace.
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu). [default: 1]
+    --pvclust     Run also pvclust to create another dendrogram of reaction.
     -v     Verbose.
 
 """
@@ -40,16 +41,18 @@ def analysis_parse_args(command_args):
     run_id = args['--run']
     verbose = args['-v']
     nb_cpu_to_use = int(args["--cpu"])
+    pvclust = args['--pvclust']
 
-    run_analysis(run_id, nb_cpu_to_use, verbose)
+    run_analysis(run_id, nb_cpu_to_use, pvclust, verbose)
 
 
-def run_analysis(run_id, nb_cpu_to_use, verbose):
+def run_analysis(run_id, nb_cpu_to_use, pvclust, verbose):
     """Create input data for creationf of reaction dendrogram tsv reactions files.
 
     Args:
         run_id (str): ID of the run
         nb_cpu_to_use (int): number of CPU for multiprocessing
+        pvclust (boolean): use also pvclust to create reaction dendrogram
         verbose (boolean): verbose
     """
     aucome_pool = Pool(nb_cpu_to_use)
@@ -67,7 +70,7 @@ def run_analysis(run_id, nb_cpu_to_use, verbose):
         for row in group_reader:
             group_name = row[0]
             groups = [org_name for org_name in row[1:] if org_name]
-            tmp_data = (group_name, groups, config_data, verbose)
+            tmp_data = (group_name, groups, config_data, pvclust, verbose)
 
             group_data.append(tmp_data)
 
@@ -77,13 +80,14 @@ def run_analysis(run_id, nb_cpu_to_use, verbose):
     aucome_pool.close()
     aucome_pool.join()
 
-def analysis_on_group(group_name, groups, config_data, verbose):
+def analysis_on_group(group_name, groups, config_data, pvclust, verbose):
     """Create reaction dendrogram and extract specific reactions using metabolic networks.
 
     Args:
         group_name (str): Name of the group from group_template.tsv.
         groups (list): All the species inside the group.
         config_data (dict): Dictionary with all configuration paths.
+        pvclust (boolean): use also pvclust to create reaction dendrogram
         verbose (bool): Verbose.
     """
 
@@ -107,8 +111,8 @@ def analysis_on_group(group_name, groups, config_data, verbose):
         # Compare the padmet to create the reactions.csv file needed to create the reaction dendrogram.
         compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose)
 
-        dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output', padmetRef_file=database_path, verbose=verbose)
-
+        dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output',
+                                                                padmetRef_file=database_path, pvclust=pvclust, verbose=verbose)
 
     else:
         print(group_analysis_path + ' already exists. Delete it if you want to relaunch the analysis.')
