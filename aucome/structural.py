@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome prot2genome --run=ID [--cpu=INT] [-v]
+    aucome structural --run=ID [--cpu=INT] [-v]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -20,7 +20,7 @@ def command_help():
     print(docopt.docopt(__doc__))
 
 
-def prot2genome_parse_args(command_args):
+def structural_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
@@ -30,10 +30,10 @@ def prot2genome_parse_args(command_args):
     else:
         nb_cpu_to_use = 1
 
-    run_prot2genome(run_id, nb_cpu_to_use, verbose)
+    run_structural(run_id, nb_cpu_to_use, verbose)
 
 
-def run_prot2genome(run_id, nb_cpu_to_use, verbose):
+def run_structural(run_id, nb_cpu_to_use, verbose):
 
     config_data = parse_config_file(run_id)
     database_path = config_data['database_path']

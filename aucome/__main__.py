@@ -3,7 +3,6 @@ usage:
     aucome --init=ID [-v]
     aucome <command> [<args>...]
     aucome -R --run=ID
-    aucome --version
     aucome --installPWT=PWT_path [--ptools=ptools_path]
     aucome --uninstallPWT
 
@@ -18,8 +17,8 @@ The subcommands are:
     check    Check inputs validity
     reconstruction    Run Pathway Tools
     orthology    Run Orthofinder for crossing orthology between species
-    draft    Merge all networks (from Pathway Tools and Orthology)
-    prot2genome    #TODO
+    structural    Run check of the structural annotation
+    merge    Merge all networks (from Pathway Tools, Orthology and Structural)
 
     workflow    Run Check, Pathway Tools, Orthofinder and Merging of all networks
     analysis    Analyze results
@@ -30,7 +29,6 @@ See 'aucome <command> -h' for more information on a specific command.
 import configparser
 import csv
 import docopt
-import eventlet
 import mpwt
 import os
 import pkg_resources
@@ -41,8 +39,6 @@ import subprocess
 import sys
 
 import aucome
-
-release_on_gitlab = "https://raw.githubusercontent.com/AuReMe/aucome/master/release.txt"
 
 
 def main(args=None):
@@ -74,18 +70,9 @@ def main(args=None):
         uninstalling_pwt()
         return
 
-    if args["--version"]:
-        online_version = get_version()
-        current_version = pkg_resources.get_distribution("metage2metabo").version
-        if online_version:
-            print("You are using the version %s, the latest is %s" %(current_version, online_version))
-        else:
-            print('No internet connection. Skip checking AuCoMe version.')
-        return
-
     if command:
-        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'draft', 'prot2genome', 'analysis', 'compare']:
-            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, draft, prot2genome, analysis, compare.')
+        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'merge', 'structural', 'analysis', 'compare']:
+            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, merge, structural, analysis, compare.')
 
         if '-h' in command_args:
             getattr(aucome, command).command_help()
@@ -106,11 +93,11 @@ def main(args=None):
         elif command == 'orthology':
             aucome.orthology.orthology_parse_args(command_args)
 
-        elif command == 'draft':
-            aucome.draft.draft_parse_args(command_args)
+        elif command == 'structural':
+            aucome.structural.structural_parse_args(command_args)
 
-        elif command == 'prot2genome':
-            aucome.prot2genome.prot2genome_parse_args(command_args)
+        elif command == 'merge':
+            aucome.merge.merge_parse_args(command_args)
 
         elif command == 'analysis':
             aucome.analysis.analysis_parse_args(command_args)
@@ -129,12 +116,14 @@ def create_run(run_id):
         print('creating Run %s' %run_id)
         os.mkdir('{0}'.format(run_id))
         all_folders = ['studied_organisms', 'model_organisms', 'networks', 'orthology_based',\
-                       'orthology_based/Orthofinder_WD', 'annotation_based',\
+                       '/orthology_based/0_Orthofinder_WD', '/orthology_based/1_sbml_orthology', \
+                       '/orthology_based/2_padmet_orthology', '/orthology_based/3_padmet_filtered', 'annotation_based',\
                        'annotation_based/PGDBs', 'annotation_based/PADMETs',\
                        'annotation_based/SBMLs', 'analysis', 'logs',\
                        'networks/PADMETs', 'networks/SBMLs',
-                       'prot2genome', 'prot2genome/blast_results','prot2genome/blast_results/analysis', 'prot2genome/blast_results/tmp', 
-                       'prot2genome/PADMETs', 'prot2genome/reactions_to_add', 'prot2genome/specifics_reactions']
+                       'structural_check', 'structural_check/0_specifics_reactions',
+                       'structural_check/1_blast_results','structural_check/1_blast_results/analysis', 'structural_check/1_blast_results/tmp',
+                       'structural_check/2_reactions_to_add', 'structural_check/3_PADMETs']
         for folder in all_folders:
             print('creating folder {0}/{1}'.format(run_id, folder))
             os.mkdir("{0}/{1}".format(run_id, folder))
@@ -157,7 +146,10 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'studied_organisms_path', '/studied_organisms')
     config.set('PATHS_IN_RUN', 'model_organisms_path', '/model_organisms')
     config.set('PATHS_IN_RUN', 'orthology_based_path', '/orthology_based')
-    config.set('PATHS_IN_RUN', 'orthofinder_wd_path', '/orthology_based/Orthofinder_WD')
+    config.set('PATHS_IN_RUN', 'orthofinder_wd_path', '/orthology_based/0_Orthofinder_WD')
+    config.set('PATHS_IN_RUN', 'orthofinder_sbml_path', '/orthology_based/1_sbml_orthology')
+    config.set('PATHS_IN_RUN', 'orthofinder_padmet_path', '/orthology_based/2_padmet_orthology')
+    config.set('PATHS_IN_RUN', 'orthofinder_filtered_path', '/orthology_based/3_padmet_filtered')
     config.set('PATHS_IN_RUN', 'annotation_based_path', '/annotation_based')
     config.set('PATHS_IN_RUN', 'pgdb_from_annotation_path', '%(annotation_based_path)s/PGDBs')
     config.set('PATHS_IN_RUN', 'padmet_from_annotation_path', '%(annotation_based_path)s/PADMETs')
@@ -169,13 +161,13 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'analysis_path', '/analysis')
     config.set('PATHS_IN_RUN', 'analysis_group_file_path', '%(analysis_path)s/group_template.tsv')
 
-    config.set('PATHS_IN_RUN', 'prot2genome_path', '/prot2genome')
-    config.set('PATHS_IN_RUN', 'prot2genome_reactions_to_add_path', '%(prot2genome_path)s/reactions_to_add')
-    config.set('PATHS_IN_RUN', 'prot2genome_specifics_reactions_path', '%(prot2genome_path)s/specifics_reactions')
-    config.set('PATHS_IN_RUN', 'prot2genome_padmets_path', '%(prot2genome_path)s/PADMETs')
-    config.set('PATHS_IN_RUN', 'prot2genome_blast_results_path', '%(prot2genome_path)s/blast_results')
-    config.set('PATHS_IN_RUN', 'prot2genome_blast_results_analysis_path', '%(prot2genome_blast_results_path)s/analysis')
-    config.set('PATHS_IN_RUN', 'prot2genome_blast_results_tmp_path', '%(prot2genome_blast_results_path)s/tmp')
+    config.set('PATHS_IN_RUN', 'structural_path', '/structural_check')
+    config.set('PATHS_IN_RUN', 'structural_specifics_reactions_path', '%(structural_path)s/0_specifics_reactions')
+    config.set('PATHS_IN_RUN', 'structural_blast_results_path', '%(structural_path)s/1_blast_results')
+    config.set('PATHS_IN_RUN', 'structural_reactions_to_add_path', '%(structural_path)s/2_reactions_to_add')
+    config.set('PATHS_IN_RUN', 'structural_padmets_path', '%(structural_path)s/3_PADMETs')
+    config.set('PATHS_IN_RUN', 'structural_blast_results_analysis_path', '%(structural_blast_results_path)s/analysis')
+    config.set('PATHS_IN_RUN', 'structural_blast_results_tmp_path', '%(structural_blast_results_path)s/tmp')
 
     config.add_section('TOOL_PATHS')
     config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')
@@ -185,23 +177,6 @@ def create_config_file(config_file_path, run_id):
     # Writing our configuration file to 'example.cfg'
     with open(config_file_path, 'w') as configfile:
         config.write(configfile)
-
-
-def get_version():
-    '''
-    Get version from Gitlab.
-    Check internet connection using requests and eventlet timeout.
-    '''
-    reg_version = r'^\#+VERSION:([0-9.]*)#+'
-    with eventlet.Timeout(2):
-        try:
-            response = requests.get(release_on_gitlab)
-            first_line = response.text.split('\n')[0]
-            version = re.match(reg_version,first_line).group(1)
-        except eventlet.timeout.Timeout:
-            version = None
-
-    return version
 
 
 def installing_pwt(pwt_path, input_ptools_local_path):

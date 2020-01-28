@@ -20,7 +20,10 @@ def parse_config_file(run_id):
     studied_organisms_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','studied_organisms_path'))
     model_organisms_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','model_organisms_path'))
     orthology_based_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthology_based_path'))
-    orthofinder_wd_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_wd_path'))    
+    orthofinder_wd_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_wd_path'))
+    orthofinder_sbml_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_sbml_path'))
+    orthofinder_padmet_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_padmet_path'))
+    orthofinder_filtered_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_filtered_path'))
     annotation_based_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','annotation_based_path'))
     pgdb_from_annotation_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','pgdb_from_annotation_path'))
     padmet_from_annotation_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','padmet_from_annotation_path'))
@@ -31,6 +34,8 @@ def parse_config_file(run_id):
     networks_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','networks_path'))
     padmet_from_networks_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','padmet_from_networks_path'))
     sbml_from_networks_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','sbml_from_networks_path'))
+    structural_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','structural_path'))
+    structural_padmets_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','structural_padmets_path'))
 
     #TOOL_PATHS
     orthofinder_bin_path = config.get('TOOL_PATHS','orthofinder_bin_path')
@@ -40,10 +45,13 @@ def parse_config_file(run_id):
     config_data = {'database_path': database_path, 'mnx_rxn_path': mnx_rxn_path, 'mnx_cpd_path': mnx_cpd_path,
                     'studied_organisms_path': studied_organisms_path, 'model_organisms_path': model_organisms_path,
                     'orthology_based_path': orthology_based_path, 'orthofinder_wd_path': orthofinder_wd_path,
+                    'orthofinder_sbml_path': orthofinder_sbml_path, 'orthofinder_padmet_path': orthofinder_padmet_path,
+                    'orthofinder_filtered_path': orthofinder_filtered_path,
                     'annotation_based_path': annotation_based_path, 'pgdb_from_annotation_path': pgdb_from_annotation_path,
                     'padmet_from_annotation_path': padmet_from_annotation_path, 'sbml_from_annotation_path': sbml_from_annotation_path,
                     'sbml_from_annotation_path': sbml_from_annotation_path, 'log_path': log_path,
                     'networks_path': networks_path, 'orthofinder_bin_path': orthofinder_bin_path,
+                    'structural_path': structural_path, 'structural_padmets_path': structural_padmets_path,
                     'study_from_annot_prefix': study_from_annot_prefix, 'analysis_path': analysis_path,
                     'padmet_from_networks_path': padmet_from_networks_path, 'sbml_from_networks_path': sbml_from_networks_path,
                     'analysis_group_file_path': analysis_group_file_path}

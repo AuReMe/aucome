@@ -1,1 +1,1 @@
-from aucome import analysis, check, compare, draft, reconstruction, orthology, utils, workflow, prot2genome
+from aucome import analysis, check, compare, merge, reconstruction, orthology, utils, workflow, structural
