@@ -16,7 +16,7 @@ import shutil
 import sys
 
 from shutil import copyfile
-from padmet.utils.connection import sbml_to_padmet, sbmlGenerator
+from padmet.utils.connection import sbml_to_padmet, sbmlGenerator, padmet_to_padmet
 
 from aucome.utils import parse_config_file
 from multiprocessing import Pool
@@ -53,6 +53,7 @@ def run_merge(run_id, nb_cpu_to_use, verbose):
     orthofinder_filtered_path = config_data['orthofinder_filtered_path']
     orthofinder_padmet_path = config_data['orthofinder_padmet_path']
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
+    networks_path = config_data['networks_path']
 
     structural_padmets = [padmet for padmet in os.listdir(structural_padmets_path) if padmet.endswith('.padmet')]
     orthofinder_filtered_padmets = [padmet for padmet in os.listdir(orthofinder_filtered_path) if padmet.endswith('.padmet')]
@@ -79,6 +80,9 @@ def run_merge(run_id, nb_cpu_to_use, verbose):
 
     aucome_pool.close()
     aucome_pool.join()
+
+    padmet_to_padmet.padmet_to_padmet(padmet_from_networks_path, networks_path + '/panmetabolism.padmet')
+    sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=verbose)
 
 
 def create_output(tmp_study_data):
