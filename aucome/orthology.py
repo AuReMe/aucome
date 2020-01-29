@@ -177,7 +177,7 @@ def _convert_sbml_db(data_convert_sbml_db):
             if db_ref.lower() != "metacyc":
                 if verbose:
                     print("Creating id mapping file: %s" %dict_file)
-                convert_sbml_db.map_sbml(sbml_file, "reaction", "metacyc", dict_file, verbose=verbose, mnx_rxn_path=mnx_rxn_path, mnx_chem_path=mnx_cpd_path)
+                convert_sbml_db.map_sbml(sbml_file, "reaction", "metacyc", dict_file, verbose=verbose, mnx_reac_file=mnx_rxn_path, mnx_chem_file=mnx_cpd_path)
 
 
 def orthogroup_to_sbml(dict_data):
@@ -364,20 +364,6 @@ def extractPropagtion(dict_rxn_orgs_genes):
                                         dict_rxn_org_gene_propagation[rxn_id][ortho_org_id][ortho_gene_id]["propagation_to_not_ptool"].add((org_id, gene_id))
 
     return dict_rxn_org_gene_propagation
-
-
-
-def tableExcel(dict_rxn_org_gene_propagation, output):
-    with open(output, 'w') as f:
-        for rxn_id in ["1.2.1.13-RXN", "1TRANSKETO-RXN", "2TRANSKETO-RXN", "F16ALDOLASE-RXN", "F16BDEPHOS-RXN", "PHOSGLYPHOS-RXN", "PHOSPHORIBULOKINASE-RXN", "RIB5PISOM-RXN", "RIBULOSE-BISPHOSPHATE-CARBOXYLASE-RXN", "RIBULP3EPIM-RXN", "SEDOHEPTULOSE-BISPHOSPHATASE-RXN", "TRIOSEPISOMERIZATION-RXN"]:
-            f.write(rxn_id+"\n")
-            f.write("\t".join(["gene_id", "prop_to_ptool", "prop_not_to_ptool"])+"\n")
-            for org_id, org_data in dict_rxn_org_gene_propagation[rxn_id].items():
-                for gene_id, gene_data in org_data.items():
-                    if gene_data["propagation_to_ptool"] or gene_data["propagation_to_not_ptool"]:
-                        line = "\t".join([gene_id, str(len({i[0] for i in gene_data["propagation_to_ptool"]})), str(len({i[0] for i in gene_data["propagation_to_not_ptool"]}))])+"\n"
-                        f.write(line)
-            f.write("\n\n")
 
 
 def extractPropagationToRemove(dict_rxn_org_gene_propagation, output):
