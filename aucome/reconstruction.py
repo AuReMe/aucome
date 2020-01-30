@@ -44,8 +44,12 @@ def run_reconstruction(run_id, nb_cpu_to_use, verbose):
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
     studied_organisms_path = config_data['studied_organisms_path']
     log_path = config_data['log_path']
-    #check for each study if exist PGDB folder in PGDBs folder, if missing RUN ptools
+
     chronoDepart = time.time()
+
+    taxon_file = None
+    if 'taxon_id.tsv' in set(next(os.walk(config_data['studied_organisms_path']))[2]):
+        taxon_file = True
 
     mpwt.multiprocess_pwt(input_folder=studied_organisms_path,
                             output_folder=pgdb_from_annotation_path,
@@ -54,6 +58,7 @@ def run_reconstruction(run_id, nb_cpu_to_use, verbose):
                             dat_extraction=True,
                             number_cpu=nb_cpu_to_use,
                             patho_log=log_path,
+                            taxon_file=taxon_file,
                             verbose=verbose)
 
     chrono = (time.time() - chronoDepart)
