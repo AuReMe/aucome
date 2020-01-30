@@ -200,7 +200,16 @@ def orthogroup_to_sbml(dict_data):
 
 def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbose=False):
     """
+    Add orthologs information to a padmet file.
+
+    Args:
+        orthologue_folder (str): path to the orthologs folder
+        padmet_folder (str): path to the padmet files to update
+        output_folder (str): path to the output folder
+        verbose (boolean): verbose
     """
+
+    # Read orthologs files and create a dictionary containing orthologs infomations.
     all_orgs = set()
     all_orthologue_files = []
     for _path, _folders, _files in os.walk(orthologue_folder):
@@ -231,6 +240,7 @@ def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbos
                     except KeyError:
                         dict_orthologues[org_A.lower()][gene_id_A] = {org_B.lower():set(gene_ids_B)}
 
+    # Add the orthologs to the padmets.
     if verbose:
         print("Updating padmets...")
     for padmet_file in [i for i in next(os.walk(padmet_folder))[2]]:
@@ -324,18 +334,13 @@ def extractPropagtion(dict_rxn_orgs_genes):
     """
     dict_rxn_org_gene_propagation = {}
     for rxn_id, rxn_data in dict_rxn_orgs_genes.items():
-        #rxn_id ="1.2.1.13-RXN"
-        #rxn_data = dict_rxn_orgs_genes[rxn_id]
         dict_rxn_org_gene_propagation[rxn_id] = dict()
         for org_id, org_data in rxn_data.items():
             if org_id not in dict_rxn_org_gene_propagation[rxn_id].keys():
                 dict_rxn_org_gene_propagation[rxn_id][org_id] = dict()
-            #org_id = 'auxenochlorella_protothecoides'
-            #org_data = rxn_data[org_id]
             #because of genes without gene link sources
             if len(org_data.keys()) > 1:
                 for gene_id, gene_data in org_data.items():
-                    #gene_id, gene_data = list(org_data.items())[2]
                     if gene_id != "FROM-PTOOL":
                         gene_id = gene_id
                         if any (src for src in gene_data if src.startswith("GENOME")):
@@ -343,13 +348,11 @@ def extractPropagtion(dict_rxn_orgs_genes):
                         else:
                             is_from_ptool = False
                         for src in gene_data:
-                            #src = list(gene_data)[-1]
                             if not src.startswith("GENOME:"):
                                 ortho_org_id, ortho_genes_ids = src.split(":")
                                 ortho_genes_ids = ortho_genes_ids.split(";")
                                 if ortho_org_id not in dict_rxn_org_gene_propagation[rxn_id].keys():
                                     dict_rxn_org_gene_propagation[rxn_id][ortho_org_id] = dict()
-
                                 for ortho_gene_id in ortho_genes_ids:
                                     try:
                                         dict_rxn_org_gene_propagation[rxn_id][org_id][gene_id]["propagation_from_ptool"].add((ortho_org_id, ortho_gene_id))
@@ -409,14 +412,12 @@ def cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
 
     dict_org_rxn_clean = {}
     for padmet_file in all_padmets:
-        #padmet_file = "Thalassiosira_pseudonana.padmet"
         padmet_path = os.path.join(padmet_folder, padmet_file)
         org_id = os.path.splitext(padmet_file)[0].upper()
         padmet = PadmetSpec(padmet_path)
         dict_org_rxn_clean[org_id] = dict()
         for rxn_id in [node.id for node in padmet.dicOfNode.values() if node.type == "reaction" and node.id in dict_rxn_org_gene_propag_to_remove.keys()]:
             dict_org_rxn_clean[org_id][rxn_id] = dict()
-            #rxn_id = "1.2.1.13-RXN"
             for is_linked_rlt in [rlt for rlt in padmet.dicOfRelationIn[rxn_id] if rlt.type == "is_linked_to"]:
                 gene_id = is_linked_rlt.id_out
                 all_sources = {src.replace("OUTPUT_ORTHOFINDER_FROM_","")  for src in is_linked_rlt.misc["SOURCE:ASSIGNMENT"]}
@@ -440,7 +441,6 @@ def cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
                 dict_org_rxn_clean[org_id][rxn_id][gene_id] = new_sources
 
     for padmet_file in all_padmets:
-        #padmet_file = "Thalassiosira_pseudonana.padmet"
         padmet_path = os.path.join(padmet_folder, padmet_file)
         org_id = os.path.splitext(padmet_file)[0].upper()
         padmet = PadmetSpec(padmet_path)
