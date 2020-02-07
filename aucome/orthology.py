@@ -49,6 +49,7 @@ def orthology_parse_args(command_args):
 
     run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose)
 
+
 def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose):
     aucome_pool = Pool(nb_cpu_to_use)
 
@@ -101,15 +102,15 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         if verbose:
             print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
-        chronoDepart = time.time()
+        start_time = time.time()
         cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", str(nb_cpu_to_use),
                 "-S", sequence_search_prg]
         subprocess.call(cmds)
-        chrono = (time.time() - chronoDepart)
-        partie_entiere, partie_decimale = str(chrono).split('.')
-        chrono = ".".join([partie_entiere, partie_decimale[:3]])
+        end_time = (time.time() - start_time)
+        integer_part, decimal_part = str(end_time).split('.')
+        end_time = ".".join([integer_part, decimal_part[:3]])
         if verbose:
-            print("Orthofinder done in: %ss" %chrono)
+            print("Orthofinder done in: %ss" %end_time)
         if orthogroups:
             orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
         else:
@@ -126,13 +127,13 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
                     'output': orthofinder_sbml_path + '/' + study_name}
         all_dict_data.append(dict_data)
 
-    chronoDepart = time.time()
+    start_time = time.time()
     aucome_pool.map(orthogroup_to_sbml, all_dict_data)
-    chrono = (time.time() - chronoDepart)
-    integer_part, decimal_part = str(chrono).split('.')
-    chrono = ".".join([integer_part, decimal_part[:3]])
+    end_time = (time.time() - start_time)
+    integer_part, decimal_part = str(end_time).split('.')
+    end_time = ".".join([integer_part, decimal_part[:3]])
     if verbose:
-        print("Orthofinder output parsed in: %ss" %chrono)
+        print("Orthofinder output parsed in: %ss" %end_time)
     """
     #check database, mapping to metacyc ???
     data_convert_sbml_db = []
@@ -143,22 +144,30 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         
     aucome_pool.map(_convert_sbml_db, data_convert_sbml_db)
     """
+
+    if verbose:
+        if filtering:
+            print("Start padmet creation and filtering...")
+        else:
+            print("Start padmet creation...")
+
+    multiprocessing_datas = []
+    for sbml in os.listdir(orthofinder_sbml_path):
+        multiprocessing_datas.append(sbml, orthofinder_sbml_path, padmet_from_annotation_path,
+                         database_path, orthofinder_padmet_path, orthodata_path,
+                         orthofinder_filtered_path, filtering, verbose)
+
+    start_time = time.time()
+    aucome_pool.starmap(orthology_to_padmet, multiprocessing_datas)
+    end_time = (time.time() - start_time)
+    integer_part, decimal_part = str(end_time).split('.')
+    end_time = ".".join([integer_part, decimal_part[:3]])
+    if verbose:
+        print("Padmet created in: %ss" %end_time)
+
+
     aucome_pool.close()
     aucome_pool.join()
-
-    source_tool = "ORTHOFINDER"
-    source_category = "ORTHOLOGY"
-    for sbml in os.listdir(orthofinder_sbml_path):
-        sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
-                                        padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet',
-                                        padmetRef_file=database_path,
-                                        output=orthofinder_padmet_path + '/' + sbml + '.padmet',
-                                        source_tool=source_tool, source_category=source_category, verbose=verbose)
-
-    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, verbose)
-
-    if filtering:
-        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
 
 
 def _convert_sbml_db(data_convert_sbml_db):
@@ -197,6 +206,25 @@ def orthogroup_to_sbml(dict_data):
         extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)
     else:
         extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)
+
+
+def orthology_to_padmet(sbml, orthofinder_sbml_path, padmet_from_annotation_path,
+                         database_path, orthofinder_padmet_path, orthodata_path,
+                         orthofinder_filtered_path, filtering, verbose):
+    source_tool = "ORTHOFINDER"
+    source_category = "ORTHOLOGY"
+
+    sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
+                                    padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet',
+                                    padmetRef_file=database_path,
+                                    output=orthofinder_padmet_path + '/' + sbml + '.padmet',
+                                    source_tool=source_tool, source_category=source_category, verbose=verbose)
+
+    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, verbose)
+
+    if filtering:
+        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
+
 
 def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbose=False):
     """

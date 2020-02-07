@@ -45,7 +45,7 @@ def run_reconstruction(run_id, nb_cpu_to_use, verbose):
     studied_organisms_path = config_data['studied_organisms_path']
     log_path = config_data['log_path']
 
-    chronoDepart = time.time()
+    start_time = time.time()
 
     taxon_file = None
     if 'taxon_id.tsv' in set(next(os.walk(config_data['studied_organisms_path']))[2]):
@@ -61,15 +61,15 @@ def run_reconstruction(run_id, nb_cpu_to_use, verbose):
                             taxon_file=taxon_file,
                             verbose=verbose)
 
-    chrono = (time.time() - chronoDepart)
-    partie_entiere, partie_decimale = str(chrono).split('.')
-    chrono = ".".join([partie_entiere, partie_decimale[:3]])
+    end_time = (time.time() - start_time)
+    integer_part, decimal_part = str(end_time).split('.')
+    end_time = ".".join([integer_part, decimal_part[:3]])
 
     if os.listdir(pgdb_from_annotation_path) == []:
         print('Pathway-Tools inference failed!')
         return
     if verbose:
-        print("Pathway-Tools done in: %ss" %chrono)
+        print("Pathway-Tools done in: %ss" %end_time)
 
     create_padmet_sbml_from_pgdb(run_id, nb_cpu_to_use, verbose)
 
