@@ -5,9 +5,15 @@ Some utils function.
 """
 
 import configparser
+import os
+import sys
+
 
 def parse_config_file(run_id):
     config_file_path = "{0}/config.txt".format(run_id)
+
+    if not os.path.exists(config_file_path):
+        sys.exit('Error no existing config file: ' + config_file_path)
 
     config = configparser.ConfigParser()
     config.read(config_file_path)
