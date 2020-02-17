@@ -111,8 +111,8 @@ def analysis_on_group(group_name, groups, config_data, pvclust, verbose):
 
         # Compare the padmet to create the reactions.csv file needed to create the reaction dendrogram.
         compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose)
-        padmet_to_padmet.padmet_to_padmet(",".join(all_padmet_path), group_analysis_path + '/' + group_name + 'panmetabolism.padmet')
-        sbmlGenerator.padmet_to_sbml(padmet=group_analysis_path + '/' + group_name + '_panmetabolism.padmet', output=group_analysis_path + '/panmetabolism.sbml', verbose=verbose)
+        padmet_to_padmet.padmet_to_padmet(",".join(all_padmet_path), group_analysis_path + '/' + group_name + '_panmetabolism.padmet')
+        sbmlGenerator.padmet_to_sbml(padmet=group_analysis_path + '/' + group_name + '_panmetabolism.padmet', output=group_analysis_path + '/' + group_name + '_panmetabolism.sbml', verbose=verbose)
 
         dendrogram_reactions_distance.reaction_figure_creation(reaction_file=group_analysis_path + '/reactions.csv', output_folder=group_analysis_path + '/dendrogram_output',
                                                                 padmetRef_file=database_path, pvclust=pvclust, verbose=verbose)
