@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--filtering]
+    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -11,6 +11,7 @@ options:
         Options: blast, mmseqs, blast_gz, diamond
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
+    --vv    Very verbose.
     --filtering     Use a filter to limit propagation.
 """
 
@@ -40,6 +41,7 @@ def orthology_parse_args(command_args):
     orthogroups = args['--orthogroups']
     sequence_search_prg = args['-S']
     verbose = args['-v']
+    veryverbose = args['--vv']
     filtering = args['--filtering']
 
     if args["--cpu"]:
@@ -47,10 +49,13 @@ def orthology_parse_args(command_args):
     else:
         nb_cpu_to_use = 1
 
-    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose)
+    if veryverbose and not verbose:
+        verbose = veryverbose
+
+    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
 
 
-def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose):
+def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose):
     aucome_pool = Pool(nb_cpu_to_use)
 
     config_data = parse_config_file(run_id)
@@ -86,7 +91,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
     except ValueError:
         if verbose:
-            print("Enable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
+            print("Unable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
         for name, faa_path in list(all_study_faa.items()):
             if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                 if verbose:
@@ -123,7 +128,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     all_dict_data = []
     for study_name in all_study_name:
         dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
-                    'verbose': verbose, 'orthogroups': orthogroups,
+                    'verbose': verbose, 'orthogroups': orthogroups, 'veryverbose': veryverbose,
                     'output': orthofinder_sbml_path + '/' + study_name}
         all_dict_data.append(dict_data)
 
@@ -155,10 +160,16 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     for sbml in os.listdir(orthofinder_sbml_path):
         multiprocessing_datas.append([sbml, orthofinder_sbml_path, padmet_from_annotation_path,
                          database_path, orthofinder_padmet_path, orthodata_path,
-                         orthofinder_filtered_path, filtering, verbose])
+                         orthofinder_filtered_path, filtering, verbose, veryverbose])
 
     start_time = time.time()
     aucome_pool.starmap(orthology_to_padmet, multiprocessing_datas)
+
+    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, verbose)
+
+    if filtering:
+        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
+
     end_time = (time.time() - start_time)
     integer_part, decimal_part = str(end_time).split('.')
     end_time = ".".join([integer_part, decimal_part[:3]])
@@ -199,31 +210,42 @@ def orthogroup_to_sbml(dict_data):
     study_name = dict_data['study_name']
     output = dict_data['output']
     verbose = dict_data['verbose']
+    veryverbose = dict_data['veryverbose']
     orthogroups = dict_data['orthogroups']
 
-    all_model_sbml = extract_orthofinder.get_sbml_files(sbml, workflow="aucome", verbose=verbose)
-    if orthogroups:
-        extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)
+    if verbose:
+        print('Create sbml for ' + study_name)
+
+    if veryverbose:
+        extract_orthofinder_verbose = veryverbose
     else:
-        extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, verbose)
+        extract_orthofinder_verbose = False
+
+    all_model_sbml = extract_orthofinder.get_sbml_files(sbml, workflow="aucome", verbose=extract_orthofinder_verbose)
+    if orthogroups:
+        extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
+    else:
+        extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
 
 
 def orthology_to_padmet(sbml, orthofinder_sbml_path, padmet_from_annotation_path,
                          database_path, orthofinder_padmet_path, orthodata_path,
-                         orthofinder_filtered_path, filtering, verbose):
+                         orthofinder_filtered_path, filtering, verbose, veryverbose):
     source_tool = "ORTHOFINDER"
     source_category = "ORTHOLOGY"
+
+    if verbose:
+        print('Create padmet from sbml for ' + sbml)
+    if veryverbose:
+        sbml_padmet_verbose = veryverbose
+    else:
+        sbml_padmet_verbose = False
 
     sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
                                     padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet',
                                     padmetRef_file=database_path,
                                     output=orthofinder_padmet_path + '/' + sbml + '.padmet',
-                                    source_tool=source_tool, source_category=source_category, verbose=verbose)
-
-    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, verbose)
-
-    if filtering:
-        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
+                                    source_tool=source_tool, source_category=source_category, verbose=sbml_padmet_verbose)
 
 
 def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbose=False):
