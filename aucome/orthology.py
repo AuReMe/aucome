@@ -153,9 +153,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
 
     multiprocessing_datas = []
     for sbml in os.listdir(orthofinder_sbml_path):
-        multiprocessing_datas.append(sbml, orthofinder_sbml_path, padmet_from_annotation_path,
+        multiprocessing_datas.append([sbml, orthofinder_sbml_path, padmet_from_annotation_path,
                          database_path, orthofinder_padmet_path, orthodata_path,
-                         orthofinder_filtered_path, filtering, verbose)
+                         orthofinder_filtered_path, filtering, verbose])
 
     start_time = time.time()
     aucome_pool.starmap(orthology_to_padmet, multiprocessing_datas)
@@ -283,9 +283,10 @@ def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbos
             gene_id = linked_rlt.id_out
             for index, src in enumerate(linked_rlt.misc["SOURCE:ASSIGNMENT"]):
                 if 'GENOME:' not in src:
-                    ortho_org_id = src.replace("OUTPUT_ORTHOFINDER_FROM_","").lower()
-                    ortho_genes_id = ";".join(dict_orthologues[org_id][gene_id][ortho_org_id])
-                    new_src = "%s:%s"%(src, ortho_genes_id)
+                    ortho_org_id = src.replace("OUTPUT_ORTHOFINDER_FROM_","").split(':')[0]
+                    ortho_org_id_low = ortho_org_id.lower()
+                    ortho_genes_id = ";".join(dict_orthologues[org_id][gene_id][ortho_org_id_low])
+                    new_src = "OUTPUT_ORTHOFINDER_FROM_%s:%s"%(ortho_org_id, ortho_genes_id)
                     linked_rlt.misc["SOURCE:ASSIGNMENT"][index] = new_src
         padmet.generateFile(new_padmet_path)
 
