@@ -69,7 +69,7 @@ def run_merge(run_id, nb_cpu_to_use, verbose):
     elif len(pathway_tools_padmets) > 0:
         padmets = [(padmet, padmet_from_annotation_path + '/' + padmet) for padmet in pathway_tools_padmets]
     else:
-        sys.exit('No padmets have benn creatd, run reconstruction or workflow.')
+        sys.exit('No padmets have been created, run reconstruction or workflow.')
 
     study_draft_data = []
     for study_name, padmet_path in padmets:
@@ -103,5 +103,3 @@ def create_output(tmp_study_data):
         sbmlGenerator.padmet_to_sbml(padmet=padmet_path, output=sbml_from_networks_path + '/' + study_padmet + '.sbml', verbose=verbose)
     else:
         print('There is already a sbml for ' + study_padmet + ' in ' + sbml_from_networks_path + '.')
-
-
