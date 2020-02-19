@@ -127,10 +127,14 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         print("Start sbml creation...")
     all_dict_data = []
     for study_name in all_study_name:
-        dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
-                    'verbose': verbose, 'orthogroups': orthogroups, 'veryverbose': veryverbose,
-                    'output': orthofinder_sbml_path + '/' + study_name}
-        all_dict_data.append(dict_data)
+        output_sbml = orthofinder_sbml_path + '/' + study_name
+        if os.path.exists(output_sbml):
+            print(output_sbml + " already exists, delete it if you want to relaunch ortholog creation.")
+        else:
+            dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
+                        'verbose': verbose, 'orthogroups': orthogroups, 'veryverbose': veryverbose,
+                        'output': output_sbml}
+            all_dict_data.append(dict_data)
 
     start_time = time.time()
     aucome_pool.map(orthogroup_to_sbml, all_dict_data)
@@ -158,9 +162,13 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
 
     multiprocessing_datas = []
     for sbml in os.listdir(orthofinder_sbml_path):
-        multiprocessing_datas.append([sbml, orthofinder_sbml_path, padmet_from_annotation_path,
-                         database_path, orthofinder_padmet_path, orthodata_path,
-                         orthofinder_filtered_path, filtering, verbose, veryverbose])
+        output_padmet = padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet'
+        if os.path.exists(output_padmet):
+            print(output_padmet + " already exists, delete it if you want to relaunch ortholog creation.")
+        else:
+            multiprocessing_datas.append([sbml, orthofinder_sbml_path, output_padmet,
+                            database_path, orthofinder_padmet_path, orthodata_path,
+                            orthofinder_filtered_path, filtering, verbose, veryverbose])
 
     start_time = time.time()
     aucome_pool.starmap(orthology_to_padmet, multiprocessing_datas)
@@ -228,7 +236,7 @@ def orthogroup_to_sbml(dict_data):
         extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
 
 
-def orthology_to_padmet(sbml, orthofinder_sbml_path, padmet_from_annotation_path,
+def orthology_to_padmet(sbml, orthofinder_sbml_path, output_padmet,
                          database_path, orthofinder_padmet_path, orthodata_path,
                          orthofinder_filtered_path, filtering, verbose, veryverbose):
     source_tool = "ORTHOFINDER"
@@ -242,7 +250,7 @@ def orthology_to_padmet(sbml, orthofinder_sbml_path, padmet_from_annotation_path
         sbml_padmet_verbose = False
 
     sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
-                                    padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet',
+                                    output_padmet,
                                     padmetRef_file=database_path,
                                     output=orthofinder_padmet_path + '/' + sbml + '.padmet',
                                     source_tool=source_tool, source_category=source_category, verbose=sbml_padmet_verbose)
@@ -420,12 +428,15 @@ def extractPropagtion(dict_rxn_orgs_genes):
     return dict_rxn_org_gene_propagation
 
 
-def extractPropagationToRemove(dict_rxn_org_gene_propagation, output):
+def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_threshold=0, orthology_threshold=0.05):
     """
-    It writes the file propagation_to_remove.
+    Using ptool_threshold and orthology_threshold, this function select the propagations to remove.
+    These propagation are written in propagation_to_remove.csv.
     """
     header = ["reaction_id", "org_id", "gene_id"]
-    seuil_ptool = 0
+
+    # At this moment filter is as 200/N with 0.05
+    inverse_orthology_threshold = 1/orthology_threshold
 
     dict_rxn_org_gene_propag_to_remove = dict()
     with open(output, 'w') as csvfile:
@@ -434,12 +445,12 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output):
         for rxn_id ,rxn_data in dict_rxn_org_gene_propagation.items():
             nb_org_prop = len(rxn_data.keys())-1
             if nb_org_prop:
-                seuil_not_ptool = round(max([(2/nb_org_prop)*100, (5*nb_org_prop)/100]),0)
+                not_ptool_threshold = round(max([inverse_orthology_threshold/nb_org_prop, orthology_threshold*nb_org_prop],0))
                 for org_id, org_data in rxn_data.items():
                     gene_ids_to_remove = set()
                     for gene_id, gene_data in org_data.items():
-                        if len({i[0] for i in gene_data["propagation_to_ptool"]}) <= seuil_ptool:
-                            if len({i[0] for i in gene_data["propagation_to_not_ptool"]}) >= seuil_not_ptool:
+                        if len({i[0] for i in gene_data["propagation_to_ptool"]}) <= ptool_threshold:
+                            if len({i[0] for i in gene_data["propagation_to_not_ptool"]}) >= not_ptool_threshold:
                                 gene_ids_to_remove.add(gene_id)
                     if gene_ids_to_remove:
                         genes_ids = ";".join(gene_ids_to_remove)
