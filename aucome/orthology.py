@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering]
+    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -12,7 +12,7 @@ options:
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
     --vv    Very verbose.
-    --filtering     Use a filter to limit propagation.
+    --filtering[=FLOAT]     Use a filter to limit propagation [Default: 0.05].
 """
 
 import csv
@@ -160,23 +160,30 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         else:
             print("Start padmet creation...")
 
+    already_present_padmets = {}
     multiprocessing_datas = []
     for sbml in os.listdir(orthofinder_sbml_path):
-        output_padmet = padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet'
+        input_pwt_padmet = padmet_from_annotation_path + '/output_pathwaytools_' + sbml + '.padmet'
+        output_padmet = orthofinder_padmet_path + '/' + sbml + '.padmet'
         if os.path.exists(output_padmet):
+            already_present_padmets[sbml] = True
             print(output_padmet + " already exists, delete it if you want to relaunch ortholog creation.")
         else:
-            multiprocessing_datas.append([sbml, orthofinder_sbml_path, output_padmet,
-                            database_path, orthofinder_padmet_path, orthodata_path,
+            already_present_padmets[sbml] = False
+            multiprocessing_datas.append([sbml, orthofinder_sbml_path, input_pwt_padmet,
+                            database_path, output_padmet, orthodata_path,
                             orthofinder_filtered_path, filtering, verbose, veryverbose])
 
     start_time = time.time()
     aucome_pool.starmap(orthology_to_padmet, multiprocessing_datas)
 
-    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, verbose)
+    addOrthologyInPadmet(orthodata_path, orthofinder_padmet_path, orthofinder_padmet_path, already_present_padmets, verbose)
 
     if filtering:
-        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
+        if isinstance(filtering,float):
+            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose, filtering)
+        else:
+            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
 
     end_time = (time.time() - start_time)
     integer_part, decimal_part = str(end_time).split('.')
@@ -236,8 +243,8 @@ def orthogroup_to_sbml(dict_data):
         extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
 
 
-def orthology_to_padmet(sbml, orthofinder_sbml_path, output_padmet,
-                         database_path, orthofinder_padmet_path, orthodata_path,
+def orthology_to_padmet(sbml, orthofinder_sbml_path, input_pwt_padmet,
+                         database_path, output_padmet, orthodata_path,
                          orthofinder_filtered_path, filtering, verbose, veryverbose):
     source_tool = "ORTHOFINDER"
     source_category = "ORTHOLOGY"
@@ -250,13 +257,13 @@ def orthology_to_padmet(sbml, orthofinder_sbml_path, output_padmet,
         sbml_padmet_verbose = False
 
     sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
-                                    output_padmet,
+                                    input_pwt_padmet,
                                     padmetRef_file=database_path,
-                                    output=orthofinder_padmet_path + '/' + sbml + '.padmet',
+                                    output=output_padmet,
                                     source_tool=source_tool, source_category=source_category, verbose=sbml_padmet_verbose)
 
 
-def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbose=False):
+def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, already_present_padmets, verbose=False):
     """
     Add orthologs information to a padmet file.
 
@@ -264,6 +271,7 @@ def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbos
         orthologue_folder (str): path to the orthologs folder
         padmet_folder (str): path to the padmet files to update
         output_folder (str): path to the output folder
+        already_present_padmets (dict): padmet from a previous run
         verbose (boolean): verbose
     """
 
@@ -302,25 +310,29 @@ def addOrthologyInPadmet(orthologue_folder, padmet_folder, output_folder, verbos
     if verbose:
         print("Updating padmets...")
     for padmet_file in [i for i in next(os.walk(padmet_folder))[2]]:
-        if verbose:
-            print("%s..."%padmet_file)
-        org_id = os.path.splitext(padmet_file)[0]
-        padmet_path = os.path.join(padmet_folder, padmet_file)
-        new_padmet_path = os.path.join(output_folder, "%s.padmet"%org_id)
-        org_id = org_id.lower()
-        padmet = PadmetSpec(padmet_path)
-        for linked_rlt in [rlt for rlt in padmet.getAllRelation() if rlt.type == "is_linked_to"]:
-            gene_id = linked_rlt.id_out
-            for index, src in enumerate(linked_rlt.misc["SOURCE:ASSIGNMENT"]):
-                if 'GENOME:' not in src:
-                    ortho_org_id = src.replace("OUTPUT_ORTHOFINDER_FROM_","").split(':')[0]
-                    ortho_org_id_low = ortho_org_id.lower()
-                    ortho_genes_id = ";".join(dict_orthologues[org_id][gene_id][ortho_org_id_low])
-                    new_src = "OUTPUT_ORTHOFINDER_FROM_%s:%s"%(ortho_org_id, ortho_genes_id)
-                    linked_rlt.misc["SOURCE:ASSIGNMENT"][index] = new_src
-        padmet.generateFile(new_padmet_path)
+        padmet_name = os.path.splitext(padmet_file)[0]
+        if not already_present_padmets[padmet_name]:
+            if verbose:
+                print("%s..."%padmet_file)
+            org_id = os.path.splitext(padmet_file)[0]
+            padmet_path = os.path.join(padmet_folder, padmet_file)
+            new_padmet_path = os.path.join(output_folder, "%s.padmet"%org_id)
+            org_id = org_id.lower()
+            padmet = PadmetSpec(padmet_path)
+            for linked_rlt in [rlt for rlt in padmet.getAllRelation() if rlt.type == "is_linked_to"]:
+                gene_id = linked_rlt.id_out
+                for index, src in enumerate(linked_rlt.misc["SOURCE:ASSIGNMENT"]):
+                    if 'GENOME:' not in src:
+                        ortho_org_id = src.replace("OUTPUT_ORTHOFINDER_FROM_","").split(':')[0]
+                        ortho_org_id_low = ortho_org_id.lower()
+                        ortho_genes_id = ";".join(dict_orthologues[org_id][gene_id][ortho_org_id_low])
+                        new_src = "OUTPUT_ORTHOFINDER_FROM_%s:%s"%(ortho_org_id, ortho_genes_id)
+                        linked_rlt.misc["SOURCE:ASSIGNMENT"][index] = new_src
+            padmet.generateFile(new_padmet_path)
+        else:
+                print("%s is from a previous run, it will not be updated"%padmet_file)
 
-def filter_propagation(padmet_folder, output_folder, verbose=None):
+def filter_propagation(padmet_folder, output_folder, verbose=None, filtering=0.05):
     propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.csv")
     reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.csv')
     padmet_output_folder = output_folder
@@ -333,7 +345,7 @@ def filter_propagation(padmet_folder, output_folder, verbose=None):
     dict_rxn_org_gene_propagation = extractPropagtion(dict_rxn_orgs_genes)
     if verbose:
         print("Writing the file propagation_to_remove...")
-    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file)
+    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file, orthology_threshold=filtering)
     if verbose:
         print("Cleaning the Padmet files and writing the reactions_to_remove_file file...")
     cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
@@ -434,7 +446,6 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_thre
     These propagation are written in propagation_to_remove.csv.
     """
     header = ["reaction_id", "org_id", "gene_id"]
-
     # At this moment filter is as 200/N with 0.05
     inverse_orthology_threshold = 1/orthology_threshold
 
@@ -445,7 +456,7 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_thre
         for rxn_id ,rxn_data in dict_rxn_org_gene_propagation.items():
             nb_org_prop = len(rxn_data.keys())-1
             if nb_org_prop:
-                not_ptool_threshold = round(max([inverse_orthology_threshold/nb_org_prop, orthology_threshold*nb_org_prop],0))
+                not_ptool_threshold = round(max(inverse_orthology_threshold/nb_org_prop, orthology_threshold*nb_org_prop),0)
                 for org_id, org_data in rxn_data.items():
                     gene_ids_to_remove = set()
                     for gene_id, gene_data in org_data.items():
