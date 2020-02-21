@@ -44,7 +44,7 @@ def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filter
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose)
 
-    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose)
+    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, None)
 
     aucome.structural.run_structural(run_id, nb_cpu_to_use, verbose)
 
