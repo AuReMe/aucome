@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--filtering]
+    aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -11,7 +11,8 @@ options:
         Options: blast, mmseqs, blast_gz, diamond
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
-    --filtering     Use a filter to limit propagation.
+    --vv    Very verbose.
+    --filtering[=FLOAT]     Use a filter to limit propagation [Default: 0.05].
 """
 
 import docopt
@@ -29,6 +30,7 @@ def workflow_parse_args(command_args):
     orthogroups = args['--orthogroups']
     sequence_search_prg = args['-S']
     verbose = args['-v']
+    veryverbose = args['--vv']
     filtering = args['--filtering']
 
     if args["--cpu"]:
@@ -36,16 +38,19 @@ def workflow_parse_args(command_args):
     else:
         nb_cpu_to_use = 1
 
-    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose)
+    if veryverbose and not verbose:
+        verbose = veryverbose
+
+    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose, veryverbose)
 
 
-def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose):
+def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose, veryverbose=None):
     aucome.check.run_check(run_id, nb_cpu_to_use, verbose)
 
-    aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose)
+    aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
-    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, None)
+    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
 
     aucome.structural.run_structural(run_id, nb_cpu_to_use, verbose)
 
-    aucome.merge.run_merge(run_id, nb_cpu_to_use, verbose)
+    aucome.merge.run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)

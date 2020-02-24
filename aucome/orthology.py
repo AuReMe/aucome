@@ -55,7 +55,7 @@ def orthology_parse_args(command_args):
     run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
 
 
-def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose):
+def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose=None):
     aucome_pool = Pool(nb_cpu_to_use)
 
     config_data = parse_config_file(run_id)

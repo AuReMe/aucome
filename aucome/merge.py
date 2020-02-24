@@ -8,6 +8,7 @@ options:
     --run=ID    Pathname to the comparison workspace.
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
+    --vv    Very verbose.
 """
 
 import docopt
@@ -30,16 +31,20 @@ def merge_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
+    veryverbose = args['--vv']
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
     else:
         nb_cpu_to_use = 1
 
-    run_merge(run_id, nb_cpu_to_use, verbose)
+    if veryverbose and not verbose:
+        verbose = veryverbose
+
+    run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)
 
 
-def run_merge(run_id, nb_cpu_to_use, verbose):
+def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
 
     aucome_pool = Pool(nb_cpu_to_use)
 
@@ -74,21 +79,22 @@ def run_merge(run_id, nb_cpu_to_use, verbose):
     study_draft_data = []
     for study_name, padmet_path in padmets:
         tmp_study_data = {'padmet_path': padmet_path, 'study_padmet': study_name, 'padmet_from_networks_path': padmet_from_networks_path,
-                            'sbml_from_networks_path': sbml_from_networks_path, 'verbose': verbose}
+                            'sbml_from_networks_path': sbml_from_networks_path, 'verbose': verbose, 'veryverbose': veryverbose}
         study_draft_data.append(tmp_study_data)
     aucome_pool.map(create_output, study_draft_data)
 
     aucome_pool.close()
     aucome_pool.join()
 
-    padmet_to_padmet.padmet_to_padmet(padmet_from_networks_path, networks_path + '/panmetabolism.padmet')
-    sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=verbose)
+    padmet_to_padmet.padmet_to_padmet(padmet_from_networks_path, networks_path + '/panmetabolism.padmet', verbose=veryverbose)
+    sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=veryverbose)
 
 
 def create_output(tmp_study_data):
     padmet_path = tmp_study_data['padmet_path']
     study_padmet = tmp_study_data['study_padmet'].replace('.padmet', '').replace('output_pathwaytools_', '')
     verbose = tmp_study_data['verbose']
+    veryverbose = tmp_study_data['veryverbose']
     padmet_from_networks_path = tmp_study_data['padmet_from_networks_path']
     sbml_from_networks_path = tmp_study_data['sbml_from_networks_path']
 
@@ -100,6 +106,6 @@ def create_output(tmp_study_data):
         print('There is already a padmet for ' + study_padmet + ' ' + padmet_from_networks_path + '.')
 
     if not os.path.exists(sbml_from_networks_path + '/' + study_padmet + '.sbml'):
-        sbmlGenerator.padmet_to_sbml(padmet=padmet_path, output=sbml_from_networks_path + '/' + study_padmet + '.sbml', verbose=verbose)
+        sbmlGenerator.padmet_to_sbml(padmet=padmet_path, output=sbml_from_networks_path + '/' + study_padmet + '.sbml', verbose=veryverbose)
     else:
         print('There is already a sbml for ' + study_padmet + ' in ' + sbml_from_networks_path + '.')
