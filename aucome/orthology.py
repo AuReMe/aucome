@@ -542,7 +542,10 @@ def cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
             for rxn_id, rxn_data in org_data.items():
                 if any(rxn_data.keys()) and not any(rxn_data.values()):
                     to_remove.append(rxn_id)
-                    ec = dict_rxn_ec[rxn_id]
+                    if rxn_id in dict_rxn_ec:
+                        ec = dict_rxn_ec[rxn_id]
+                    else:
+                        ec = ''
                     gene_id = dict_org_rxn_clean[org_id][rxn_id]
                     line = {"org_id":org_id, "reaction_id":rxn_id,
                             "ec-number":ec, "gene_id":";".join(gene_id)}
