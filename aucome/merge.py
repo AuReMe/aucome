@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome merge --run=ID [--cpu=INT] [-v]
+    aucome merge --run=ID [--cpu=INT] [-v] [-vv]
 
 options:
     --run=ID    Pathname to the comparison workspace.
