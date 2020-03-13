@@ -33,14 +33,9 @@ RUN apt-get -y update && \
     gnome-terminal;\
     echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
 
-RUN cd tmp;\
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py;\
-    python3.7 get-pip.py
-
 #Install Python packages
 RUN python3.7 -m pip install requests \
 	mpwt \
-	eventlet \
 	padmet \
 	aucome
 
@@ -61,19 +56,12 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"' >> ~/.bashrc
 
 # Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
-RUN R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
-    R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )"
+RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
+    R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
+    R -e "install.packages('https://cran.r-project.org/src/contrib/ape_5.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)"
 
-#Copy metacyc database
-RUN mkdir -p /home/data/database
-COPY database/* /home/data/database/
 
 #Change in future by python3.7 -m pip install aucome (need to update aucome pack)
 #clone depots
 RUN cd /programs;\
     git clone https://github.com/AuReMe/padmet-utils.git
-
- 
-
-	
-

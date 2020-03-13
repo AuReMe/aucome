@@ -453,7 +453,7 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_thre
     These propagation are written in propagation_to_remove.csv.
     """
     header = ["reaction_id", "org_id", "gene_id"]
-    # At this moment filter is as 200/N with 0.05
+    # At this moment filter is as 20/N with 0.05
     inverse_orthology_threshold = 1/orthology_threshold
 
     dict_rxn_org_gene_propag_to_remove = dict()

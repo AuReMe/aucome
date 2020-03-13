@@ -3,7 +3,8 @@ Bootstrap: docker
 From: ubuntu:18.04
 
 %files
-    pathway-tools-23.0-linux-64-tier1-install /tmp
+    pathway-tools-23.5-linux-64-tier1-install /tmp
+    metacyc_23.5.padmet /tmp
 
 %environment
     export PATH="$PATH:/programs/pathway-tools:"
@@ -31,16 +32,16 @@ From: ubuntu:18.04
     exonerate \
     gnome-terminal;\
     apt-get clean; \
-    apt-get purge; \
-    mkdir /programs/ /programs/diamond/ /shared/;\
+    apt-get purge;\
+    mkdir -p /programs/ /programs/diamond/ /shared/ /home/database/BIOCYC/METACYC/23/;\
     cd /tmp;\
-    ls;\
+    mv metacyc_23.5.padmet /home/database/BIOCYC/METACYC/23/ ;\
     mkdir -p /external/folder;\
-    chmod u+x pathway-tools-23.0-linux-64-tier1-install;\
-    ./pathway-tools-23.0-linux-64-tier1-install --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /external/folder/ --InstallDesktopShortcuts 0 --mode unattended;\
+    chmod u+x pathway-tools-23.5-linux-64-tier1-install;\
+    ./pathway-tools-23.5-linux-64-tier1-install --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /external/folder/ --InstallDesktopShortcuts 0 --mode unattended;\
     mkdir -p /opt/;\
     cp -r /external/folder/ptools-local /opt;\
-    rm pathway-tools-23.0-linux-64-tier1-install;\
+    rm pathway-tools-23.5-linux-64-tier1-install;\
     cd /programs;\
     wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.3/OrthoFinder-2.3.3.tar.gz;\
     tar xzf OrthoFinder-2.3.3.tar.gz;\
@@ -53,12 +54,22 @@ From: ubuntu:18.04
     wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
     tar xzf diamond-linux64.tar.gz;\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
-    R -e "install.packages('UpSetR',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
-    R -e "install.packages('pvclust',,dependencies=TRUE, repos='http://cran.rstudio.com/' )";\
+    R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
+    R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
+    R -e "install.packages('https://cran.r-project.org/src/contrib/ape_5.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
+    pip3 install seaborn scipy intervene lxml rpy2;\
     cd /programs;\
-    git clone https://github.com/AuReMe/padmet-utils.git;\
-    pip3 install padmet mpwt eventlet requests seaborn scipy intervene lxml rpy2 tzlocal;\
+    git clone https://github.com/AuReMe/mpwt.git;\
+    cd mpwt;\
+    git checkout mpwt_0.5.4;\
+    python3 setup.py develop;\
+    cd ..;\
+    git clone https://github.com/AuReMe/padmet.git;\
+    cd padmet;\
+    git checkout dev;\
+    python3 setup.py develop;\
+    cd ..;\
     git clone https://github.com/AuReMe/aucome.git;\
     cd aucome;\
     python3 setup.py develop
