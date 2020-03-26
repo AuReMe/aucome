@@ -44,6 +44,14 @@ def orthology_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
+    if filtering:
+        if args['=FLOAT']:
+            filtering = args['=FLOAT']
+        else:
+            filtering = 0.05
+    else:
+        if args['=FLOAT']:
+            print('When giving a float for the filtering, you must specify the --filtering argument.')
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
@@ -57,6 +65,13 @@ def orthology_parse_args(command_args):
 
 
 def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose=None):
+    # Check filtering
+    if filtering:
+        try:
+            filtering = float(filtering)
+        except:
+            sys.exit('filtering value must be a float between 0 and 1.')
+
     aucome_pool = Pool(nb_cpu_to_use)
 
     config_data = parse_config_file(run_id)

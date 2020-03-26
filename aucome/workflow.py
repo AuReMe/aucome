@@ -32,6 +32,14 @@ def workflow_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
+    if filtering:
+        if args['=FLOAT']:
+            filtering = args['=FLOAT']
+        else:
+            filtering = 0.05
+    else:
+        if args['=FLOAT']:
+            print('When giving a float for the filtering, you must specify the --filtering argument.')
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
