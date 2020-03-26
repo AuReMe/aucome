@@ -44,6 +44,9 @@ def orthology_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
+
+    # This a terrible use of docopt because with the [=FLOAT] we can give a float to the command without --filtering.
+    # TODO: use another CLI or find a better way to add this optional value of an optional argument?
     if filtering:
         if args['=FLOAT']:
             filtering = args['=FLOAT']
