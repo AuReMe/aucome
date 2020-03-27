@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
+    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
 
 options:
     --run=ID    Pathname to the comparison workspace.
     --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
     -S=STR    Sequence search program for Orthofinder [Default: diamond].
         Options: blast, mmseqs, blast_gz, diamond
+    --keep-tmp    Keep temporary file (especially sequence of predicted gene linked to reaction).
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
     --vv    Very verbose.
@@ -29,6 +30,7 @@ def workflow_parse_args(command_args):
     run_id = args['--run']
     orthogroups = args['--orthogroups']
     sequence_search_prg = args['-S']
+    keep_tmp = args['--keep-tmp']
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
@@ -49,16 +51,16 @@ def workflow_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose, veryverbose)
+    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, keep_tmp, verbose, veryverbose)
 
 
-def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, verbose, veryverbose=None):
+def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, keep_tmp, verbose, veryverbose=None):
     aucome.check.run_check(run_id, nb_cpu_to_use, verbose)
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
     aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
 
-    aucome.structural.run_structural(run_id, nb_cpu_to_use, verbose)
+    aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
     aucome.merge.run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)

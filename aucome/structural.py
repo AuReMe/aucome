@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome structural --run=ID [--cpu=INT] [-v]
+    aucome structural --run=ID [--keep-tmp] [--cpu=INT] [-v]
 
 options:
     --run=ID    Pathname to the comparison workspace.
+    --keep-tmp    Keep temporary file (especially sequence of predicted gene linked to reaction).
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
 """
@@ -23,6 +24,7 @@ def command_help():
 def structural_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
+    keep_tmp = args['--keep-tmp']
     verbose = args['-v']
 
     if args["--cpu"]:
@@ -30,13 +32,13 @@ def structural_parse_args(command_args):
     else:
         nb_cpu_to_use = 1
 
-    run_structural(run_id, nb_cpu_to_use, verbose)
+    run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
 
-def run_structural(run_id, nb_cpu_to_use, verbose):
+def run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose):
 
     config_data = parse_config_file(run_id)
     database_path = config_data['database_path']
 
-    prot2genome.fromAucome(run_id, nb_cpu_to_use, database_path, blastp=True, tblastn=True, exonerate=True, debug=False)
+    prot2genome.fromAucome(run_id, nb_cpu_to_use, database_path, blastp=True, tblastn=True, exonerate=True, keep_tmp=keep_tmp, debug=False)
 
