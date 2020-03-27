@@ -304,6 +304,9 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
         output_padmet (str): path to the output padmet file
         verbose (boolean): verbose
     """
+    if os.path.exists(output_padmet):
+        print(output_padmet + " already exists, delete it if you want to relaunch add orthology in padmet.")
+        return
 
     # Read orthologs files and create a dictionary containing orthologs infomations.
     all_orgs = set()
