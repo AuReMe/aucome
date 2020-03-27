@@ -212,9 +212,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
 
     if filtering:
         if isinstance(filtering,float):
-            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose, filtering)
+            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose, filtering)
         else:
-            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, verbose)
+            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose)
 
     end_time = (time.time() - start_time)
     integer_part, decimal_part = str(end_time).split('.')
@@ -304,10 +304,6 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
         output_padmet (str): path to the output padmet file
         verbose (boolean): verbose
     """
-    if os.path.exists(output_padmet):
-        print(output_padmet + " already exists, delete it if you want to relaunch add orthology in padmet.")
-        return
-
     # Read orthologs files and create a dictionary containing orthologs infomations.
     all_orgs = set()
     all_orthologue_files = []
@@ -336,10 +332,7 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
                 for gene_id_A in gene_ids_A:
                     if gene_id_A not in dict_orthologues[org_A.lower()].keys():
                         dict_orthologues[org_A.lower()][gene_id_A] = dict()
-                    try:
-                        dict_orthologues[org_A.lower()][gene_id_A][org_B.lower()] = set(gene_ids_B)
-                    except KeyError:
-                        dict_orthologues[org_A.lower()][gene_id_A] = {org_B.lower():set(gene_ids_B)}
+                    dict_orthologues[org_A.lower()][gene_id_A][org_B.lower()] = set(gene_ids_B)
 
     padmet_file = os.path.basename(output_padmet)
     if verbose:
@@ -360,14 +353,14 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
     padmet.generateFile(output_padmet)
 
 
-def filter_propagation(padmet_folder, output_folder, verbose=None, filtering=0.05):
+def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, filtering=0.05):
     propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.csv")
     reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.csv')
     padmet_output_folder = output_folder
 
     if verbose:
         print("Extracting all the relations gene-reaction...")
-    dict_rxn_orgs_genes, dict_rxn_ec, dict_orgs_genes = extractRGL(padmet_folder)
+    dict_rxn_orgs_genes, dict_rxn_ec = extractRGL(padmet_folder, aucome_pool)
     if verbose:
         print("Extracting all the gene propagations...")
     dict_rxn_org_gene_propagation = extractPropagtion(dict_rxn_orgs_genes)
@@ -377,10 +370,21 @@ def filter_propagation(padmet_folder, output_folder, verbose=None, filtering=0.0
     if verbose:
         print("Cleaning the Padmet files and writing the reactions_to_remove_file file...")
     cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
-                padmet_output_folder, reactions_to_remove_file)
+                padmet_output_folder, reactions_to_remove_file, aucome_pool)
 
 
-def extractRGL(padmet_folder):
+def merge_result_dict(first_dict, second_dict):
+    for rxn_id in second_dict:
+        if rxn_id not in first_dict:
+            first_dict[rxn_id] = dict()
+        for org_id in second_dict[rxn_id]:
+            if org_id not in first_dict[rxn_id]:
+                first_dict[rxn_id][org_id] = dict()
+            for gene_id in second_dict[rxn_id][org_id]:
+                if gene_id not in first_dict[rxn_id][org_id]:
+                    first_dict[rxn_id][org_id][gene_id] = second_dict[rxn_id][org_id][gene_id]
+
+def extractRGL(padmet_folder, aucome_pool):
     """
     extract reactions genes relations.
     It reads all Padmet files in padmet_folder, then it creates three
@@ -392,36 +396,48 @@ def extractRGL(padmet_folder):
 
     return dict {rxn_id:{org_id:{'FROM-PTOOL': bool, gene_id:set of sources (ex ortho_org_id:ortho_genes)}}}
     """
-
-    all_padmets = [i for i in next(os.walk(padmet_folder))[2]]
-
     dict_rxn_orgs_genes = {}
     dict_rxn_ec = {}
-    dict_org_genes = {}
-    for padmet_file in all_padmets:
-        padmet_path = os.path.join(padmet_folder, padmet_file)
-        org_id = os.path.splitext(padmet_file)[0].upper()
-        padmet = PadmetSpec(padmet_path)
-        dict_org_genes[org_id] = set()
-        for node in padmet.dicOfNode.values():
-            if node.type == "reaction":
-                rxn_id = node.id
-                try:
-                    dict_rxn_orgs_genes[rxn_id][org_id] = dict()
-                    dict_rxn_ec[rxn_id] = node.misc['EC-NUMBER'][0]
-                except KeyError:
-                    dict_rxn_orgs_genes[rxn_id] = {org_id:dict()}
-                #rxn_id = "PHOSGLYPHOS-RXN"
-                from_ptool = False
-                for is_linked_rlt in [rlt for rlt in padmet.dicOfRelationIn[rxn_id] if rlt.type == "is_linked_to"]:
-                    gene_id = is_linked_rlt.id_out
-                    dict_org_genes[org_id].add(gene_id)
-                    all_sources = {src.replace("OUTPUT_ORTHOFINDER_FROM_","")  for src in is_linked_rlt.misc["SOURCE:ASSIGNMENT"]}
-                    if any (src for src in all_sources if src.startswith("GENOME")):
-                        from_ptool = True
-                    dict_rxn_orgs_genes[rxn_id][org_id][gene_id] = all_sources
-                dict_rxn_orgs_genes[rxn_id][org_id]["FROM-PTOOL"] = from_ptool
-    return dict_rxn_orgs_genes, dict_rxn_ec, dict_org_genes
+    multiprocessing_datas = []
+    for padmet_file in next(os.walk(padmet_folder))[2]:
+        multiprocessing_datas.append([padmet_file, padmet_folder])
+
+    multiprocessing_results = aucome_pool.starmap(mp_extractRGL, multiprocessing_datas)
+
+    for multiprocessing_result in multiprocessing_results:
+        merge_result_dict(dict_rxn_orgs_genes, multiprocessing_result[0])
+        dict_rxn_ec.update(multiprocessing_result[1])
+
+    return dict_rxn_orgs_genes, dict_rxn_ec
+
+
+def mp_extractRGL(padmet_file, padmet_folder):
+    padmet_path = os.path.join(padmet_folder, padmet_file)
+    org_id = os.path.splitext(padmet_file)[0].upper()
+    padmet = PadmetSpec(padmet_path)
+    dict_rxn_orgs_genes = {}
+    dict_rxn_ec = {}
+    for node in padmet.dicOfNode.values():
+        if node.type == "reaction":
+            rxn_id = node.id
+            if rxn_id not in dict_rxn_orgs_genes:
+                dict_rxn_orgs_genes[rxn_id] = dict()
+
+            if org_id not in dict_rxn_orgs_genes[rxn_id]:
+                dict_rxn_orgs_genes[rxn_id][org_id] = dict()
+            if 'EC-NUMBER' in node.misc:
+                dict_rxn_ec[rxn_id] = node.misc['EC-NUMBER'][0]
+            #rxn_id = "PHOSGLYPHOS-RXN"
+            from_ptool = False
+            for is_linked_rlt in [rlt for rlt in padmet.dicOfRelationIn[rxn_id] if rlt.type == "is_linked_to"]:
+                gene_id = is_linked_rlt.id_out
+                all_sources = {src.replace("OUTPUT_ORTHOFINDER_FROM_","")  for src in is_linked_rlt.misc["SOURCE:ASSIGNMENT"]}
+                if any (src for src in all_sources if src.startswith("GENOME")):
+                    from_ptool = True
+                dict_rxn_orgs_genes[rxn_id][org_id][gene_id] = all_sources
+            dict_rxn_orgs_genes[rxn_id][org_id]["FROM-PTOOL"] = from_ptool
+
+    return dict_rxn_orgs_genes, dict_rxn_ec
 
 
 def extractPropagtion(dict_rxn_orgs_genes):
@@ -453,9 +469,9 @@ def extractPropagtion(dict_rxn_orgs_genes):
                                 if ortho_org_id not in dict_rxn_org_gene_propagation[rxn_id].keys():
                                     dict_rxn_org_gene_propagation[rxn_id][ortho_org_id] = dict()
                                 for ortho_gene_id in ortho_genes_ids:
-                                    try:
+                                    if gene_id in dict_rxn_org_gene_propagation[rxn_id][org_id]:
                                         dict_rxn_org_gene_propagation[rxn_id][org_id][gene_id]["propagation_from_ptool"].add((ortho_org_id, ortho_gene_id))
-                                    except KeyError:
+                                    else:
                                         dict_rxn_org_gene_propagation[rxn_id][org_id][gene_id] = {"propagation_to_ptool":set(),"propagation_to_not_ptool":set(), "propagation_from_ptool": set([(ortho_org_id, ortho_gene_id)])}
 
                                     if ortho_gene_id not in dict_rxn_org_gene_propagation[rxn_id][ortho_org_id].keys():
@@ -493,10 +509,10 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_thre
                                 gene_ids_to_remove.add(gene_id)
                     if gene_ids_to_remove:
                         genes_ids = ";".join(gene_ids_to_remove)
-                        try:
+                        if rxn_id in dict_rxn_org_gene_propag_to_remove:
                             dict_rxn_org_gene_propag_to_remove[rxn_id][org_id] = gene_ids_to_remove
-                        except KeyError:
-                            dict_rxn_org_gene_propag_to_remove[rxn_id] = {org_id:  gene_ids_to_remove}
+                        else:
+                            dict_rxn_org_gene_propag_to_remove[rxn_id] = {org_id: gene_ids_to_remove}
 
                         line = {"reaction_id": rxn_id, "org_id": org_id,
                                 "gene_id": genes_ids}
@@ -504,65 +520,95 @@ def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_thre
     return dict_rxn_org_gene_propag_to_remove
 
 
+def merge_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean, dict_rxn_org_gene_propag_to_remove):
+    for org_id in tmp_dict_org_rxn_clean:
+        if org_id not in dict_org_rxn_clean:
+            dict_org_rxn_clean[org_id] = dict()
+        for rxn_id in tmp_dict_org_rxn_clean[org_id]:
+            if rxn_id in dict_rxn_org_gene_propag_to_remove.keys():
+                if rxn_id not in dict_org_rxn_clean[org_id]:
+                    dict_org_rxn_clean[org_id][rxn_id] = dict()
+                for gene_id in tmp_dict_org_rxn_clean[org_id][rxn_id]:
+                    if gene_id not in dict_org_rxn_clean[org_id][rxn_id]:
+                        dict_org_rxn_clean[org_id][rxn_id][gene_id] = tmp_dict_org_rxn_clean[org_id][rxn_id][gene_id]
+
+
+def create_dict_org_rxn_clean(padmet_file, padmet_folder, dict_rxn_org_gene_propag_to_remove):
+    padmet_path = os.path.join(padmet_folder, padmet_file)
+    org_id = os.path.splitext(padmet_file)[0].upper()
+    padmet = PadmetSpec(padmet_path)
+    dict_org_rxn_clean = dict()
+    dict_org_rxn_clean[org_id] = dict()
+    for rxn_id in [node.id for node in padmet.dicOfNode.values() if node.type == "reaction" and node.id in dict_rxn_org_gene_propag_to_remove.keys()]:
+        dict_org_rxn_clean[org_id][rxn_id] = dict()
+        for is_linked_rlt in [rlt for rlt in padmet.dicOfRelationIn[rxn_id] if rlt.type == "is_linked_to"]:
+            gene_id = is_linked_rlt.id_out
+            all_sources = {src.replace("OUTPUT_ORTHOFINDER_FROM_","")  for src in is_linked_rlt.misc["SOURCE:ASSIGNMENT"]}
+            new_sources = set()
+            for src in all_sources:
+                if src.startswith("GENOME:"):
+                    new_sources.add(src)
+                else:
+                    ortho_org_id, ortho_genes_ids = src.split(":")
+                    ortho_genes_ids = set(ortho_genes_ids.split(";"))
+                    if ortho_org_id not in dict_rxn_org_gene_propag_to_remove[rxn_id].keys():
+                        new_sources.add(src)
+                    else:
+                        new_ortho_genes_ids = set()
+                        for ortho_gene_id in ortho_genes_ids:
+                            if ortho_gene_id not in dict_rxn_org_gene_propag_to_remove[rxn_id][ortho_org_id]:
+                                new_ortho_genes_ids.add(ortho_gene_id)
+                        if new_ortho_genes_ids:
+                            new_src = "%s:%s"%(ortho_org_id, ";".join(new_ortho_genes_ids))
+                            new_sources.add(new_src)
+            dict_org_rxn_clean[org_id][rxn_id][gene_id] = new_sources
+
+    return dict_org_rxn_clean
+
+def delete_propagation(padmet_file, padmet_folder, dict_org_rxn_clean, output_folder):
+    padmet_path = os.path.join(padmet_folder, padmet_file)
+    org_id = os.path.splitext(padmet_file)[0].upper()
+    padmet = PadmetSpec(padmet_path)
+    output = os.path.join(output_folder, padmet_file)
+    nb_rxn_removed = 0
+    for rxn_id, rxn_data in dict_org_rxn_clean[org_id].items():
+        if any(rxn_data.keys()):
+            if not any(rxn_data.values()):
+                nb_rxn_removed += 1
+                padmet.delNode(rxn_id)
+            else:
+                for gene_id, gene_data in rxn_data.items():
+                    is_linked_rlt = [rlt for rlt in padmet.dicOfRelationOut[gene_id] if rlt.id_in == rxn_id and rlt.id_out == gene_id][0]
+                    if not gene_data:
+                        #remove relation
+                        padmet._delRelation(is_linked_rlt)
+                    else:
+                        #update relation.misc[src:assgn], /!\ MAJ et source edition
+                        is_linked_rlt.misc["SOURCE:ASSIGNMENT"] = ["OUTPUT_ORTHOFINDER_FROM_%s"%src for src in gene_data]
+    print("Removing %s in %s"%(nb_rxn_removed, org_id))
+    padmet.generateFile(output)
+
+
 def cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
-                output_folder, reactions_to_remove_file):
+                output_folder, reactions_to_remove_file, aucome_pool):
     """
     It cleans the Padmet files and it writes the reactions_to_remove_file file.
     """
-    all_padmets = [i for i in next(os.walk(padmet_folder))[2]]
+    dict_org_rxn_clean = dict()
+    create_multiprocessing_datas = []
+    for padmet_file in next(os.walk(padmet_folder))[2]:
+        create_multiprocessing_datas.append([padmet_file, padmet_folder, dict_rxn_org_gene_propag_to_remove])
 
-    dict_org_rxn_clean = {}
-    for padmet_file in all_padmets:
-        padmet_path = os.path.join(padmet_folder, padmet_file)
-        org_id = os.path.splitext(padmet_file)[0].upper()
-        padmet = PadmetSpec(padmet_path)
-        dict_org_rxn_clean[org_id] = dict()
-        for rxn_id in [node.id for node in padmet.dicOfNode.values() if node.type == "reaction" and node.id in dict_rxn_org_gene_propag_to_remove.keys()]:
-            dict_org_rxn_clean[org_id][rxn_id] = dict()
-            for is_linked_rlt in [rlt for rlt in padmet.dicOfRelationIn[rxn_id] if rlt.type == "is_linked_to"]:
-                gene_id = is_linked_rlt.id_out
-                all_sources = {src.replace("OUTPUT_ORTHOFINDER_FROM_","")  for src in is_linked_rlt.misc["SOURCE:ASSIGNMENT"]}
-                new_sources = set()
-                for src in all_sources:
-                    if src.startswith("GENOME:"):
-                        new_sources.add(src)
-                    else:
-                        ortho_org_id, ortho_genes_ids = src.split(":")
-                        ortho_genes_ids = set(ortho_genes_ids.split(";"))
-                        if ortho_org_id not in dict_rxn_org_gene_propag_to_remove[rxn_id].keys():
-                            new_sources.add(src)
-                        else:
-                            new_ortho_genes_ids = set()
-                            for ortho_gene_id in ortho_genes_ids:
-                                if ortho_gene_id not in dict_rxn_org_gene_propag_to_remove[rxn_id][ortho_org_id]:
-                                    new_ortho_genes_ids.add(ortho_gene_id)
-                            if new_ortho_genes_ids:
-                                new_src = "%s:%s"%(ortho_org_id, ";".join(new_ortho_genes_ids))
-                                new_sources.add(new_src)
-                dict_org_rxn_clean[org_id][rxn_id][gene_id] = new_sources
+    multiprocessing_results = aucome_pool.starmap(create_dict_org_rxn_clean, create_multiprocessing_datas)
 
-    for padmet_file in all_padmets:
-        padmet_path = os.path.join(padmet_folder, padmet_file)
-        org_id = os.path.splitext(padmet_file)[0].upper()
-        padmet = PadmetSpec(padmet_path)
-        output = os.path.join(output_folder, padmet_file)
-        nb_rxn_removed = 0
-        for rxn_id, rxn_data in dict_org_rxn_clean[org_id].items():
-            if any(rxn_data.keys()):
-                if not any(rxn_data.values()):
-                    nb_rxn_removed += 1
-                    padmet.delNode(rxn_id)
-                else:
-                    for gene_id, gene_data in rxn_data.items():
-                        is_linked_rlt = [rlt for rlt in padmet.dicOfRelationOut[gene_id] if rlt.id_in == rxn_id and rlt.id_out == gene_id][0]
-                        if not gene_data:
-                            #remove relation
-                            padmet._delRelation(is_linked_rlt)
-                        else:
-                            #update relation.misc[src:assgn], /!\ MAJ et source edition
-                            is_linked_rlt.misc["SOURCE:ASSIGNMENT"] = ["OUTPUT_ORTHOFINDER_FROM_%s"%src for src in gene_data]
-        print("Removing %s in %s"%(nb_rxn_removed, org_id))
-        padmet.generateFile(output)
+    for multiprocessing_result in multiprocessing_results:
+        merge_dict_org_rxn_clean(dict_org_rxn_clean, multiprocessing_result, dict_rxn_org_gene_propag_to_remove)
+
+    remove_multiprocessing_datas = []
+    for padmet_file in next(os.walk(padmet_folder))[2]:
+        remove_multiprocessing_datas.append([padmet_file, padmet_folder, dict_org_rxn_clean, output_folder])
+
+    aucome_pool.starmap(delete_propagation, remove_multiprocessing_datas)
 
     with open(reactions_to_remove_file, 'w') as csvfile:
         header = ["org_id","reaction_id", "ec-number", "gene_id"]
