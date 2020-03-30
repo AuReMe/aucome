@@ -102,7 +102,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
                           else (model_name, '')
                           for model_name in all_model_name])
 
-    #check if Orthofinder already run, if yes, get the last workdir
+    #check if Orthofinder already run, if yes, get the last workdir.
     try:
         if orthogroups:
             orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
@@ -111,6 +111,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     except ValueError:
         if verbose:
             print("Unable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
+        orthodata_path = None
+
+    if not orthodata_path:
         for name, faa_path in list(all_study_faa.items()):
             if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                 if verbose:
