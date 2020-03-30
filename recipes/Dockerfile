@@ -20,7 +20,6 @@ RUN apt-get -y update && \
     csh \
     git \
     ncbi-blast+ \
-    mcl \
     libxm4 \ 
     vim \
     r-base \
@@ -43,17 +42,10 @@ RUN python3.7 -m pip install requests \
 # Install OrthoFinder.
 RUN mkdir /programs/ /programs/diamond/ /shared/;\
     cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.3/OrthoFinder-2.3.3.tar.gz;\
-    tar xzf OrthoFinder-2.3.3.tar.gz;\
-    rm OrthoFinder-2.3.3.tar.gz;\
-    wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
-    tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
-    mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
-    rm -rf fastme-2.1.5*;\
-    cd diamond;\
-    wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
-    tar xzf diamond-linux64.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder-2.3.3:"\nexport PATH="$PATH:/programs/diamond:"' >> ~/.bashrc
+    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.11/OrthoFinder.tar.gz;\
+    tar xzf OrthoFinder.tar.gz;\
+    rm OrthoFinder.tar.gz;\
+    echo 'export PATH="$PATH:/programs/OrthoFinder:"\nexport PATH="$PATH:/programs/OrthoFinder/bin:"\nexport OPENBLAS_NUM_THREADS=1' >> ~/.bashrc
 
 # Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\

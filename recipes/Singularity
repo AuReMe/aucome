@@ -8,8 +8,9 @@ From: ubuntu:18.04
 
 %environment
     export PATH="$PATH:/programs/pathway-tools:"
-    export PATH="$PATH:/programs/OrthoFinder-2.3.3:"
-    export PATH="$PATH:/programs/diamond:"
+    export PATH="$PATH:/programs/OrthoFinder:"
+    export PATH="$PATH:/programs/OrthoFinder/bin:"
+    export OPENBLAS_NUM_THREADS=1
     export LANG="C.UTF-8"
 
 %post
@@ -21,7 +22,6 @@ From: ubuntu:18.04
     csh \
     git \
     ncbi-blast+ \
-    mcl \
     libxm4 \
     vim \
     r-base \
@@ -33,7 +33,7 @@ From: ubuntu:18.04
     gnome-terminal;\
     apt-get clean; \
     apt-get purge;\
-    mkdir -p /programs/ /programs/diamond/ /shared/ /home/database/BIOCYC/METACYC/23/;\
+    mkdir -p /programs/ /shared/ /home/database/BIOCYC/METACYC/23/;\
     cd /tmp;\
     mv metacyc_23.5.padmet /home/database/BIOCYC/METACYC/23/ ;\
     mkdir -p /external/folder;\
@@ -43,16 +43,9 @@ From: ubuntu:18.04
     cp -r /external/folder/ptools-local /opt;\
     rm pathway-tools-23.5-linux-64-tier1-install;\
     cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.3/OrthoFinder-2.3.3.tar.gz;\
-    tar xzf OrthoFinder-2.3.3.tar.gz;\
-    rm OrthoFinder-2.3.3.tar.gz;\
-    wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
-    tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
-    mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
-    rm -rf fastme-2.1.5*;\
-    cd diamond;\
-    wget https://github.com/bbuchfink/diamond/releases/download/v0.9.22/diamond-linux64.tar.gz;\
-    tar xzf diamond-linux64.tar.gz;\
+    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.11/OrthoFinder.tar.gz;\
+    tar xzf OrthoFinder.tar.gz;\
+    rm OrthoFinder.tar.gz;\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
     R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
