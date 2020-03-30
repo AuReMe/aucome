@@ -137,18 +137,24 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             print("Orthofinder done in: %ss" %end_time)
         if orthogroups:
             orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
-            orthogroups_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthogroups'
-            if os.path.exists(orthogroups_result_path):
-                orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            if os.path.exists(orthofinder_result_path):
+                orthogroups_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthogroups'
+                if os.path.exists(orthogroups_result_path):
+                    orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+                else:
+                    sys.exit('There was an error with OrthoFinder, there is no results in ' + orthogroups_result_path)
             else:
-                sys.exit('There was an error with OrthoFinder, there is no results in ' + orthogroups_result_path)
+                sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
         else:
             orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
-            orthologues_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthologues'
-            if os.path.exists(orthologues_result_path):
-                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+            if os.path.exists(orthofinder_result_path):
+                orthologues_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthologues'
+                if os.path.exists(orthologues_result_path):
+                    orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+                else:
+                    sys.exit('There was an error with OrthoFinder, there is no results in ' + orthologues_result_path)
             else:
-                sys.exit('There was an error with OrthoFinder, there is no results in ' + orthologues_result_path)
+                sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
     if verbose:
         print("Parsing Orthofinder output %s" %orthodata_path)
 
