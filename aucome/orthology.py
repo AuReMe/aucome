@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
+    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -12,7 +12,8 @@ options:
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
     --vv    Very verbose.
-    --filtering[=FLOAT]     Use a filter to limit propagation [Default: 0.05].
+    --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
+    --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument [Default: 0.05].
 """
 
 import csv
@@ -44,17 +45,14 @@ def orthology_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
+    filtering_threshold = args['--threshold']
 
-    # This a terrible use of docopt because with the [=FLOAT] we can give a float to the command without --filtering.
-    # TODO: use another CLI or find a better way to add this optional value of an optional argument?
     if filtering:
-        if args['=FLOAT']:
-            filtering = args['=FLOAT']
-        else:
-            filtering = 0.05
+        if not filtering_threshold:
+            filtering_threshold = 0.05
     else:
-        if args['=FLOAT']:
-            print('When giving a float for the filtering, you must specify the --filtering argument.')
+        if filtering_threshold:
+            sys.exit('--threshold must be used with --filtering.')
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
@@ -64,16 +62,16 @@ def orthology_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
+    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose)
 
 
-def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose=None):
-    # Check filtering
-    if filtering:
+def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose=None):
+    # Check filtering_threshold
+    if filtering_threshold:
         try:
-            filtering = float(filtering)
+            filtering_threshold = float(filtering_threshold)
         except:
-            sys.exit('filtering value must be a float between 0 and 1.')
+            sys.exit('filtering_threshold value must be a float between 0 and 1.')
 
     aucome_pool = Pool(nb_cpu_to_use)
 
@@ -118,13 +116,19 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                 if verbose:
                     print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
+            if faa_path != "" and os.path.isfile(faa_path):
                 shutil.copyfile(faa_path, orthofinder_wd_path + '/' + name + '.faa')
+            else:
+                sys.exit("Missing fasta for " + name + ", use 'aucome check' to input fasta from genbank.")
 
         for name, faa_path in list(all_model_faa.items()):
             if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                 if verbose:
                     print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
+            if faa_path != "" and os.path.isfile(faa_path):
                 shutil.copyfile(faa_path, orthofinder_wd_path + '/' + name + '.faa')
+            else:
+                sys.exit("Missing fasta for " + name + ", use 'aucome check' to input fasta from genbank.")
 
         if verbose:
             print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
@@ -193,7 +197,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     """
 
     if verbose:
-        if filtering:
+        if filtering_threshold:
             print("Start padmet creation and filtering...")
         else:
             print("Start padmet creation...")
@@ -208,7 +212,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         else:
             multiprocessing_datas.append([sbml, orthofinder_sbml_path, input_pwt_padmet,
                             database_path, output_padmet, orthodata_path,
-                            orthofinder_filtered_path, filtering, verbose, veryverbose])
+                            orthofinder_filtered_path, filtering_threshold, verbose, veryverbose])
             update_padmet_datas.append([sbml, orthodata_path, output_padmet, verbose])
 
     start_time = time.time()
@@ -219,9 +223,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         print("Updating padmets...")
     aucome_pool.starmap(addOrthologyInPadmet, update_padmet_datas)
 
-    if filtering:
-        if isinstance(filtering,float):
-            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose, filtering)
+    if filtering_threshold:
+        if isinstance(filtering_threshold, float):
+            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose, filtering_threshold)
         else:
             filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose)
 
@@ -285,7 +289,7 @@ def orthogroup_to_sbml(dict_data):
 
 def orthology_to_padmet(sbml, orthofinder_sbml_path, input_pwt_padmet,
                          database_path, output_padmet, orthodata_path,
-                         orthofinder_filtered_path, filtering, verbose, veryverbose):
+                         orthofinder_filtered_path, filtering_threshold, verbose, veryverbose):
     source_tool = "ORTHOFINDER"
     source_category = "ORTHOLOGY"
 
@@ -362,7 +366,7 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
     padmet.generateFile(output_padmet)
 
 
-def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, filtering=0.05):
+def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, filtering_threshold=0.05):
     propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.csv")
     reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.csv')
     padmet_output_folder = output_folder
@@ -375,7 +379,7 @@ def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, 
     dict_rxn_org_gene_propagation = extractPropagtion(dict_rxn_orgs_genes)
     if verbose:
         print("Writing the file propagation_to_remove...")
-    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file, orthology_threshold=filtering)
+    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file, orthology_threshold=filtering_threshold)
     if verbose:
         print("Cleaning the Padmet files and writing the reactions_to_remove_file file...")
     cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,

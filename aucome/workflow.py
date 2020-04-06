@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering[=FLOAT]]
+    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -13,7 +13,8 @@ options:
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
     --vv    Very verbose.
-    --filtering[=FLOAT]     Use a filter to limit propagation [Default: 0.05].
+    --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
+    --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument [Default: 0.05].
 """
 
 import docopt
@@ -34,14 +35,14 @@ def workflow_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
+    filtering_threshold = args['--threshold']
+
     if filtering:
-        if args['=FLOAT']:
-            filtering = args['=FLOAT']
-        else:
-            filtering = 0.05
+        if not filtering_threshold:
+            filtering_threshold = 0.05
     else:
-        if args['=FLOAT']:
-            print('When giving a float for the filtering, you must specify the --filtering argument.')
+        if filtering_threshold:
+            sys.exit('--threshold must be used with --filtering.')
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
@@ -51,15 +52,15 @@ def workflow_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, keep_tmp, verbose, veryverbose)
+    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold, keep_tmp, verbose, veryverbose)
 
 
-def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering, keep_tmp, verbose, veryverbose=None):
+def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold, keep_tmp, verbose, veryverbose=None):
     aucome.check.run_check(run_id, nb_cpu_to_use, verbose)
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
-    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering, verbose, veryverbose)
+    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose)
 
     aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
