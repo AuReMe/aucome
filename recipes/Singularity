@@ -47,11 +47,10 @@ From: ubuntu:18.04
     tar xzf OrthoFinder.tar.gz;\
     rm OrthoFinder.tar.gz;\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
-    R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('https://cran.r-project.org/src/contrib/ape_5.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     curl https://bootstrap.pypa.io/get-pip.py | python3;\
-    pip3 install seaborn scipy intervene lxml rpy2;\
+    pip3 install seaborn scipy lxml rpy2 supervenn;\
     cd /programs;\
     git clone https://github.com/AuReMe/mpwt.git;\
     cd mpwt;\

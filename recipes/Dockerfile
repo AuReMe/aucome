@@ -47,9 +47,8 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
     rm OrthoFinder.tar.gz;\
     echo 'export PATH="$PATH:/programs/OrthoFinder:"\nexport PATH="$PATH:/programs/OrthoFinder/bin:"\nexport OPENBLAS_NUM_THREADS=1' >> ~/.bashrc
 
-# Install r upset for intervene and pvclust for dendrogram, padmet, mpwt and comparison script.
-RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/UpSetR/UpSetR_1.3.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
-    R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
+# Install r upset for pvclust for dendrogram, padmet, mpwt and comparison script.
+RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('https://cran.r-project.org/src/contrib/ape_5.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)"
 
 

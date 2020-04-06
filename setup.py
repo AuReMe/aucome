@@ -33,9 +33,9 @@ setup(name='aucome',
             'mpwt==0.5.3',
             'padmet==4.0',
             'eventlet==0.25.0',
-            'intervene==0.6.4',
             'requests==2.22.0',
             'rpy2==3.0.5',
+            'supervenn==0.1.13',
       ],
       entry_points={
           'console_scripts': [

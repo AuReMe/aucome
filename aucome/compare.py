@@ -13,14 +13,14 @@ options:
 
 import csv
 import docopt
+import matplotlib.pyplot as plt
 import os
 import pandas as pa
-import subprocess
-
-from padmet.classes.padmetRef import PadmetRef
-from padmet.utils.exploration import compare_padmet, dendrogram_reactions_distance
 
 from aucome.utils import parse_config_file
+from padmet.classes.padmetRef import PadmetRef
+from padmet.utils.exploration import compare_padmet, dendrogram_reactions_distance
+from supervenn import supervenn
 
 
 def command_help():
@@ -61,8 +61,6 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     analysis_path = config_data['analysis_path']
     analysis_group_file_path = config_data['analysis_group_file_path']
     upset_path = analysis_path + '/compare_group'
-    upset_tmp_data_path = upset_path + '/tmp_data'
-    upset_tmp_reaction_path = upset_tmp_data_path + '/tmp'
 
     database_path = config_data['database_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
@@ -106,8 +104,9 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     for column in reactions_dataframe.columns.tolist():
         reactions_dataframe[column] = [True if data == 'present' else False for data in reactions_dataframe[column]]
 
-    # For each group, extract the reactions present in its species.
-    # Then create a tsv file containing these reactions..
+    # For each group, extract the reactions present in its species to create supervenn sets.
+    supervenn_sets = []
+    supervenn_labels = []
     for group_name in group_data:
         if group_name != 'all':
             groups = group_data[group_name]
@@ -115,20 +114,13 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             for species in groups:
                 species_reactions_dataframe = reactions_dataframe[reactions_dataframe[species] == True]
                 reactions_temp.extend(species_reactions_dataframe.index.tolist())
+            supervenn_sets.append(set(reactions_temp))
+            supervenn_labels.append(group_name)
             cluster_reactions[group_name] = set(reactions_temp)
 
-            df = pa.DataFrame({group_name: list(cluster_reactions[group_name])})
-            df.to_csv(upset_tmp_data_path+'/'+group_name+'.tsv', sep='\t', index=None, header=None)
-
-    # Launch Intervene to create upset graph using each group file.
-    upset_data_path = [upset_tmp_data_path + '/' + tsv_file for tsv_file in os.listdir(upset_tmp_data_path) if tsv_file.endswith('.tsv')]
-    cmds = ['intervene', 'upset', '-i', *upset_data_path, '--type', 'list', '-o', upset_path, '--figtype', 'svg']
-
-    if verbose:
-        subprocess.call(cmds)
-    else:
-        FNULL = open(os.devnull, 'w')
-        subprocess.call(cmds, stdout=FNULL, stderr=subprocess.STDOUT)
+    supervenn(supervenn_sets, supervenn_labels, sets_ordering='minimize gaps')
+    plt.savefig(upset_path + '/compare_group.png', bbox_inches='tight')
+    plt.clf()
 
     dendrogram_reactions_distance.reaction_figure_creation(reactions_file, os.path.join(upset_path, "dendrogram_output"), padmetRef_file=database_path, verbose=verbose)
 
