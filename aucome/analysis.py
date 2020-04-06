@@ -56,8 +56,6 @@ def run_analysis(run_id, nb_cpu_to_use, pvclust, verbose):
         pvclust (boolean): use also pvclust to create reaction dendrogram
         verbose (boolean): verbose
     """
-    aucome_pool = Pool(nb_cpu_to_use)
-
     config_data = parse_config_file(run_id)
 
     analysis_group_file_path = config_data['analysis_group_file_path']
@@ -71,17 +69,10 @@ def run_analysis(run_id, nb_cpu_to_use, pvclust, verbose):
         for row in group_reader:
             group_name = row[0]
             groups = [org_name for org_name in row[1:] if org_name]
-            tmp_data = (group_name, groups, config_data, pvclust, verbose)
+            analysis_on_group(group_name, groups, config_data, pvclust, nb_cpu_to_use, verbose)
 
-            group_data.append(tmp_data)
 
-    # For each group, create a dendrogram and the tsv reactions files.
-    aucome_pool.starmap(analysis_on_group, group_data)
-
-    aucome_pool.close()
-    aucome_pool.join()
-
-def analysis_on_group(group_name, groups, config_data, pvclust, verbose):
+def analysis_on_group(group_name, groups, config_data, pvclust, nb_cpu_to_use, verbose):
     """Create reaction dendrogram and extract specific reactions using metabolic networks.
 
     Args:
@@ -89,6 +80,7 @@ def analysis_on_group(group_name, groups, config_data, pvclust, verbose):
         groups (list): All the species inside the group.
         config_data (dict): Dictionary with all configuration paths.
         pvclust (boolean): use also pvclust to create reaction dendrogram
+        nb_cpu_to_use (int): number of CPU for multiprocessing
         verbose (bool): Verbose.
     """
 
@@ -110,7 +102,7 @@ def analysis_on_group(group_name, groups, config_data, pvclust, verbose):
                 sys.exit("Padmet file of organism %s from group %s not found in %s" %(org_name, group_name, padmet_from_networks_path))
 
         # Compare the padmet to create the reactions.csv file needed to create the reaction dendrogram.
-        compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose)
+        compare_padmet.compare_padmet(padmet_path=",".join(all_padmet_path), output=group_analysis_path, padmetRef=padmetRef, verbose=verbose, number_cpu=nb_cpu_to_use)
         padmet_to_padmet.padmet_to_padmet(",".join(all_padmet_path), group_analysis_path + '/' + group_name + '_panmetabolism.padmet')
         sbmlGenerator.padmet_to_sbml(padmet=group_analysis_path + '/' + group_name + '_panmetabolism.padmet', output=group_analysis_path + '/' + group_name + '_panmetabolism.sbml', verbose=verbose)
 
