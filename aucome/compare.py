@@ -88,12 +88,12 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             os.mkdir(upset_tmp_reaction_path)
 
     padmetref = PadmetRef(database_path)
-    # Create the reactions.csv file needed to create dendrogram.
+    # Create the reactions.tsv file needed to create dendrogram.
     padmet_path = ','.join(padmets)
     compare_padmet.compare_padmet(padmet_path=padmet_path, output=upset_tmp_reaction_path, padmetRef=padmetref, verbose=verbose)
 
-    # Read the reactions.csv file and remove the column unused.
-    reactions_file = upset_tmp_reaction_path + '/' + 'reactions.csv'
+    # Read the reactions.tsv file and remove the column unused.
+    reactions_file = upset_tmp_reaction_path + '/' + 'reactions.tsv'
     reactions_dataframe = pa.read_csv(reactions_file, sep='\t')
     columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column]
     columns = [column for column in columns if '_formula' not in column]

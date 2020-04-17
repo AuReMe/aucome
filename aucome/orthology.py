@@ -108,7 +108,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
     except ValueError:
         if verbose:
-            print("Unable to find file Orthogroups.csv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
+            print("Unable to find file Orthogroups.tsv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
         orthodata_path = None
 
     if not orthodata_path:
@@ -248,7 +248,7 @@ def _convert_sbml_db(data_convert_sbml_db):
     mnx_cpd_path = data_convert_sbml_db['mnx_cpd_path']
 
     if os.path.isfile(sbml_file):
-        dict_file = "{0}_dict.csv".format(os.path.splitext(sbml_file)[0])
+        dict_file = "{0}_dict.tsv".format(os.path.splitext(sbml_file)[0])
         if not os.path.exists(dict_file):
             db_ref = convert_sbml_db.check_sbml_db(sbml_file, "reaction", mnx_reac_file=mnx_rxn_path, verbose=True)[0]
             if verbose:
@@ -367,8 +367,8 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
 
 
 def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, filtering_threshold=0.05):
-    propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.csv")
-    reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.csv')
+    propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.tsv")
+    reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.tsv')
     padmet_output_folder = output_folder
 
     if verbose:
@@ -500,7 +500,7 @@ def extractPropagtion(dict_rxn_orgs_genes):
 def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_threshold=0, orthology_threshold=0.05):
     """
     Using ptool_threshold and orthology_threshold, this function select the propagations to remove.
-    These propagation are written in propagation_to_remove.csv.
+    These propagation are written in propagation_to_remove.tsv.
     """
     header = ["reaction_id", "org_id", "gene_id"]
     # At this moment filter is as 20/N with 0.05
