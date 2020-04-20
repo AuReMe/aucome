@@ -92,7 +92,7 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=veryverbose)
 
 
-def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path):
+def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path, only_complete_pathways=True):
     number_spontaneous_reactions = 0
 
     padmetSpec = PadmetSpec(padmet_path)
@@ -103,17 +103,23 @@ def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path):
     for spontaneous_rxn_id in all_spontaneous_rxns:
         in_pwys = set([rlt.id_out for rlt in padmetRef.dicOfRelationIn.get(spontaneous_rxn_id,None) if rlt.type == "is_in_pathway"])
         for pwy_id in in_pwys:
-            padmet_ref_in_rxns = set([rlt.id_in for rlt in padmetRef.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
-            padmet_spec_in_rxns = set([rlt.id_in for rlt in padmetSpec.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
+            if pwy_id in padmetSpec.dicOfNode.keys():
+                padmet_ref_in_rxns = set([rlt.id_in for rlt in padmetRef.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
+                padmet_spec_in_rxns = set([rlt.id_in for rlt in padmetSpec.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
 
-            difference_rxns = padmet_ref_in_rxns.difference(padmet_spec_in_rxns)
+                if only_complete_pathways:
+                    difference_rxns = padmet_ref_in_rxns.difference(padmet_spec_in_rxns)
 
-            if difference_rxns != set():
-                if difference_rxns.issubset(all_spontaneous_rxns):
-                    for difference_rxn in difference_rxns:
-                        if difference_rxn not in set([node.id for node in list(padmetSpec.dicOfNode.values()) if node.type == "reaction"]):
-                            padmetSpec.copyNode(padmetRef, difference_rxn)
-                            number_spontaneous_reactions += 1
+                    if difference_rxns != set():
+                        if difference_rxns.issubset(all_spontaneous_rxns):
+                            for difference_rxn in difference_rxns:
+                                if difference_rxn not in set([node.id for node in list(padmetSpec.dicOfNode.values()) if node.type == "reaction"]):
+                                    padmetSpec.copyNode(padmetRef, difference_rxn)
+                                    number_spontaneous_reactions += 1
+                else:
+                    if spontaneous_rxn_id not in set([node.id for node in list(padmetSpec.dicOfNode.values()) if node.type == "reaction"]):
+                        padmetSpec.copyNode(padmetRef, spontaneous_rxn_id)
+                        number_spontaneous_reactions += 1
 
     padmetSpec.generateFile(output_padmet_path)
 
