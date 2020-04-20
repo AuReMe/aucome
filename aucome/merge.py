@@ -18,7 +18,7 @@ import sys
 
 from shutil import copyfile
 from padmet.utils.connection import sbml_to_padmet, sbmlGenerator, padmet_to_padmet
-
+from padmet.classes import PadmetRef, PadmetSpec
 from aucome.utils import parse_config_file
 from multiprocessing import Pool
 
@@ -53,6 +53,7 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
     sbml_from_networks_path = config_data['sbml_from_networks_path']
+    database_path = config_data['database_path']
 
     structural_padmets_path = config_data['structural_padmets_path']
     orthofinder_filtered_path = config_data['orthofinder_filtered_path']
@@ -79,7 +80,8 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     study_draft_data = []
     for study_name, padmet_path in padmets:
         tmp_study_data = {'padmet_path': padmet_path, 'study_padmet': study_name, 'padmet_from_networks_path': padmet_from_networks_path,
-                            'sbml_from_networks_path': sbml_from_networks_path, 'verbose': verbose, 'veryverbose': veryverbose}
+                            'sbml_from_networks_path': sbml_from_networks_path, 'database_path': database_path,
+                            'verbose': verbose, 'veryverbose': veryverbose}
         study_draft_data.append(tmp_study_data)
     aucome_pool.map(create_output, study_draft_data)
 
@@ -90,6 +92,34 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=veryverbose)
 
 
+def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path):
+    number_spontaneous_reactions = 0
+
+    padmetSpec = PadmetSpec(padmet_path)
+    padmetRef = PadmetRef(padmet_ref_path)
+
+    all_spontaneous_rxns = set([node.id for node in list(padmetRef.dicOfNode.values()) if node.type == "reaction" and "SPONTANEOUS" in node.misc])
+
+    for spontaneous_rxn_id in all_spontaneous_rxns:
+        in_pwys = set([rlt.id_out for rlt in padmetRef.dicOfRelationIn.get(spontaneous_rxn_id,None) if rlt.type == "is_in_pathway"])
+        for pwy_id in in_pwys:
+            padmet_ref_in_rxns = set([rlt.id_in for rlt in padmetRef.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
+            padmet_spec_in_rxns = set([rlt.id_in for rlt in padmetSpec.dicOfRelationOut.get(pwy_id,[]) if rlt.type == "is_in_pathway"])
+
+            difference_rxns = padmet_ref_in_rxns.difference(padmet_spec_in_rxns)
+
+            if difference_rxns != set():
+                if difference_rxns.issubset(all_spontaneous_rxns):
+                    for difference_rxn in difference_rxns:
+                        if difference_rxn not in set([node.id for node in list(padmetSpec.dicOfNode.values()) if node.type == "reaction"]):
+                            padmetSpec.copyNode(padmetRef, difference_rxn)
+                            number_spontaneous_reactions += 1
+
+    padmetSpec.generateFile(output_padmet_path)
+
+    print('Add {0} spontaneous reactions to {1}'.format(number_spontaneous_reactions, output_padmet_path))
+
+
 def create_output(tmp_study_data):
     padmet_path = tmp_study_data['padmet_path']
     study_padmet = tmp_study_data['study_padmet'].replace('.padmet', '').replace('output_pathwaytools_', '')
@@ -97,11 +127,12 @@ def create_output(tmp_study_data):
     veryverbose = tmp_study_data['veryverbose']
     padmet_from_networks_path = tmp_study_data['padmet_from_networks_path']
     sbml_from_networks_path = tmp_study_data['sbml_from_networks_path']
+    padmet_ref_path = tmp_study_data['database_path']
 
     if not os.path.exists(padmet_from_networks_path + '/' + study_padmet + '.padmet'):
         if verbose:
             print('Move ' + study_padmet +' from ' + padmet_path + ' to ' + padmet_from_networks_path)
-        shutil.copyfile(padmet_path, padmet_from_networks_path + '/' + study_padmet + '.padmet')
+        add_spontaneous_reactions(padmet_path, padmet_ref_path, padmet_from_networks_path + '/' + study_padmet + '.padmet')
     else:
         print('There is already a padmet for ' + study_padmet + ' ' + padmet_from_networks_path + '.')
 
