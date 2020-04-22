@@ -13,7 +13,7 @@ options:
     -v     Verbose.
     --vv    Very verbose.
     --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
-    --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument [Default: 0.05].
+    --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument.
 """
 
 import csv
@@ -53,6 +53,8 @@ def orthology_parse_args(command_args):
     else:
         if filtering_threshold:
             sys.exit('--threshold must be used with --filtering.')
+        else:
+            filtering_threshold = None
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
