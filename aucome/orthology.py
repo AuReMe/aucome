@@ -53,8 +53,6 @@ def orthology_parse_args(command_args):
     else:
         if filtering_threshold:
             sys.exit('--threshold must be used with --filtering.')
-        else:
-            filtering_threshold = None
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
@@ -68,6 +66,9 @@ def orthology_parse_args(command_args):
 
 
 def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose=None):
+    print('--- Running orthology step ---')
+    orthology_start_time = time.time()
+
     # Check filtering_threshold
     if filtering_threshold:
         try:
@@ -237,9 +238,15 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     if verbose:
         print("Padmet created in: %ss" %end_time)
 
-
     aucome_pool.close()
     aucome_pool.join()
+
+    orthology_end_time = (time.time() - orthology_start_time)
+    integer_part, decimal_part = str(orthology_end_time).split('.')
+    orthology_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- orthology step done in: %ss ---" %orthology_time)
 
 
 def _convert_sbml_db(data_convert_sbml_db):

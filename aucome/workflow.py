@@ -19,6 +19,7 @@ options:
 import aucome
 import docopt
 import sys
+import time
 
 
 def command_help():
@@ -42,8 +43,6 @@ def workflow_parse_args(command_args):
     else:
         if filtering_threshold:
             sys.exit('--threshold must be used with --filtering.')
-        else:
-            filtering_threshold = None
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
@@ -57,7 +56,11 @@ def workflow_parse_args(command_args):
 
 
 def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold, keep_tmp, verbose, veryverbose=None):
-    aucome.check.run_check(run_id, nb_cpu_to_use, verbose)
+    if verbose:
+        print('--- Running workflow ---')
+    workflow_start_time = time.time()
+
+    aucome.check.run_check(run_id, nb_cpu_to_use, verbose, veryverbose)
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
@@ -66,3 +69,10 @@ def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filter
     aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
     aucome.merge.run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)
+
+    workflow_end_time = (time.time() - workflow_start_time)
+    integer_part, decimal_part = str(workflow_end_time).split('.')
+    workflow_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- workflow step done in: %ss ---" %workflow_time)

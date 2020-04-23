@@ -16,6 +16,8 @@ import csv
 import docopt
 import os
 import sys
+import time
+
 from multiprocessing import Pool
 
 from padmet.utils.connection import sbmlGenerator, padmet_to_padmet
@@ -56,6 +58,9 @@ def run_analysis(run_id, nb_cpu_to_use, pvclust, verbose):
         pvclust (boolean): use also pvclust to create reaction dendrogram
         verbose (boolean): verbose
     """
+    if verbose:
+        print('--- Running analysis step ---')
+    analysis_start_time = time.time()
     config_data = parse_config_file(run_id)
 
     analysis_group_file_path = config_data['analysis_group_file_path']
@@ -70,6 +75,13 @@ def run_analysis(run_id, nb_cpu_to_use, pvclust, verbose):
             group_name = row[0]
             groups = [org_name for org_name in row[1:] if org_name]
             analysis_on_group(group_name, groups, config_data, pvclust, nb_cpu_to_use, verbose)
+
+    analysis_end_time = (time.time() - analysis_start_time)
+    integer_part, decimal_part = str(analysis_end_time).split('.')
+    analysis_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- analysis step done in: %ss ---" %analysis_time)
 
 
 def analysis_on_group(group_name, groups, config_data, pvclust, nb_cpu_to_use, verbose):

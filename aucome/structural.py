@@ -12,6 +12,8 @@ options:
 """
 
 import docopt
+import time
+
 from padmet.utils.exploration import prot2genome
 
 from aucome.utils import parse_config_file
@@ -36,9 +38,18 @@ def structural_parse_args(command_args):
 
 
 def run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose):
+    if verbose:
+        print('--- Running structural check step ---')
+    structural_start_time = time.time()
 
     config_data = parse_config_file(run_id)
     database_path = config_data['database_path']
 
     prot2genome.fromAucome(run_id, nb_cpu_to_use, database_path, blastp=True, tblastn=True, exonerate=True, keep_tmp=keep_tmp, debug=False)
 
+    structural_end_time = (time.time() - structural_start_time)
+    integer_part, decimal_part = str(structural_end_time).split('.')
+    structural_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- structural step done in: %ss ---" %structural_time)

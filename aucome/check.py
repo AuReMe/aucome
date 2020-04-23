@@ -2,18 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome check --run=ID [--cpu=INT] [-v]
+    aucome check --run=ID [--cpu=INT] [-v] [-vv]
 
 options:
     --run=ID    Pathname to the comparison workspace.
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
     -v     Verbose.
-
+    --vv    Very verbose.
 """
 
 import csv
 import docopt
 import os
+import time
 
 from padmet.utils.connection import gbk_to_faa, pgdb_to_padmet, sbmlGenerator
 
@@ -31,16 +32,23 @@ def check_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
+    veryverbose = args['--vv']
 
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
     else:
         nb_cpu_to_use = 1
 
-    run_check(run_id, nb_cpu_to_use, verbose)
+    if veryverbose and not verbose:
+        verbose = veryverbose
+
+    run_check(run_id, nb_cpu_to_use, verbose, veryverbose)
 
 
-def run_check(run_id, nb_cpu_to_use, verbose):
+def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
+    if verbose:
+        print('--- Running check step ---')
+    start_time = time.time()
 
     config_data = parse_config_file(run_id)
 
@@ -130,7 +138,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
         padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
         pgdb_folder = all_study_pgdb[study_name]
         tmp_padmet_data = {'study_name': study_name, 'pgdb_folder': pgdb_folder, 'verbose': verbose, 
-                           'padmet_file': padmet_file, 'database_path': database_path}
+                           'padmet_file': padmet_file, 'database_path': database_path, 'veryverbose': veryverbose}
         study_padmet_data.append(tmp_padmet_data)
     aucome_pool.map(create_padmet_from_pgdb, study_padmet_data)
 
@@ -144,7 +152,7 @@ def run_check(run_id, nb_cpu_to_use, verbose):
         sbml_file = "{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name)
         padmet_file = all_study_padmet[study_name]
         tmp_sbml_data = {'sbml_file': sbml_file, 'padmet_file': padmet_file,
-                         'study_name': study_name, 'verbose': verbose}
+                         'study_name': study_name, 'verbose': verbose, 'veryverbose': veryverbose}
         study_sbml_data.append(tmp_sbml_data)
     aucome_pool.map(create_sbml, study_sbml_data)
 
@@ -206,6 +214,13 @@ def run_check(run_id, nb_cpu_to_use, verbose):
     aucome_pool.close()
     aucome_pool.join()
 
+    end_time = (time.time() - start_time)
+    integer_part, decimal_part = str(end_time).split('.')
+    check_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- check step done in: %ss ---" %check_time)
+
 
 def check_create_faa(tmp_faa_data):
     study_name = tmp_faa_data['study_name']
@@ -240,11 +255,12 @@ def create_padmet_from_pgdb(tmp_padmet_data):
     verbose = tmp_padmet_data['verbose']
     padmet_file = tmp_padmet_data['padmet_file']
     database_path = tmp_padmet_data['database_path']
+    veryverbose = tmp_padmet_data['veryverbose']
 
     if not os.path.isfile(padmet_file) and pgdb_folder:
         if verbose:
             print("Creating padmet from pgdb for %s" %study_name)
-        padmet = pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=verbose)
+        padmet = pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=veryverbose)
         padmet.generateFile(padmet_file)
 
 
@@ -254,11 +270,12 @@ def create_sbml(tmp_sbml_data):
     padmet_file = tmp_sbml_data['padmet_file']
     study_name = tmp_sbml_data['study_name']
     verbose = tmp_sbml_data['verbose']
+    veryverbose = tmp_sbml_data['veryverbose']
 
     if not os.path.isfile(sbml_file) and padmet_file:
         if verbose:
             print("Creating sbml from padmet for %s" %study_name)
-        sbmlGenerator.padmet_to_sbml(padmet=padmet_file, output=sbml_file, sbml_lvl=3, verbose=True)
+        sbmlGenerator.padmet_to_sbml(padmet=padmet_file, output=sbml_file, sbml_lvl=3, verbose=veryverbose)
 
 
 

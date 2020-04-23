@@ -15,6 +15,7 @@ import docopt
 import os
 import shutil
 import sys
+import time
 
 from shutil import copyfile
 from padmet.utils.connection import sbml_to_padmet, sbmlGenerator, padmet_to_padmet
@@ -45,7 +46,9 @@ def merge_parse_args(command_args):
 
 
 def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
-
+    if verbose:
+        print('--- Running merge step ---')
+    merge_start_time = time.time()
     aucome_pool = Pool(nb_cpu_to_use)
 
     config_data = parse_config_file(run_id)
@@ -90,6 +93,13 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
 
     padmet_to_padmet.padmet_to_padmet(padmet_from_networks_path, networks_path + '/panmetabolism.padmet', verbose=veryverbose)
     sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=veryverbose)
+
+    merge_end_time = (time.time() - merge_start_time)
+    integer_part, decimal_part = str(merge_end_time).split('.')
+    merge_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- merge step done in: %ss ---" %merge_time)
 
 
 def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path, only_complete_pathways=True):

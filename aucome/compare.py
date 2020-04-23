@@ -16,6 +16,7 @@ import docopt
 import matplotlib.pyplot as plt
 import os
 import pandas as pa
+import time
 
 from aucome.utils import parse_config_file
 from padmet.classes.padmetRef import PadmetRef
@@ -56,6 +57,9 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
         nb_cpu_to_use (int): number of CPU for multiprocessing
         verbose (boolean): verbose
     """
+    if verbose:
+        print('--- Running compare step ---')
+    compare_start_time = time.time()
     config_data = parse_config_file(run_id)
 
     analysis_path = config_data['analysis_path']
@@ -124,3 +128,9 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
     dendrogram_reactions_distance.reaction_figure_creation(reactions_file, os.path.join(upset_path, "dendrogram_output"), padmetRef_file=database_path, verbose=verbose)
 
+    compare_end_time = (time.time() - compare_start_time)
+    integer_part, decimal_part = str(compare_end_time).split('.')
+    compare_time = ".".join([integer_part, decimal_part[:3]])
+
+    if verbose:
+        print("--- compare step done in: %ss ---" %compare_time)
