@@ -34,6 +34,7 @@ RUN apt-get -y update && \
 
 #Install Python packages
 RUN python3.7 -m pip install requests \
+    tzlocal \
 	mpwt \
 	padmet \
 	aucome
@@ -49,7 +50,7 @@ RUN mkdir /programs/ /programs/diamond/ /shared/;\
 
 # Install r upset for pvclust for dendrogram, padmet, mpwt and comparison script.
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
-    R -e "install.packages('https://cran.r-project.org/src/contrib/ape_5.3.tar.gz', repos=NULL, type='source', dependencies=TRUE)"
+    R -e "install.packages('ape', dependencies=TRUE)"
 
 
 #Change in future by python3.7 -m pip install aucome (need to update aucome pack)
