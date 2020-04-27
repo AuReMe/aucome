@@ -19,6 +19,7 @@ import time
 from padmet.utils.connection import gbk_to_faa, pgdb_to_padmet, sbmlGenerator
 
 from aucome.utils import parse_config_file
+from aucome.reconstruction import create_padmet_from_pgdb, create_sbml
 
 from Bio import SeqIO
 from multiprocessing import Pool
@@ -247,36 +248,6 @@ def create_faa_model(tmp_model_data):
         if verbose:
             print("Creating faa from gbk for %s" %model_name)
         gbk_to_faa.gbk_to_faa(gbk_file=gbk_file, output=faa_path, verbose=verbose)
-
-
-def create_padmet_from_pgdb(tmp_padmet_data):
-    study_name = tmp_padmet_data['study_name']
-    pgdb_folder = tmp_padmet_data['pgdb_folder']
-    verbose = tmp_padmet_data['verbose']
-    padmet_file = tmp_padmet_data['padmet_file']
-    database_path = tmp_padmet_data['database_path']
-    veryverbose = tmp_padmet_data['veryverbose']
-
-    if not os.path.isfile(padmet_file) and pgdb_folder:
-        if verbose:
-            print("Creating padmet from pgdb for %s" %study_name)
-        padmet = pgdb_to_padmet.from_pgdb_to_padmet(pgdb_folder=pgdb_folder, padmetRef_file=database_path, source="genome", extract_gene=True, no_orphan=True, verbose=veryverbose)
-        padmet.generateFile(padmet_file)
-
-
-
-def create_sbml(tmp_sbml_data):
-    sbml_file = tmp_sbml_data['sbml_file']
-    padmet_file = tmp_sbml_data['padmet_file']
-    study_name = tmp_sbml_data['study_name']
-    verbose = tmp_sbml_data['verbose']
-    veryverbose = tmp_sbml_data['veryverbose']
-
-    if not os.path.isfile(sbml_file) and padmet_file:
-        if verbose:
-            print("Creating sbml from padmet for %s" %study_name)
-        sbmlGenerator.padmet_to_sbml(padmet=padmet_file, output=sbml_file, sbml_lvl=3, verbose=veryverbose)
-
 
 
 def checking_genbank(genbank_file_name, studied_organisms_path, verbose):

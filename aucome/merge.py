@@ -147,7 +147,7 @@ def create_output(tmp_study_data):
 
     if not os.path.exists(padmet_from_networks_path + '/' + study_padmet + '.padmet'):
         if verbose:
-            print('Move ' + study_padmet +' from ' + padmet_path + ' to ' + padmet_from_networks_path)
+            print('Create ' + study_padmet +' from ' + padmet_path + ' to ' + padmet_from_networks_path)
         add_spontaneous_reactions(padmet_path, padmet_ref_path, padmet_from_networks_path + '/' + study_padmet + '.padmet')
     else:
         print('There is already a padmet for ' + study_padmet + ' ' + padmet_from_networks_path + '.')
