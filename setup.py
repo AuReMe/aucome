@@ -30,7 +30,7 @@ setup(name='aucome',
       ],
       packages=['aucome'],
       install_requires=[
-            'mpwt==0.5.3',
+            'mpwt==0.5.4',
             'padmet==4.0',
             'eventlet==0.25.0',
             'requests==2.22.0',
