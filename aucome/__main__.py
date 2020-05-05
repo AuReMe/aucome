@@ -29,6 +29,7 @@ See 'aucome <command> -h' for more information on a specific command.
 import configparser
 import csv
 import docopt
+import logging
 import mpwt
 import os
 import pkg_resources
@@ -39,6 +40,10 @@ import subprocess
 import sys
 
 import aucome
+
+logging.basicConfig(format='%(message)s', level=logging.CRITICAL)
+logger = logging.getLogger(__name__)
+logging.getLogger("aucome").setLevel(logging.DEBUG)
 
 
 def main(args=None):

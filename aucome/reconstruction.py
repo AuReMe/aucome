@@ -12,6 +12,7 @@ options:
 """
 
 import docopt
+import logging
 import mpwt
 import os
 import time
@@ -20,8 +21,6 @@ from padmet.utils.connection import pgdb_to_padmet, sbmlGenerator
 
 from aucome.utils import parse_config_file
 from multiprocessing import Pool
-
-import logging
 
 logger = logging.getLogger('aucome')
 logger.setLevel(logging.CRITICAL)
