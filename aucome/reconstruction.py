@@ -21,6 +21,12 @@ from padmet.utils.connection import pgdb_to_padmet, sbmlGenerator
 from aucome.utils import parse_config_file
 from multiprocessing import Pool
 
+import logging
+
+logger = logging.getLogger('aucome')
+logger.setLevel(logging.CRITICAL)
+logging.getLogger("mpwt").setLevel(logging.CRITICAL)
+
 
 def command_help():
     print(docopt.docopt(__doc__))
@@ -45,6 +51,8 @@ def reconstruction_parse_args(command_args):
 
 def run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     if verbose:
+        logger.setLevel(logging.DEBUG)
+        logging.getLogger("mpwt").setLevel(logging.DEBUG)
         print('--- Running reconstruction step ---')
     start_time = time.time()
     config_data = parse_config_file(run_id)
