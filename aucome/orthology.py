@@ -114,7 +114,75 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             print("Unable to find file Orthogroups.tsv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
         orthodata_path = None
 
-    if not orthodata_path:
+    # If there is already an orthofinder result, check if all the species are in it.
+    if orthodata_path:
+        wd_orthodata_path = max(["%s/%s" %(x[0], 'WorkingDirectory') for x in os.walk(orthofinder_wd_path) if 'WorkingDirectory' in x[1]])
+
+        input_fasta = [fasta_name for fasta_name in all_study_faa]
+        already_analysed_fasta = [fasta_name.replace('.faa', '') for fasta_name in os.listdir(orthofinder_wd_path) if fasta_name != 'OrthoFinder']
+
+        # If there is missing species, rerun OrthoFinder to add the missing species.
+        if len(already_analysed_fasta) != len(input_fasta):
+            fasta_to_adds = set(input_fasta) - set(already_analysed_fasta)
+            tmp_folder = orthofinder_wd_path + '/tmp/'
+            os.mkdir(tmp_folder)
+
+            print('There is missing species in orthofinder: ' + ','.join(list(fasta_to_adds)))
+            print('Rerun OrthoFinder on them using the old results from '+ orthofinder_wd_path)
+
+            for name, faa_path in list(all_study_faa.items()):
+                if name in fasta_to_adds:
+                    if not os.path.isfile("{0}/{1}.faa".format(tmp_folder, name)):
+                        if verbose:
+                            print("Copying {0}'s faa to {1}".format(name, tmp_folder))
+                    if faa_path != "" and os.path.isfile(faa_path):
+                        shutil.copyfile(faa_path, tmp_folder + '/' + name + '.faa')
+                    else:
+                        sys.exit("Missing fasta for " + name + ", use 'aucome check' to input fasta from genbank.")
+
+            orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
+            start_time = time.time()
+            cmds = [orthofinder_bin_path, "-b", wd_orthodata_path, "-f", tmp_folder,
+                    "-t", str(nb_cpu_to_use), "-S", sequence_search_prg]
+            subprocess.call(cmds)
+            end_time = (time.time() - start_time)
+            integer_part, decimal_part = str(end_time).split('.')
+            end_time = ".".join([integer_part, decimal_part[:3]])
+            if verbose:
+                print("Orthofinder done in: %ss" %end_time)
+
+        for fasta_name in os.listdir(tmp_folder):
+            shutil.copyfile(tmp_folder + '/' + fasta_name, orthofinder_wd_path + '/' + fasta_name)
+
+        shutil.rmtree(tmp_folder)
+
+        # Replace the old OrthoFinder results folder with the new one.
+        new_orthofidner_path = max(["%s/%s" %(x[0], 'OrthoFinder') for x in os.walk(wd_orthodata_path) if 'OrthoFinder' in x[1]])
+
+        orthofinder_tmp = orthofinder_wd_path + '/OrthoFinder_tmp'
+
+        shutil.copytree(new_orthofidner_path, orthofinder_tmp)
+        shutil.rmtree(orthofinder_result_path)
+        shutil.copytree(orthofinder_tmp, orthofinder_result_path)
+        shutil.rmtree(orthofinder_tmp)
+
+        if orthogroups:
+            orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+        else:
+            orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+
+        # Clean sbml/padmet/padmet filtered to recreate them with the new data.
+        for sbml_folder in os.listdir(orthofinder_sbml_path):
+            shutil.rmtree(orthofinder_sbml_path + '/' + sbml_folder)
+
+        for padmet_folder in os.listdir(orthofinder_padmet_path):
+            os.remove(orthofinder_padmet_path + '/' + padmet_folder)
+
+        for filtered_padmet_folder in os.listdir(orthofinder_filtered_path):
+            os.remove(orthofinder_filtered_path + '/' + filtered_padmet_folder)
+
+    # If there is no OrthoFinder results folder run OrthoFinder on all the fasta.
+    elif not orthodata_path:
         for name, faa_path in list(all_study_faa.items()):
             if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
                 if verbose:
@@ -145,6 +213,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         end_time = ".".join([integer_part, decimal_part[:3]])
         if verbose:
             print("Orthofinder done in: %ss" %end_time)
+
         if orthogroups:
             orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
             if os.path.exists(orthofinder_result_path):
@@ -165,6 +234,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
                     sys.exit('There was an error with OrthoFinder, there is no results in ' + orthologues_result_path)
             else:
                 sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
+
+
+
     if verbose:
         print("Parsing Orthofinder output %s" %orthodata_path)
 
