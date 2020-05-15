@@ -151,35 +151,35 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             if verbose:
                 print("Orthofinder done in: %ss" %end_time)
 
-        for fasta_name in os.listdir(tmp_folder):
-            shutil.copyfile(tmp_folder + '/' + fasta_name, orthofinder_wd_path + '/' + fasta_name)
+            for fasta_name in os.listdir(tmp_folder):
+                shutil.copyfile(tmp_folder + '/' + fasta_name, orthofinder_wd_path + '/' + fasta_name)
 
-        shutil.rmtree(tmp_folder)
+            shutil.rmtree(tmp_folder)
 
-        # Replace the old OrthoFinder results folder with the new one.
-        new_orthofidner_path = max(["%s/%s" %(x[0], 'OrthoFinder') for x in os.walk(wd_orthodata_path) if 'OrthoFinder' in x[1]])
+            # Replace the old OrthoFinder results folder with the new one.
+            new_orthofidner_path = max(["%s/%s" %(x[0], 'OrthoFinder') for x in os.walk(wd_orthodata_path) if 'OrthoFinder' in x[1]])
 
-        orthofinder_tmp = orthofinder_wd_path + '/OrthoFinder_tmp'
+            orthofinder_tmp = orthofinder_wd_path + '/OrthoFinder_tmp'
 
-        shutil.copytree(new_orthofidner_path, orthofinder_tmp)
-        shutil.rmtree(orthofinder_result_path)
-        shutil.copytree(orthofinder_tmp, orthofinder_result_path)
-        shutil.rmtree(orthofinder_tmp)
+            shutil.copytree(new_orthofidner_path, orthofinder_tmp)
+            shutil.rmtree(orthofinder_result_path)
+            shutil.copytree(orthofinder_tmp, orthofinder_result_path)
+            shutil.rmtree(orthofinder_tmp)
 
-        if orthogroups:
-            orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-        else:
-            orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+            if orthogroups:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            else:
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
 
-        # Clean sbml/padmet/padmet filtered to recreate them with the new data.
-        for sbml_folder in os.listdir(orthofinder_sbml_path):
-            shutil.rmtree(orthofinder_sbml_path + '/' + sbml_folder)
+            # Clean sbml/padmet/padmet filtered to recreate them with the new data.
+            for sbml_folder in os.listdir(orthofinder_sbml_path):
+                shutil.rmtree(orthofinder_sbml_path + '/' + sbml_folder)
 
-        for padmet_folder in os.listdir(orthofinder_padmet_path):
-            os.remove(orthofinder_padmet_path + '/' + padmet_folder)
+            for padmet_folder in os.listdir(orthofinder_padmet_path):
+                os.remove(orthofinder_padmet_path + '/' + padmet_folder)
 
-        for filtered_padmet_folder in os.listdir(orthofinder_filtered_path):
-            os.remove(orthofinder_filtered_path + '/' + filtered_padmet_folder)
+            for filtered_padmet_folder in os.listdir(orthofinder_filtered_path):
+                os.remove(orthofinder_filtered_path + '/' + filtered_padmet_folder)
 
     # If there is no OrthoFinder results folder run OrthoFinder on all the fasta.
     elif not orthodata_path:
