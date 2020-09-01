@@ -64,7 +64,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
     analysis_path = config_data['analysis_path']
     analysis_group_file_path = config_data['analysis_group_file_path']
-    upset_path = analysis_path + '/compare_group'
+    compare_output_path = analysis_path + '/compare_group'
 
     database_path = config_data['database_path']
     padmet_from_networks_path = config_data['padmet_from_networks_path']
@@ -84,23 +84,18 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
 
     padmets = list(set(padmets))
 
-    if not os.path.isdir(upset_path):
-        os.mkdir(upset_path)
-    if not os.path.isdir(upset_tmp_data_path):
-        os.mkdir(upset_tmp_data_path)
-        if not os.path.isdir(upset_tmp_reaction_path):
-            os.mkdir(upset_tmp_reaction_path)
+    if not os.path.isdir(compare_output_path):
+        os.mkdir(compare_output_path)
 
     padmetref = PadmetRef(database_path)
     # Create the reactions.tsv file needed to create dendrogram.
     padmet_path = ','.join(padmets)
-    compare_padmet.compare_padmet(padmet_path=padmet_path, output=upset_tmp_reaction_path, padmetRef=padmetref, verbose=verbose)
+    compare_padmet.compare_padmet(padmet_path=padmet_path, output=compare_output_path, padmetRef=padmetref, verbose=verbose)
 
     # Read the reactions.tsv file and remove the column unused.
-    reactions_file = upset_tmp_reaction_path + '/' + 'reactions.tsv'
+    reactions_file = compare_output_path + '/' + 'reactions.tsv'
     reactions_dataframe = pa.read_csv(reactions_file, sep='\t')
-    columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column]
-    columns = [column for column in columns if '_formula' not in column]
+    columns = [column for column in reactions_dataframe.columns if '(sep=;)' not in column and '_formula' not in column]
     reactions_dataframe = reactions_dataframe[columns].copy()
     reactions_dataframe.set_index('reaction', inplace=True)
 
@@ -122,11 +117,11 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             supervenn_labels.append(group_name)
             cluster_reactions[group_name] = set(reactions_temp)
 
-    supervenn(supervenn_sets, supervenn_labels, sets_ordering='minimize gaps')
-    plt.savefig(upset_path + '/compare_group.png', bbox_inches='tight')
+    supervenn(supervenn_sets, supervenn_labels, chunks_ordering='occurence', sets_ordering='minimize gaps')
+    plt.savefig(compare_output_path + '/compare_group.png', bbox_inches='tight')
     plt.clf()
 
-    dendrogram_reactions_distance.reaction_figure_creation(reactions_file, os.path.join(upset_path, "dendrogram_output"), padmetRef_file=database_path, verbose=verbose)
+    dendrogram_reactions_distance.reaction_figure_creation(reactions_file, os.path.join(compare_output_path, "dendrogram_output"), padmetRef_file=database_path, verbose=verbose)
 
     compare_end_time = (time.time() - compare_start_time)
     integer_part, decimal_part = str(compare_end_time).split('.')
