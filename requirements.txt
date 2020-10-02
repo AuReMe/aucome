@@ -1,0 +1,4 @@
+mpwt>=0.5.7
+padmet>=4.0
+rpy2>=3.0.5
+supervenn>=0.1.13
