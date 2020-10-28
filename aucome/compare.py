@@ -99,10 +99,6 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
     reactions_dataframe = reactions_dataframe[columns].copy()
     reactions_dataframe.set_index('reaction', inplace=True)
 
-    # Translate 'present'/(nan) data into a True/False absence-presence matrix.
-    for column in reactions_dataframe.columns.tolist():
-        reactions_dataframe[column] = [True if data == 'present' else False for data in reactions_dataframe[column]]
-
     # For each group, extract the reactions present in its species to create supervenn sets.
     supervenn_sets = []
     supervenn_labels = []
@@ -111,7 +107,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             groups = group_data[group_name]
             reactions_temp = []
             for species in groups:
-                species_reactions_dataframe = reactions_dataframe[reactions_dataframe[species] == True]
+                species_reactions_dataframe = reactions_dataframe[reactions_dataframe[species] == 1]
                 reactions_temp.extend(species_reactions_dataframe.index.tolist())
             supervenn_sets.append(set(reactions_temp))
             supervenn_labels.append(group_name)
