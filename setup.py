@@ -38,7 +38,7 @@ setup(name='aucome',
       install_requires=[
             'mpwt==0.6.0',
             'padmet==4.0',
-            'eventlet==0.25.0',
+            'eventlet==0.31.0',
             'requests==2.22.0',
             'rpy2==3.0.5',
             'supervenn==0.1.13',
