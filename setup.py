@@ -8,15 +8,10 @@ setup_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(setup_directory, 'README.rst'), encoding='utf-8') as readme_file:
     long_description = readme_file.read()
 
-init_data = {}
-init_pathname = convert_path('aucome/__init__.py')
-with open(init_pathname) as init_file:
-    exec(init_file.read(), init_data)
 
 setup(name='aucome',
       description='Automatic Comparison of Metabolism',
       long_description=long_description,
-      version=init_data['__version__'],
       url='https://github.com/AuReMe/aucome',
       author='A. Belcour',
       author_email='arnaud.belcour@gmail.com',
