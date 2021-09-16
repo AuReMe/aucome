@@ -31,12 +31,12 @@ setup(name='aucome',
       ],
       packages=['aucome'],
       install_requires=[
-            'mpwt==0.6.0',
-            'padmet==4.0',
-            'eventlet==0.25.0',
-            'requests==2.22.0',
-            'rpy2==3.0.5',
-            'supervenn==0.1.13',
+            'mpwt>=0.6.0',
+            'padmet>=4.0',
+            'requests>=2.22.0',
+            'rpy2>=3.0.5',
+            'supervenn>=0.1.13',
+            'seaborn'
       ],
       entry_points={
           'console_scripts': [
