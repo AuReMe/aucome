@@ -13,8 +13,8 @@ setup(name='aucome',
       description='Automatic Comparison of Metabolism',
       long_description=long_description,
       url='https://github.com/AuReMe/aucome',
-      author='A. Belcour',
-      author_email='arnaud.belcour@gmail.com',
+      author='AuReMe',
+      author_email='gem-aureme@inria.fr',
       classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

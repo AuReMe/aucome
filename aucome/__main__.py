@@ -120,23 +120,27 @@ def create_run(run_id):
     else:
         print('creating Run %s' %run_id)
         os.mkdir('{0}'.format(run_id))
-        all_folders = ['studied_organisms', 'model_organisms', 'networks', 'orthology_based',\
-                       '/orthology_based/0_Orthofinder_WD', '/orthology_based/1_sbml_orthology', \
-                       '/orthology_based/2_padmet_orthology', '/orthology_based/3_padmet_filtered', 'annotation_based',\
-                       'annotation_based/PGDBs', 'annotation_based/PADMETs',\
-                       'annotation_based/SBMLs', 'analysis', 'logs',\
-                       'networks/PADMETs', 'networks/SBMLs',
-                       'structural_check', 'structural_check/0_specifics_reactions',
-                       'structural_check/1_blast_results','structural_check/1_blast_results/analysis', 'structural_check/1_blast_results/tmp',
-                       'structural_check/2_reactions_to_add', 'structural_check/3_PADMETs']
+        all_folders = [['studied_organisms'], ['model_organisms'], ['networks'], ['orthology_based'],\
+                       ['orthology_based', '0_Orthofinder_WD'], ['orthology_based', '0_Orthofinder_WD', 'OrthoFinder'], \
+                        ['orthology_based', '1_sbml_orthology'], \
+                       ['orthology_based', '2_padmet_orthology'], ['orthology_based', '3_padmet_filtered'], ['annotation_based'],\
+                       ['annotation_based', 'PGDBs'], ['annotation_based', 'PADMETs'],\
+                       ['annotation_based', 'SBMLs'], ['analysis'], ['logs'],\
+                       ['networks', 'PADMETs'], ['networks', 'SBMLs'],
+                       ['structural_check'], ['structural_check', '0_specifics_reactions'],
+                       ['structural_check', '1_blast_results'], ['structural_check', '1_blast_results', 'analysis'], ['structural_check', '1_blast_results', 'tmp'],
+                       ['structural_check', '2_reactions_to_add'], ['structural_check', '3_PADMETs']]
         for folder in all_folders:
-            print('creating folder {0}/{1}'.format(run_id, folder))
-            os.mkdir("{0}/{1}".format(run_id, folder))
+            folder_path = os.path.join(run_id, *folder)
+            print('creating folder {0}'.format(folder_path))
+            os.mkdir(folder_path)
 
-        with open('{0}/{1}/group_template.tsv'.format(run_id, 'analysis'), 'w') as group_file:
+        group_template_path = os.path.join(run_id, *['analysis', 'group_template.tsv'])
+        studied_organisms_path = os.path.join(run_id, 'studied_organisms')
+        with open(group_template_path, 'w') as group_file:
             group_writer = csv.writer(group_file, delimiter='\t')
-            group_writer.writerow(['all', *os.listdir('{0}/{1}'.format(run_id, 'studied_organisms'))])
-        config_file_path = '{0}/config.txt'.format(run_id)
+            group_writer.writerow(['all', *os.listdir(studied_organisms_path)])
+        config_file_path = os.path.join(run_id, 'config.txt')
         create_config_file(config_file_path, run_id)
 
 
