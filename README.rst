@@ -295,6 +295,7 @@ To assure that no reactions are missing due to missing gene structures a genomic
     aucome structural --run=ID [--keep-tmp] [--cpu=INT] [-v]
 
 .. code-block:: text
+
 	├── structural_check
 		├── 0_specifics_reactions
 			├── species_1_VS_species_2.tsv
