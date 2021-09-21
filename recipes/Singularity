@@ -3,13 +3,12 @@ Bootstrap: docker
 From: ubuntu:18.04
 
 %files
-    pathway-tools-23.5-linux-64-tier1-install /tmp
-    metacyc_23.5.padmet /tmp
+    pathway-tools-23.5-linux-64-tier1-install /opt
+    metacyc_23.5.padmet /opt
 
 %environment
     export PATH="$PATH:/programs/pathway-tools:"
-    export PATH="$PATH:/programs/OrthoFinder:"
-    export PATH="$PATH:/programs/OrthoFinder/bin:"
+    export PATH="/opt/conda/bin:${PATH}"
     export OPENBLAS_NUM_THREADS=1
     export LANG="C.UTF-8"
 
@@ -30,38 +29,34 @@ From: ubuntu:18.04
     iputils-ping \
     screen \
     exonerate \
-    gnome-terminal;\
+    gnome-terminal ;\
     apt-get clean; \
-    apt-get purge;\
-    mkdir -p /programs/ /shared/ /home/database/BIOCYC/METACYC/23/;\
-    cd /tmp;\
+    apt-get purge ;\
+    wget -c https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh ;\
+    /bin/bash Miniconda3-latest-Linux-x86_64.sh -bfp /usr/local ;\
+    conda update conda ;\
+	conda install -c bioconda orthofinder  ;\
+    mkdir -p /programs/ /shared/ /home/database/BIOCYC/METACYC/23/ ;\
+    cd /opt ;\
     mv metacyc_23.5.padmet /home/database/BIOCYC/METACYC/23/ ;\
-    mkdir -p /external/folder;\
-    chmod u+x pathway-tools-23.5-linux-64-tier1-install;\
-    ./pathway-tools-23.5-linux-64-tier1-install --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /external/folder/ --InstallDesktopShortcuts 0 --mode unattended;\
-    mkdir -p /opt/;\
-    cp -r /external/folder/ptools-local /opt;\
-    rm pathway-tools-23.5-linux-64-tier1-install;\
-    cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.11/OrthoFinder.tar.gz;\
-    tar xzf OrthoFinder.tar.gz;\
-    rm OrthoFinder.tar.gz;\
-    curl https://bootstrap.pypa.io/get-pip.py | python3;\
+    mkdir -p /external/folder ;\
+    chmod u+x pathway-tools-23.5-linux-64-tier1-install ;\
+    ./pathway-tools-23.5-linux-64-tier1-install --InstallDir /programs/pathway-tools --PTOOLS_LOCAL_PATH /external/folder/ --InstallDesktopShortcuts 0 --mode unattended ;\
+    cp -r /external/folder/ptools-local /opt ;\
+    rm pathway-tools-23.5-linux-64-tier1-install ;\
     R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('ape', dependencies=TRUE)";\
-    curl https://bootstrap.pypa.io/get-pip.py | python3;\
-    pip3 install seaborn scipy lxml rpy2 supervenn tzlocal;\
-    cd /programs;\
-    git clone https://github.com/AuReMe/mpwt.git;\
-    cd mpwt;\
-    git checkout mpwt_0.5.4;\
-    python3 setup.py develop;\
-    cd ..;\
-    git clone https://github.com/AuReMe/padmet.git;\
-    cd padmet;\
-    git checkout dev;\
-    python3 setup.py develop;\
-    cd ..;\
-    git clone https://github.com/AuReMe/aucome.git;\
-    cd aucome;\
+    curl https://bootstrap.pypa.io/get-pip.py | python3 ;\
+    pip3 install seaborn scipy lxml rpy2 supervenn tzlocal ;\
+    cd /programs ;\
+    git clone https://github.com/AuReMe/mpwt.git ;\
+    cd mpwt ;\
+    python3 setup.py develop ;\
+    cd .. ;\
+    git clone https://github.com/AuReMe/padmet.git ;\
+    cd padmet ;\
+    python3 setup.py develop ;\
+    cd .. ;\
+    git clone https://github.com/AuReMe/aucome.git ;\
+    cd aucome ;\
     python3 setup.py develop
