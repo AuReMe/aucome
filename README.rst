@@ -4,7 +4,7 @@
 AuCoMe: Automatic Comparison of Metabolism
 ==========================================
 
-**WORk IN PROGRESS** Workflow to reconstruct multiple metabolic networks in order to compare them.
+**WORK IN PROGRESS** Workflow to reconstruct multiple metabolic networks in order to compare them.
 
 .. contents:: Table of contents
    :backlinks: top
@@ -94,7 +94,7 @@ If you have the issue:
 	FATAL ERROR: Failed to write to output filesystem
 
 It is because Singularity has not enough space in its temporary folder due to the size of the tools needed by aucome.
-You can modify manually this path using the SINGULARITY_TMPDIR variable (the temporary folder must exist), for example:
+You can modify manually this path using the ``SINGULARITY_TMPDIR`` variable (the temporary folder must exist), for example:
 
 .. code:: sh
 
