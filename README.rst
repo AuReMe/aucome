@@ -4,7 +4,7 @@
 AuCoMe: Automatic Comparison of Metabolism
 ==========================================
 
-Workflow to reconstruct multiple metabolic networks in order to compare them.
+**WORk IN PROGRESS** Workflow to reconstruct multiple metabolic networks in order to compare them.
 
 .. contents:: Table of contents
    :backlinks: top
@@ -31,7 +31,7 @@ And some python package:
 
 	- `eventlet <https://github.com/eventlet/eventlet>`__
 
-	- `intervene <https://github.com/asntech/intervene>`__ (which needs R package `UpSetR <https://github.com/hms-dbmi/UpSetR>`__)
+	- `supervenn <https://github.com/gecko984/supervenn>`__
 
 	- `lxml <https://github.com/lxml/lxml>`__
 
@@ -73,6 +73,46 @@ From git repository:
 	cd aucome
 
 	docker build -t "my_image".
+
+
+Singularity
+~~~~~~~~~~~
+
+You need to have a pathway tools installer on the same path as the recipe.
+
+From git repository:
+
+.. code:: sh
+
+	sudo singularity build aucome.sif Singularity
+
+If you have the issue:
+
+.. code:: sh
+
+	FATAL:   While performing build: while creating squashfs: create command failed: exit status 1: Write failed because No space left on device
+	FATAL ERROR: Failed to write to output filesystem
+
+It is because Singularity has not enough space in its temporary folder due to the size of the tools needed by aucome.
+You can modify manually this path using the SINGULARITY_TMPDIR variable (the temporary folder must exist), for example:
+
+.. code:: sh
+
+	SINGULARITY_TMPDIR=/home/user/tmp_folder sudo singularity build  aucome.sif Singularity
+
+Then you can run the container with command like:
+
+.. code:: sh
+
+	singularity run  aucome.sif aucome workflow --run data  --filtering --cpu 10
+
+But using only these commands can produce errors due to the compartmentalization of singularity.
+So it is better to use the ``-c`` to avoid sharing filesystem with host.
+And the ``-B`` allows to give a shared folder between the host and the singularity container so Singularity can also access to the data in the host.
+
+.. code:: sh
+
+	singularity run -c -H /path/outside/singularity/to/shared:/path/in/singularity/container aucome.sif aucome workflow --run /path/in/singularity/container/data  --filtering --cpu 10
 
 
 pip
@@ -122,8 +162,18 @@ This command will create a folder name "run_ID" inside the working folder. In th
 		├── SBMLs
 			├──
 	├── orthology_based
-		├── Orthofinder_WD
-			├──
+		├── 0_Orthofinder_WD
+			├── OrthoFinder
+		├── 1_sbml_orthology
+		├── 2_padmet_orthology
+		├── 3_padmet_filtered
+	├── structural_check
+		├── 0_specifics_reactions
+		├── 1_blast_results
+			├── analysis
+			├── tmp
+		├── 2_reactions_to_add
+		├── 3_PADMETs
 	├── studied_organisms
 		├──
 
@@ -144,7 +194,11 @@ This command will create a folder name "run_ID" inside the working folder. In th
 
 **networks** will contain all the metabolic network created by aucome in padmet format.
 
-**orthology_based** contains one folder Orthofinder_WD. This folder will contain all the run of Orthofinder.
+**orthology_based** this folder will contain all the run of Orthofinder, the sbml and padmets created with the orthology and the padmet with the robust reacitons.
+
+**orthology_based** contains the search on the genome for missing reactions. All the studied organisms will be comapred two by two.
+If one organism has a reaction that another one has not a genomic search will be performed.
+Genes associated with the reaction in the first organism will be used to search for match with the genome sequence of the second organism.
 
 **studied_organisms**: you put all the species that you want to studies in this folder. For each species you create a folder and in this folder you put the genbank file of this species. Like for model_organisms, file and folder must have the same name. And the genbank file must end with a '.gbk'.
 
@@ -164,7 +218,7 @@ Check command
 
 .. code:: sh
 
-    aucome check --run=run_ID [--cpu=INT] [-v]
+    aucome check --run=ID [--cpu=INT] [-v] [--vv]
 
 This command will check if there is no character that will cause trouble. It will also create the proteome fasta file from the genbank.
 
@@ -179,7 +233,7 @@ A run of Pathway-Tools can be launched using the command:
 
 .. code:: sh
 
-    aucome reconstruction --run=run_ID [--cpu=INT] [-v]
+    aucome reconstruction --run=ID [--cpu=INT] [-v] [--vv]
 
 .. code-block:: text
 
@@ -210,7 +264,7 @@ Orthofinder can be launched using:
 
 .. code:: sh
 
-	aucome orthology --run=run_ID [-S=STR] [--orthogroups] [--cpu=INT] [-v]
+	aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
 
 .. code-block:: text
 
@@ -231,14 +285,41 @@ Orthofinder can be launched using:
 
 Then the proteome from the studied organisms and from the models will be moved to the Orthofinder_WD folder and orthofinder will be launch on them. Orthofinder result will be in this folder and in orthology_based, there will be all the metabolic network reconstructed from orthology.
 
-Draft command
+Structural command
+~~~~~~~~~~~~~~~~~~
+
+To assure that no reactions are missing due to missing gene structures a genomic search is performed for all reactions appearing in one organism but not in another.
+
+.. code:: sh
+
+    aucome structural --run=ID [--keep-tmp] [--cpu=INT] [-v]
+
+.. code-block:: text
+	├── structural_check
+		├── 0_specifics_reactions
+			├── species_1_VS_species_2.tsv
+			├── species_2_VS_species_1.tsv
+		├── 1_blast_results
+			├── analysis
+				├── species_1_VS_species_2.tsv
+				├── species_2_VS_species_1.tsv
+			├── tmp
+		├── 2_reactions_to_add
+			├── species_1.tsv
+			├── species_2.tsv
+		├── 3_PADMETs
+			├── species_1.padmet
+			├── species_2.padmet
+
+
+Merge command
 ~~~~~~~~~~~~~
 
 Then you can merge all the metabolic network with:
 
 .. code:: sh
 
-    aucome draft --run=run_ID [--cpu=INT] [-v]
+    aucome merge --run=ID [--cpu=INT] [-v] [--vv]
 
 .. code-block:: text
 
@@ -246,6 +327,8 @@ Then you can merge all the metabolic network with:
 		├── PADMETs
 			├── species_1.padmet
 			├── species_2.padmet
+		├── panmetabolism.padmet
+		├── panmetabolism.sbml
 		├── SBMLs
 			├── species_1.sbml
 			├── species_2.sbml
@@ -259,7 +342,7 @@ You can launch the all workflow with the command:
 
 .. code:: sh
 
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v]
+    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
 
 Analysis command
 ~~~~~~~~~~~~~~~~
@@ -268,7 +351,7 @@ You can launch group analysis with the command:
 
 .. code:: sh
 
-    aucome analysis --run=ID [--cpu=INT] [-v]
+    aucome analysis --run=ID [--cpu=INT] [--pvclust] [-v]
 
 You must write the groups of species that you want to analyze in the analysis/group_template.tsv file:
 The first line of the file contains 'all' (it will launch the analysis on all the species).
@@ -318,7 +401,7 @@ You can launch group analysis with the command:
 
 .. code:: sh
 
-    aucome analysis --run=ID [--cpu=INT] [-v]
+    aucome compare --run=ID [--cpu=INT] [-v]
 
 This script will read the group_template.tsv file and create a folder containing an upset graph comparing the group that you selected:
 
