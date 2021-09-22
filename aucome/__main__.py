@@ -121,7 +121,7 @@ def create_run(run_id):
         print('creating Run %s' %run_id)
         os.mkdir('{0}'.format(run_id))
         all_folders = [['studied_organisms'], ['model_organisms'], ['networks'], ['orthology_based'],\
-                       ['orthology_based', '0_Orthofinder_WD'], ['orthology_based', '0_Orthofinder_WD', 'OrthoFinder'], \
+                       ['orthology_based', '0_Orthofinder_WD'], \
                         ['orthology_based', '1_sbml_orthology'], \
                        ['orthology_based', '2_padmet_orthology'], ['orthology_based', '3_padmet_filtered'], ['annotation_based'],\
                        ['annotation_based', 'PGDBs'], ['annotation_based', 'PADMETs'],\
@@ -129,6 +129,7 @@ def create_run(run_id):
                        ['networks', 'PADMETs'], ['networks', 'SBMLs'],
                        ['structural_check'], ['structural_check', '0_specifics_reactions'],
                        ['structural_check', '1_blast_results'], ['structural_check', '1_blast_results', 'analysis'], ['structural_check', '1_blast_results', 'tmp'],
+                       ['structural_check', '1_blast_results', 'reactions_sequences'],
                        ['structural_check', '2_reactions_to_add'], ['structural_check', '3_PADMETs']]
         for folder in all_folders:
             folder_path = os.path.join(run_id, *folder)
@@ -177,6 +178,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'structural_padmets_path', '%(structural_path)s/3_PADMETs')
     config.set('PATHS_IN_RUN', 'structural_blast_results_analysis_path', '%(structural_blast_results_path)s/analysis')
     config.set('PATHS_IN_RUN', 'structural_blast_results_tmp_path', '%(structural_blast_results_path)s/tmp')
+    config.set('PATHS_IN_RUN', 'structural_blast_results_reactions_sequences_path', '%(structural_blast_results_path)s/reactions_sequences')
 
     config.add_section('TOOL_PATHS')
     config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder-2.3.3/orthofinder')

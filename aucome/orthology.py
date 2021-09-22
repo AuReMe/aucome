@@ -244,7 +244,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         print("Start sbml creation...")
     all_dict_data = []
     for study_name in all_study_name:
-        output_sbml = orthofinder_sbml_path + '/' + study_name
+        output_sbml = os.path.join(orthofinder_sbml_path, study_name)
         if os.path.exists(output_sbml):
             print(output_sbml + " already exists, delete it if you want to relaunch ortholog creation.")
         else:
@@ -441,7 +441,8 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
             if 'GENOME:' not in src:
                 ortho_org_id = src.replace("OUTPUT_ORTHOFINDER_FROM_","").split(':')[0]
                 ortho_org_id_low = ortho_org_id.lower()
-                ortho_genes_id = ";".join(dict_orthologues[org_id][gene_id][ortho_org_id_low])
+                org_id_orthologues = dict_orthologues[org_id][gene_id]
+                ortho_genes_id = ";".join(org_id_orthologues[ortho_org_id_low])
                 new_src = "OUTPUT_ORTHOFINDER_FROM_%s:%s"%(ortho_org_id, ortho_genes_id)
                 linked_rlt.misc["SOURCE:ASSIGNMENT"][index] = new_src
     padmet.generateFile(output_padmet)
