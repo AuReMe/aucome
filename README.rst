@@ -98,7 +98,7 @@ You can modify manually this path using the ``SINGULARITY_TMPDIR`` variable (the
 
 .. code:: sh
 
-	SINGULARITY_TMPDIR=/home/user/tmp_folder sudo singularity build  aucome.sif Singularity
+	sudo SINGULARITY_TMPDIR=/home/user/tmp_folder singularity build  aucome.sif Singularity
 
 Then you can run the container with command like:
 
