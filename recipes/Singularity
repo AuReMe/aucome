@@ -9,7 +9,6 @@ From: ubuntu:18.04
 %environment
     export PATH="$PATH:/programs/pathway-tools:"
     export PATH="/opt/conda/bin:${PATH}"
-    export OPENBLAS_NUM_THREADS=1
     export LANG="C.UTF-8"
 
 %post
@@ -35,7 +34,7 @@ From: ubuntu:18.04
     wget -c https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh ;\
     /bin/bash Miniconda3-latest-Linux-x86_64.sh -bfp /usr/local ;\
     conda update conda ;\
-	conda install -c bioconda orthofinder  ;\
+    conda install -c bioconda orthofinder=2.5.4  ;\
     mkdir -p /programs/ /shared/ /home/database/BIOCYC/METACYC/23/ ;\
     cd /opt ;\
     mv metacyc_23.5.padmet /home/database/BIOCYC/METACYC/23/ ;\
