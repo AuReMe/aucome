@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
-
+     aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
+     
 options:
-    --run=ID    Pathname to the comparison workspace.
-    --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
-    -S=STR    Sequence search program for Orthofinder [Default: diamond].
-        Options: blast, mmseqs, blast_gz, diamond
-    --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
-    -v     Verbose.
-    --vv    Very verbose.
-    --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
-    --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument.
+     --run=ID    Pathname to the comparison workspace.
+     --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
+     -S=STR    Sequence search program for Orthofinder [Default: diamond].
+         Options: blast, mmseqs, blast_gz, diamond
+     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
+     -v     Verbose.
+     --vv    Very verbose.
+     --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
+     --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument.
+    --union          Use the union filter between five threshold values [0.01, 0.05, 0.1, 0.15, 0.2] to limit propagation, to use with the --filtering argument.
+    --intersection   Use the intersection filter between five threshold values [0.01, 0.05, 0.1, 0.15, 0.2] to limit propagation, to use with the --filtering argument.
 """
 
 import csv
@@ -42,42 +44,48 @@ def orthology_parse_args(command_args):
     run_id = args['--run']
     orthogroups = args['--orthogroups']
     sequence_search_prg = args['-S']
+    cpu = args['--cpu']
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
-    filtering_threshold = args['--threshold']
-
+    threshold = args['--threshold']
+    union = args['--union']
+    intersection = args['--intersection']
+    filtering_threshold_list = []
+    
     if filtering:
-        if not filtering_threshold:
-            filtering_threshold = 0.05
+        if threshold:
+            try:
+                filtering_threshold_list.append(float(threshold))
+            except:
+                sys.exit('filtering_threshold value must be a float between 0 and 1.')       
+        else:
+            filtering_threshold_list.append(0.05)      
+        if union or intersection:
+            filtering_threshold_list = [0.01, 0.05, 0.1, 0.15, 0.2]
     else:
-        if filtering_threshold:
+        if threshold:
             sys.exit('--threshold must be used with --filtering.')
-
-    if args["--cpu"]:
-        nb_cpu_to_use = int(args["--cpu"])
+        if union:
+            sys.exit('--union must be used with --filtering.')
+        if intersection:
+            sys.exit('--intersection must be used with --filtering.')
+        
+    if cpu:
+        nb_cpu_to_use = int(cpu)
     else:
         nb_cpu_to_use = 1
 
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose)
+    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
 
 
-def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose=None):
+def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose=None):
     print('--- Running orthology step ---')
     orthology_start_time = time.time()
-
-    # Check filtering_threshold
-    if filtering_threshold:
-        try:
-            filtering_threshold = float(filtering_threshold)
-        except:
-            sys.exit('filtering_threshold value must be a float between 0 and 1.')
-
     aucome_pool = Pool(nb_cpu_to_use)
-
     config_data = parse_config_file(run_id)
 
     orthofinder_wd_path = config_data['orthofinder_wd_path']
@@ -235,8 +243,6 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             else:
                 sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
 
-
-
     if verbose:
         print("Parsing Orthofinder output %s" %orthodata_path)
 
@@ -272,7 +278,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     """
 
     if verbose:
-        if filtering_threshold:
+        if len(filtering_threshold_list)>0 :
             print("Start padmet creation and filtering...")
         else:
             print("Start padmet creation...")
@@ -287,7 +293,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         else:
             multiprocessing_datas.append([sbml, orthofinder_sbml_path, input_pwt_padmet,
                             database_path, output_padmet, orthodata_path,
-                            orthofinder_filtered_path, filtering_threshold, verbose, veryverbose])
+                            orthofinder_filtered_path, filtering_threshold_list, verbose, veryverbose])
             update_padmet_datas.append([sbml, orthodata_path, output_padmet, verbose])
 
     start_time = time.time()
@@ -298,12 +304,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         print("Updating padmets...")
     aucome_pool.starmap(addOrthologyInPadmet, update_padmet_datas)
 
-    if filtering_threshold:
-        if isinstance(filtering_threshold, float):
-            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose, filtering_threshold)
-        else:
-            filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, verbose)
-
+    if len(filtering_threshold_list)>0:
+        filter_propagation(orthofinder_padmet_path, orthofinder_filtered_path, aucome_pool, filtering_threshold_list, union, intersection, verbose)
+   
     end_time = (time.time() - start_time)
     integer_part, decimal_part = str(end_time).split('.')
     end_time = ".".join([integer_part, decimal_part[:3]])
@@ -370,7 +373,8 @@ def orthogroup_to_sbml(dict_data):
 
 def orthology_to_padmet(sbml, orthofinder_sbml_path, input_pwt_padmet,
                          database_path, output_padmet, orthodata_path,
-                         orthofinder_filtered_path, filtering_threshold, verbose, veryverbose):
+                         orthofinder_filtered_path, filtering_threshold_list,
+                        verbose, veryverbose):
     source_tool = "ORTHOFINDER"
     source_category = "ORTHOLOGY"
 
@@ -382,23 +386,25 @@ def orthology_to_padmet(sbml, orthofinder_sbml_path, input_pwt_padmet,
         sbml_padmet_verbose = False
 
     sbml_to_padmet.sbml_to_padmetSpec(orthofinder_sbml_path + '/' + sbml,
-                                    input_pwt_padmet,
-                                    padmetRef_file=database_path,
-                                    output=output_padmet,
-                                    source_tool=source_tool, source_category=source_category, verbose=sbml_padmet_verbose)
+                                      input_pwt_padmet,
+                                      padmetRef_file=database_path,
+                                      output=output_padmet,
+                                      source_tool=source_tool,
+                                      source_category=source_category,
+                                      verbose=sbml_padmet_verbose)
 
 
 def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
     """
     Add orthologs information to a padmet file.
-
     Args:
         study_id (str): ID of the species which padmet will be analyzed
         orthodata_path (str): path to Orthologues files
         output_padmet (str): path to the output padmet file
         verbose (boolean): verbose
     """
-    # Read orthologs files and create a dictionary containing orthologs infomations.
+    # Read orthologs files and create a dictionary containing orthologs
+    # infomations.
     all_orgs = set()
     all_orthologue_files = []
     for _path, _folders, _files in os.walk(orthodata_path):
@@ -448,7 +454,7 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
     padmet.generateFile(output_padmet)
 
 
-def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, filtering_threshold=0.05):
+def filter_propagation(padmet_folder, output_folder, aucome_pool, filtering_threshold_list, union=None, intersection=None, verbose=None):
     propagation_to_remove_file = os.path.join(output_folder, "propagation_to_remove.tsv")
     reactions_to_remove_file = os.path.join(output_folder, 'reactions_to_remove.tsv')
     padmet_output_folder = output_folder
@@ -458,10 +464,10 @@ def filter_propagation(padmet_folder, output_folder, aucome_pool, verbose=None, 
     dict_rxn_orgs_genes, dict_rxn_ec = extractRGL(padmet_folder, aucome_pool)
     if verbose:
         print("Extracting all the gene propagations...")
-    dict_rxn_org_gene_propagation = extractPropagtion(dict_rxn_orgs_genes)
+    dict_rxn_org_gene_propagation = extractPropagation(dict_rxn_orgs_genes)
     if verbose:
         print("Writing the file propagation_to_remove...")
-    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file, orthology_threshold=filtering_threshold)
+    dict_rxn_org_gene_propag_to_remove = extractPropagationToRemove(dict_rxn_org_gene_propagation, output=propagation_to_remove_file, orthology_threshold_list=filtering_threshold_list, union=union, intersection=intersection)
     if verbose:
         print("Cleaning the Padmet files and writing the reactions_to_remove_file file...")
     cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
@@ -484,11 +490,8 @@ def extractRGL(padmet_folder, aucome_pool):
     extract reactions genes relations.
     It reads all Padmet files in padmet_folder, then it creates three
     dictionaries: dict_rnx_orgs_genes, dict_rnx_ec, dict_org_genes.
-
     dict_rxn_org_gene: reaction & organism & assigned genes & orthologuous genes.
     dict_rxn_ec[rxn_id] = ec, simple dictionary
-
-
     return dict {rxn_id:{org_id:{'FROM-PTOOL': bool, gene_id:set of sources (ex ortho_org_id:ortho_genes)}}}
     """
     dict_rxn_orgs_genes = {}
@@ -535,7 +538,7 @@ def mp_extractRGL(padmet_file, padmet_folder):
     return dict_rxn_orgs_genes, dict_rxn_ec
 
 
-def extractPropagtion(dict_rxn_orgs_genes):
+def extractPropagation(dict_rxn_orgs_genes):
     """
     Propagations are extracted from Padmet networks. Then propagations
     are split bewteen two groups. Those who are orthologues to gene-reaction
@@ -579,43 +582,63 @@ def extractPropagtion(dict_rxn_orgs_genes):
     return dict_rxn_org_gene_propagation
 
 
-def extractPropagationToRemove(dict_rxn_org_gene_propagation, output, ptool_threshold=0, orthology_threshold=0.05):
+def extractPropagationToRemove(dict_rxn_org_gene_propagation, output,
+                               ptool_threshold=0,
+                               orthology_threshold_list=[0.05], union=None,
+                               intersection=None):
     """
-    Using ptool_threshold and orthology_threshold, this function select the propagations to remove.
-    These propagation are written in propagation_to_remove.tsv.
+    Using ptool_threshold and orthology_threshold, this function select the 
+    propagations to remove. These propagation are written in 
+    propagation_to_remove.tsv.
     """
     header = ["reaction_id", "org_id", "gene_id"]
-    # At this moment filter is as 20/N with 0.05
-    inverse_orthology_threshold = 1/orthology_threshold
-
     dict_rxn_org_gene_propag_to_remove = dict()
+    maximum = 5
     with open(output, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, header, delimiter="\t")
         writer.writeheader()
         for rxn_id ,rxn_data in dict_rxn_org_gene_propagation.items():
             nb_org_prop = len(rxn_data.keys())-1
             if nb_org_prop:
-                not_ptool_threshold = round(max(inverse_orthology_threshold/nb_org_prop, orthology_threshold*nb_org_prop),0)
                 for org_id, org_data in rxn_data.items():
                     gene_ids_to_remove = set()
+                    gene_id_tmp = ""
                     for gene_id, gene_data in org_data.items():
-                        if len({i[0] for i in gene_data["propagation_to_ptool"]}) <= ptool_threshold:
-                            if len({i[0] for i in gene_data["propagation_to_not_ptool"]}) >= not_ptool_threshold:
-                                gene_ids_to_remove.add(gene_id)
-                    if gene_ids_to_remove:
-                        genes_ids = ";".join(gene_ids_to_remove)
-                        if rxn_id in dict_rxn_org_gene_propag_to_remove:
-                            dict_rxn_org_gene_propag_to_remove[rxn_id][org_id] = gene_ids_to_remove
-                        else:
-                            dict_rxn_org_gene_propag_to_remove[rxn_id] = {org_id: gene_ids_to_remove}
-
-                        line = {"reaction_id": rxn_id, "org_id": org_id,
-                                "gene_id": genes_ids}
-                        writer.writerow(line)
+                        count = 0
+                        # At this moment filter is as 20/N with 0.05
+                        for orthology_threshold in orthology_threshold_list:
+                            inverse_orthology_threshold = 1/orthology_threshold
+                            not_ptool_threshold = round(max(inverse_orthology_threshold/nb_org_prop, orthology_threshold*nb_org_prop),0)
+                            if len({i[0] for i in gene_data["propagation_to_ptool"]}) <= ptool_threshold:
+                                if len({i[0] for i in gene_data["propagation_to_not_ptool"]}) >= not_ptool_threshold:                                    
+                                    if intersection:
+                                        count+=1 
+                                        gene_id_tmp = gene_id
+                                    elif not gene_id in gene_ids_to_remove:
+                                        gene_ids_to_remove.add(gene_id)
+                                        dict_rxn_org_gene_propag_to_remove = remove_gene(gene_ids_to_remove, dict_rxn_org_gene_propag_to_remove, rxn_id, org_id, writer)
+                        if intersection and count == maximum:
+                            gene_ids_to_remove.add(gene_id)
+                            dict_rxn_org_gene_propag_to_remove = remove_gene(gene_ids_to_remove, dict_rxn_org_gene_propag_to_remove, rxn_id, org_id, writer)
     return dict_rxn_org_gene_propag_to_remove
 
 
-def merge_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean, dict_rxn_org_gene_propag_to_remove):
+# This function is called in extractPropagationToRemove().
+def remove_gene(gene_ids_to_remove, dict_rxn_org_gene_propag_to_remove, rxn_id,
+                org_id, writer):
+    if gene_ids_to_remove:
+        genes_ids = ";".join(gene_ids_to_remove)
+        if rxn_id in dict_rxn_org_gene_propag_to_remove:
+            dict_rxn_org_gene_propag_to_remove[rxn_id][org_id] = gene_ids_to_remove
+        else:
+            dict_rxn_org_gene_propag_to_remove[rxn_id] = {org_id: gene_ids_to_remove}
+            line = {"reaction_id": rxn_id, "org_id": org_id, "gene_id": genes_ids}
+            writer.writerow(line)
+    return dict_rxn_org_gene_propag_to_remove
+
+
+def merge_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean,
+                             dict_rxn_org_gene_propag_to_remove):
     for org_id in tmp_dict_org_rxn_clean:
         if org_id not in dict_org_rxn_clean:
             dict_org_rxn_clean[org_id] = dict()
@@ -628,7 +651,8 @@ def merge_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean, dict_rx
                         dict_org_rxn_clean[org_id][rxn_id][gene_id] = tmp_dict_org_rxn_clean[org_id][rxn_id][gene_id]
 
 
-def create_dict_org_rxn_clean(padmet_file, padmet_folder, dict_rxn_org_gene_propag_to_remove):
+def create_dict_org_rxn_clean(padmet_file, padmet_folder,
+                              dict_rxn_org_gene_propag_to_remove):
     padmet_path = os.path.join(padmet_folder, padmet_file)
     org_id = os.path.splitext(padmet_file)[0].upper()
     padmet = PadmetSpec(padmet_path)
@@ -660,7 +684,10 @@ def create_dict_org_rxn_clean(padmet_file, padmet_folder, dict_rxn_org_gene_prop
 
     return dict_org_rxn_clean
 
-def delete_propagation(padmet_file, padmet_folder, dict_org_rxn_clean, output_folder):
+
+# This function is called in the cleanPadmet() function. 
+def delete_propagation(padmet_file, padmet_folder, dict_org_rxn_clean,
+                       output_folder):
     padmet_path = os.path.join(padmet_folder, padmet_file)
     org_id = os.path.splitext(padmet_file)[0].upper()
     padmet = PadmetSpec(padmet_path)
