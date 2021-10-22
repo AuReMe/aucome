@@ -120,7 +120,7 @@ def create_run(run_id):
     else:
         print('creating Run %s' %run_id)
         os.mkdir('{0}'.format(run_id))
-        all_folders = [['studied_organisms'], ['model_organisms'], ['networks'], ['orthology_based'],\
+        all_folders = [['studied_organisms'], ['networks'], ['orthology_based'],\
                        ['orthology_based', '0_Orthofinder_WD'], \
                         ['orthology_based', '1_sbml_orthology'], \
                        ['orthology_based', '2_padmet_orthology'], ['orthology_based', '3_padmet_filtered'], ['annotation_based'],\
@@ -148,13 +148,10 @@ def create_run(run_id):
 def create_config_file(config_file_path, run_id):
     config = configparser.RawConfigParser()
     config.add_section('DATABASE_PATHS')
-    config.set('DATABASE_PATHS', 'database_ref_path', '/home/database/BIOCYC/METACYC/23/metacyc_23.0.padmet')
-    config.set('DATABASE_PATHS', 'mnx_rxn_path', '/home/database/MNX/reac_xref.tsv')
-    config.set('DATABASE_PATHS', 'mnx_cpd_path', '/home/database/MNX/chem_xref.tsv')
+    config.set('DATABASE_PATHS', 'database_ref_path', '/home/database/BIOCYC/METACYC/23.5/metacyc_23.5.padmet')
     config.add_section('PATHS_IN_RUN')
     config.set('PATHS_IN_RUN', 'run_id', run_id)
     config.set('PATHS_IN_RUN', 'studied_organisms_path', '/studied_organisms')
-    config.set('PATHS_IN_RUN', 'model_organisms_path', '/model_organisms')
     config.set('PATHS_IN_RUN', 'orthology_based_path', '/orthology_based')
     config.set('PATHS_IN_RUN', 'orthofinder_wd_path', '/orthology_based/0_Orthofinder_WD')
     config.set('PATHS_IN_RUN', 'orthofinder_sbml_path', '/orthology_based/1_sbml_orthology')

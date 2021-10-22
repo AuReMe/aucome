@@ -20,11 +20,8 @@ def parse_config_file(run_id):
 
     #DATABASE_PATHS
     database_path = config.get('DATABASE_PATHS','database_ref_path')
-    mnx_rxn_path = config.get('DATABASE_PATHS','mnx_rxn_path')
-    mnx_cpd_path = config.get('DATABASE_PATHS','mnx_cpd_path')
     #PATHS_IN_RUN
     studied_organisms_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','studied_organisms_path'))
-    model_organisms_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','model_organisms_path'))
     orthology_based_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthology_based_path'))
     orthofinder_wd_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_wd_path'))
     orthofinder_sbml_path = "{0}/{1}".format(run_id, config.get('PATHS_IN_RUN','orthofinder_sbml_path'))
@@ -48,8 +45,8 @@ def parse_config_file(run_id):
     #VAR
     study_from_annot_prefix = config.get('VAR','study_from_annot_prefix')
 
-    config_data = {'database_path': database_path, 'mnx_rxn_path': mnx_rxn_path, 'mnx_cpd_path': mnx_cpd_path,
-                    'studied_organisms_path': studied_organisms_path, 'model_organisms_path': model_organisms_path,
+    config_data = {'database_path': database_path,
+                    'studied_organisms_path': studied_organisms_path,
                     'orthology_based_path': orthology_based_path, 'orthofinder_wd_path': orthofinder_wd_path,
                     'orthofinder_sbml_path': orthofinder_sbml_path, 'orthofinder_padmet_path': orthofinder_padmet_path,
                     'orthofinder_filtered_path': orthofinder_filtered_path,

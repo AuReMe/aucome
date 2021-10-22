@@ -59,12 +59,10 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
     database_path = config_data['database_path']
     pgdb_from_annotation_path = config_data['pgdb_from_annotation_path']
     studied_organisms_path = config_data['studied_organisms_path']
-    model_organisms_path = config_data['model_organisms_path']
     analysis_group_file_path = config_data['analysis_group_file_path']
 
     #create dict for ortho data
     all_study_name = set(next(os.walk(studied_organisms_path))[1])
-    all_model_name = set(next(os.walk(model_organisms_path))[1])
     all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           else (study_name, '')
@@ -73,11 +71,6 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
                           if os.path.isfile("{0}/{1}/{1}.gbk".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-    #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
-    all_model_gbk = dict([(model_name, "{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
-                          if os.path.isfile("{0}/{1}/{1}.gbk".format(model_organisms_path, model_name))
-                          else (model_name, '')
-                          for model_name in all_model_name])
 
     # Update group file in analysis
     if not os.path.exists(analysis_group_file_path):
@@ -120,20 +113,6 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
                           else (study_name, '')
                           for study_name in all_study_name])
 
-    study_model_data = []
-    for model_name in all_model_name:
-        faa_path = "{0}/{1}/{1}.faa".format(model_organisms_path, model_name)
-        tmp_model_data = {'model_name': model_name, 'faa_path': faa_path, 'gbk_file': all_model_gbk[model_name],
-                            'verbose': verbose}
-        study_model_data.append(tmp_model_data)
-    aucome_pool.map(create_faa_model, study_model_data)
-
-    #k = folder_name in model_organisms_path, v = path to faa in this folder, faa name should be folder_name.faa
-    all_model_faa = dict([(model_name, "{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
-                          if os.path.isfile("{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
-                          else (model_name, '')
-                          for model_name in all_model_name])
-
     study_padmet_data = []
     for study_name in all_study_name:
         padmet_file = "{0}/{1}{2}.padmet".format(padmet_from_annotation_path, study_from_annot_prefix, study_name)
@@ -163,12 +142,6 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
                            if os.path.isfile("{0}/{1}{2}.sbml".format(sbml_from_annotation_path, study_from_annot_prefix, study_name))
                            else (study_name, '')
                            for study_name in all_study_name])
-
-    #k = folder_name in model_organisms_path, v = path to sbml in this folder, sbml name should be folder_name.sbml
-    all_model_sbml = dict([(model_name, "{0}/{1}/{1}.sbml".format(model_organisms_path, model_name))
-                          if os.path.isfile("{0}/{1}/{1}.sbml".format(model_organisms_path, model_name))
-                          else (model_name, '')
-                          for model_name in all_model_name])
     #PGDB, padmet, sbml
     all_study_pgdb = dict([(study_name, "{0}/{1}".format(pgdb_from_annotation_path, study_name))
                           if os.path.isdir("{0}/{1}".format(pgdb_from_annotation_path, study_name))
@@ -184,6 +157,10 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
                 print("\tGBK: OK")
             else:
                 print("\t[WARNING] No GBK found, should be in {1}/{0}/{0}.gbk".format(study_name, studied_organisms_path))
+            if all_study_faa[study_name]:
+                print("\tFAA: OK")
+            else:
+                print("\t[WARNING] No FAA found, should be in {1}/{0}/{0}.faa".format(study_name, studied_organisms_path))
             if all_study_pgdb[study_name]:
                 print("\tPGDB: OK")
             else:
@@ -192,26 +169,11 @@ def run_check(run_id, nb_cpu_to_use, verbose, veryverbose):
                 print("\tPADMET: OK")
             else:
                 print("\t[WARNING] No PADMET found, should be in {1}/{2}{0}.padmet".format(study_name, padmet_from_annotation_path, study_from_annot_prefix))
-            if all_study_faa[study_name]:
-                print("\tFAA: OK")
-            else:
-                print("\t[WARNING] No FAA found, should be in {1}/{0}/{0}.faa".format(study_name, studied_organisms_path))
             if all_study_sbml[study_name]:
                 print("\tSBML: OK")
             else:
                 print("\t[WARNING] No SBML found, should be in {1}/{2}{0}.sbml".format(study_name, sbml_from_annotation_path, study_from_annot_prefix))
-        print("* %s models organims:" %(len(all_model_name)))
-        for model_name in all_model_name:
-            print("%s:" %model_name)
-            if all_model_faa[model_name]:
-                print("\tFAA: OK")
-            else:
-                print("\t[WARNING] No FAA found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
-            if all_model_sbml[model_name]:
-                print("\tSBML: OK")
-            else:
-                print("\t[WARNING] No SBML found, should be in {1}/{0}/{0}.faa".format(model_name, model_organisms_path))
-
+        
     aucome_pool.close()
     aucome_pool.join()
 
@@ -235,18 +197,6 @@ def check_create_faa(tmp_faa_data):
     if not os.path.isfile(faa_path) and gbk_file:
         if verbose:
             print("Creating faa from gbk for %s" %study_name)
-        gbk_to_faa.gbk_to_faa(gbk_file=gbk_file, output=faa_path, verbose=verbose)
-
-
-def create_faa_model(tmp_model_data):
-    model_name = tmp_model_data['model_name']
-    gbk_file = tmp_model_data['gbk_file']
-    verbose = tmp_model_data['verbose']
-    faa_path = tmp_model_data['faa_path']
-
-    if not os.path.isfile(faa_path) and gbk_file:
-        if verbose:
-            print("Creating faa from gbk for %s" %model_name)
         gbk_to_faa.gbk_to_faa(gbk_file=gbk_file, output=faa_path, verbose=verbose)
 
 
