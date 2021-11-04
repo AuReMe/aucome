@@ -94,22 +94,15 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
     orthofinder_padmet_path = config_data['orthofinder_padmet_path']
     orthofinder_filtered_path = config_data['orthofinder_filtered_path']
     studied_organisms_path = config_data['studied_organisms_path']
-    model_organisms_path = config_data['model_organisms_path']
     padmet_from_annotation_path = config_data['padmet_from_annotation_path']
     database_path = config_data['database_path']
 
     all_study_name = set(next(os.walk(studied_organisms_path))[1])
-    all_model_name = set(next(os.walk(model_organisms_path))[1])
-
+    
     all_study_faa = dict([(study_name, "{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           if os.path.isfile("{0}/{1}/{1}.faa".format(studied_organisms_path, study_name))
                           else (study_name, '')
                           for study_name in all_study_name])
-
-    all_model_faa = dict([(model_name, "{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
-                          if os.path.isfile("{0}/{1}/{1}.faa".format(model_organisms_path, model_name))
-                          else (model_name, '')
-                          for model_name in all_model_name])
 
     #check if Orthofinder already run, if yes, get the last workdir.
     try:
@@ -199,16 +192,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
                 shutil.copyfile(faa_path, orthofinder_wd_path + '/' + name + '.faa')
             else:
                 sys.exit("Missing fasta for " + name + ", use 'aucome check' to input fasta from genbank.")
-
-        for name, faa_path in list(all_model_faa.items()):
-            if not os.path.isfile("{0}/{1}.faa".format(orthofinder_wd_path, name)):
-                if verbose:
-                    print("Copying {0}'s faa to {1}".format(name, orthofinder_wd_path))
-            if faa_path != "" and os.path.isfile(faa_path):
-                shutil.copyfile(faa_path, orthofinder_wd_path + '/' + name + '.faa')
-            else:
-                sys.exit("Missing fasta for " + name + ", use 'aucome check' to input fasta from genbank.")
-
+                
         if verbose:
             print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
