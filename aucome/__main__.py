@@ -191,6 +191,9 @@ def installing_pwt(pwt_path, input_ptools_local_path):
     """
     Install silently Pathway-Tools in /programs.
     After running this function you need to source the bashrc.
+    Args:
+        pwt_path (str): Path to the Pathway Tools installer
+        input_ptools_local_path (str): Path to local data of Pathway Tools
     """
     ptools_local_path = '/root'
     if input_ptools_local_path:
