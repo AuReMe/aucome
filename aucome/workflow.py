@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT]
+    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -15,6 +15,8 @@ options:
     --vv    Very verbose.
     --filtering     Use a filter to limit propagation, by default it is 0.05, if you want to modify the value use --threshold.
     --threshold=FLOAT     Threshold of the filter to limit propagation to use with the --filtering argument.
+    --union          Use the union filter between five threshold values [0.01, 0.05, 0.1, 0.15, 0.2] to limit propagation, to use with the --filtering argument.
+    --intersection   Use the intersection filter between five threshold values [0.01, 0.05, 0.1, 0.15, 0.2] to limit propagation, to use with the --filtering argument.
 """
 import aucome
 import docopt
@@ -35,15 +37,29 @@ def workflow_parse_args(command_args):
     verbose = args['-v']
     veryverbose = args['--vv']
     filtering = args['--filtering']
-    filtering_threshold = args['--threshold']
-
+    threshold = args['--threshold']
+    union = args['--union']
+    intersection = args['--intersection']
+    filtering_threshold_list = []
+    
     if filtering:
-        if not filtering_threshold:
-            filtering_threshold = 0.05
+        if threshold:
+            try:
+                filtering_threshold_list.append(float(threshold))
+            except:
+                sys.exit('filtering_threshold value must be a float between 0 and 1.')       
+        else:
+            filtering_threshold_list.append(0.05)      
+        if union or intersection:
+            filtering_threshold_list = [0.01, 0.05, 0.1, 0.15, 0.2]
     else:
-        if filtering_threshold:
+        if threshold:
             sys.exit('--threshold must be used with --filtering.')
-
+        if union:
+            sys.exit('--union must be used with --filtering.')
+        if intersection:
+            sys.exit('--intersection must be used with --filtering.')
+            
     if args["--cpu"]:
         nb_cpu_to_use = int(args["--cpu"])
     else:
@@ -52,10 +68,10 @@ def workflow_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold, keep_tmp, verbose, veryverbose)
+    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose)
 
 
-def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold, keep_tmp, verbose, veryverbose=None):
+def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose=None):
     if verbose:
         print('--- Running workflow ---')
     workflow_start_time = time.time()
@@ -64,7 +80,7 @@ def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filter
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
-    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold, verbose, veryverbose)
+    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
 
     aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
