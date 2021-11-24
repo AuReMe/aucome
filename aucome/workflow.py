@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome workflow --run=ID [-S=STR] [--orthogroups] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
+    aucome workflow --run=ID [--sequence_search_prg=STR] [--keep-tmp] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
 
 options:
     --run=ID    Pathname to the comparison workspace.
-    --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
-    -S=STR    Sequence search program for Orthofinder [Default: diamond].
+    --sequence_search_prg=STR    Sequence search program for Orthofinder [Default: diamond].
         Options: blast, mmseqs, blast_gz, diamond
     --keep-tmp    Keep temporary file (especially sequence of predicted gene linked to reaction).
     --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
@@ -31,8 +30,7 @@ def command_help():
 def workflow_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
-    orthogroups = args['--orthogroups']
-    sequence_search_prg = args['-S']
+    sequence_search_prg = args['--sequence_search_prg']
     keep_tmp = args['--keep-tmp']
     verbose = args['-v']
     veryverbose = args['--vv']
@@ -68,10 +66,10 @@ def workflow_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose)
+    run_workflow(run_id, nb_cpu_to_use, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose)
 
 
-def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose=None):
+def run_workflow(run_id, nb_cpu_to_use, sequence_search_prg, filtering_threshold_list, union, intersection, keep_tmp, verbose, veryverbose=None):
     if verbose:
         print('--- Running workflow ---')
     workflow_start_time = time.time()
@@ -80,7 +78,7 @@ def run_workflow(run_id, nb_cpu_to_use, orthogroups, sequence_search_prg, filter
 
     aucome.reconstruction.run_reconstruction(run_id, nb_cpu_to_use, verbose, veryverbose)
 
-    aucome.orthology.run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
+    aucome.orthology.run_orthology(run_id, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
 
     aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 

@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-     aucome orthology --run=ID [-S=STR] [--orthogroups] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
+     aucome orthology --run=ID [--sequence_search_prg=STR] [--cpu=INT] [-v] [--vv] [--filtering] [--threshold=FLOAT] [--union] [--intersection]
      
 options:
      --run=ID    Pathname to the comparison workspace.
-     --orthogroups    Use Orthogroups instead of Orthologues after Orthofinder.
-     -S=STR    Sequence search program for Orthofinder [Default: diamond].
+     --sequence_search_prg=STR    Sequence search program for Orthofinder [Default: diamond].
          Options: blast, mmseqs, blast_gz, diamond
      --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
      -v     Verbose.
@@ -42,8 +41,7 @@ def command_help():
 def orthology_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
-    orthogroups = args['--orthogroups']
-    sequence_search_prg = args['-S']
+    sequence_search_prg = args['--sequence_search_prg']
     cpu = args['--cpu']
     verbose = args['-v']
     veryverbose = args['--vv']
@@ -79,10 +77,10 @@ def orthology_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
+    run_orthology(run_id, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose)
 
 
-def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose=None):
+def run_orthology(run_id, sequence_search_prg, nb_cpu_to_use, filtering_threshold_list, union, intersection, verbose, veryverbose=None):
     print('--- Running orthology step ---')
     orthology_start_time = time.time()
     aucome_pool = Pool(nb_cpu_to_use)
@@ -106,10 +104,10 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
 
     #check if Orthofinder already run, if yes, get the last workdir.
     try:
-        if orthogroups:
-            orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-        else:
-            orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+    #    if orthogroups:
+    #        orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+    #    else:
+        orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
     except ValueError:
         if verbose:
             print("Unable to find file Orthogroups.tsv in {0}, need to run Orthofinder...".format(orthofinder_wd_path))
@@ -145,6 +143,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             start_time = time.time()
             cmds = [orthofinder_bin_path, "-b", wd_orthodata_path, "-f", tmp_folder,
                     "-t", str(nb_cpu_to_use), "-S", sequence_search_prg]
+                       
             subprocess.call(cmds)
             end_time = (time.time() - start_time)
             integer_part, decimal_part = str(end_time).split('.')
@@ -167,10 +166,10 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             shutil.copytree(orthofinder_tmp, orthofinder_result_path)
             shutil.rmtree(orthofinder_tmp)
 
-            if orthogroups:
-                orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-            else:
-                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
+            #if orthogroups:
+            #    orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
+            #else:
+            orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
 
             # Clean sbml/padmet/padmet filtered to recreate them with the new data.
             for sbml_folder in os.listdir(orthofinder_sbml_path):
@@ -197,8 +196,7 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
             print("Running Orthofinder on %s cpu" %nb_cpu_to_use)
 
         start_time = time.time()
-        cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", str(nb_cpu_to_use),
-                "-S", sequence_search_prg]
+        cmds = [orthofinder_bin_path, "-f", orthofinder_wd_path, "-t", str(nb_cpu_to_use), "-S", sequence_search_prg]
         subprocess.call(cmds)
         end_time = (time.time() - start_time)
         integer_part, decimal_part = str(end_time).split('.')
@@ -206,26 +204,15 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         if verbose:
             print("Orthofinder done in: %ss" %end_time)
 
-        if orthogroups:
-            orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
-            if os.path.exists(orthofinder_result_path):
-                orthogroups_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthogroups'
-                if os.path.exists(orthogroups_result_path):
-                    orthodata_path = max(["%s/%s" %(x[0], 'Orthogroups/Orthogroups.tsv') for x in os.walk(orthofinder_wd_path) if 'Orthogroups' in x[1]])
-                else:
-                    sys.exit('There was an error with OrthoFinder, there is no results in ' + orthogroups_result_path)
+        orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
+        if os.path.exists(orthofinder_result_path):
+            orthologues_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthologues'
+            if os.path.exists(orthologues_result_path):
+                orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
             else:
-                sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
+                sys.exit('There was an error with OrthoFinder, there is no results in ' + orthologues_result_path)
         else:
-            orthofinder_result_path = orthofinder_wd_path + '/OrthoFinder/'
-            if os.path.exists(orthofinder_result_path):
-                orthologues_result_path = orthofinder_result_path + os.listdir(orthofinder_result_path)[0] + '/Orthologues'
-                if os.path.exists(orthologues_result_path):
-                    orthodata_path = max(["%s/%s" %(x[0], 'Orthologues') for x in os.walk(orthofinder_wd_path) if 'Orthologues' in x[1]])
-                else:
-                    sys.exit('There was an error with OrthoFinder, there is no results in ' + orthologues_result_path)
-            else:
-                sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
+            sys.exit('Missing OrthoFinder folder in ' + orthofinder_wd_path)
 
     if verbose:
         print("Parsing Orthofinder output %s" %orthodata_path)
@@ -238,9 +225,9 @@ def run_orthology(run_id, orthogroups, sequence_search_prg, nb_cpu_to_use, filte
         if os.path.exists(output_sbml):
             print(output_sbml + " already exists, delete it if you want to relaunch ortholog creation.")
         else:
-            dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path, 'study_name': study_name,
-                        'verbose': verbose, 'orthogroups': orthogroups, 'veryverbose': veryverbose,
-                        'output': output_sbml}
+            dict_data = {'sbml': run_id, 'orthodata_path': orthodata_path,
+                         'study_name': study_name, 'verbose': verbose,
+                         'veryverbose': veryverbose, 'output': output_sbml}
             all_dict_data.append(dict_data)
 
     start_time = time.time()
@@ -338,7 +325,7 @@ def orthogroup_to_sbml(dict_data):
     output = dict_data['output']
     verbose = dict_data['verbose']
     veryverbose = dict_data['veryverbose']
-    orthogroups = dict_data['orthogroups']
+    #orthogroups = dict_data['orthogroups']
 
     if verbose:
         print('Create sbml for ' + study_name)
@@ -349,10 +336,10 @@ def orthogroup_to_sbml(dict_data):
         extract_orthofinder_verbose = False
 
     all_model_sbml = extract_orthofinder.get_sbml_files(sbml, workflow="aucome", verbose=extract_orthofinder_verbose)
-    if orthogroups:
-        extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
-    else:
-        extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
+    #if orthogroups:
+    #    extract_orthofinder.orthogroups_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
+    #else:
+    extract_orthofinder.orthologue_to_sbml(orthodata_path, all_model_sbml, output, study_name, extract_orthofinder_verbose)
 
 
 def orthology_to_padmet(sbml, orthofinder_sbml_path, input_pwt_padmet,
@@ -391,6 +378,7 @@ def addOrthologyInPadmet(study_id, orthodata_path, output_padmet, verbose):
     # infomations.
     all_orgs = set()
     all_orthologue_files = []
+    # Process of orthologues.
     for _path, _folders, _files in os.walk(orthodata_path):
         for _folder in _folders:
             all_orgs.add(_folder.replace("Orthologues_","").lower())
