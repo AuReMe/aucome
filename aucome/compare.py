@@ -50,7 +50,7 @@ def compare_parse_args(command_args):
 
 
 def run_compare(run_id, nb_cpu_to_use, verbose):
-    """Compare the gorup specified by the user.
+    """Compare the group specified by the user.
 
     Args:
         run_id (str): ID of the run
@@ -113,7 +113,7 @@ def run_compare(run_id, nb_cpu_to_use, verbose):
             supervenn_labels.append(group_name)
             cluster_reactions[group_name] = set(reactions_temp)
 
-    supervenn(supervenn_sets, supervenn_labels, chunks_ordering='occurence', sets_ordering='minimize gaps')
+    supervenn(supervenn_sets, supervenn_labels, chunks_ordering='occurrence', sets_ordering='minimize gaps')
     plt.savefig(compare_output_path + '/compare_group.png', bbox_inches='tight')
     plt.clf()
 

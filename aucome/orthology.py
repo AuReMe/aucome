@@ -7,7 +7,7 @@ usage:
 options:
      --run=ID    Pathname to the comparison workspace.
      --sequence_search_prg=STR    Sequence search program for Orthofinder [Default: diamond].
-         Options: blast, mmseqs, blast_gz, diamond
+         Options: blast, mmseqs, blast_gz, diamond, and diamond_ultra_sens.
      --cpu=INT     Number of cpu to use for the multiprocessing (if none use 1 cpu).
      -v     Verbose.
      --vv    Very verbose.
