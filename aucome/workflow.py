@@ -31,6 +31,7 @@ def workflow_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     sequence_search_prg = args['--sequence_search_prg']
+    cpu = args['--cpu']
     keep_tmp = args['--keep-tmp']
     verbose = args['-v']
     veryverbose = args['--vv']
@@ -58,8 +59,8 @@ def workflow_parse_args(command_args):
         if intersection:
             sys.exit('--intersection must be used with --filtering.')
             
-    if args["--cpu"]:
-        nb_cpu_to_use = int(args["--cpu"])
+    if cpu:
+        nb_cpu_to_use = int(cpu)
     else:
         nb_cpu_to_use = 1
 
