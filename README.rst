@@ -17,21 +17,27 @@ Installation
 Dependencies
 ~~~~~~~~~~~~
 
-This tool needs:
+These tools are needed:
 
-	- `Orthofinder <https://github.com/davidemms/OrthoFinder>`__ (which needs `Diamond <https://github.com/bbuchfink/diamond>`__ and `FastME <https://gite.lirmm.fr/atgc/FastME/>`__)
+	- `Exonerate <https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate>`__
 
-	- `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ (which needs Blast)
+	- `Orthofinder <https://github.com/davidemms/OrthoFinder>`__ (which needs `Diamond <https://github.com/bbuchfink/diamond>`__, `FastME <https://gite.lirmm.fr/atgc/FastME/>`__, and `MMseqs2 <https://github.com/soedinglab/MMseqs2/>`__)
 
-And some python package:
+	- `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ (which needs `Blast <https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download>`__)
+
+	- `R <https://cran.r-project.org/>`__
+
+And some python packages:
 
 	- `biopython <https://github.com/biopython/biopython>`__
+	
+	- `cobra <https://github.com/opencobra/cobrapy>`__ 
+	
+	- `cython <https://github.com/cython/cython>`__
 
 	- `docopt <https://github.com/docopt/docopt>`__
 
 	- `eventlet <https://github.com/eventlet/eventlet>`__
-
-	- `supervenn <https://github.com/gecko984/supervenn>`__
 
 	- `lxml <https://github.com/lxml/lxml>`__
 
@@ -39,26 +45,67 @@ And some python package:
 
 	- `mpwt <https://github.com/AuReMe/mpwt>`__
 
-	- `pandas <https://github.com/pandas-dev/pandas>`__
+	- `numpy <https://github.com/numpy/numpy>`__
 
 	- `padmet <https://github.com/AuReMe/padmet>`__
 
-	- `padmet-utils <https://github.com/AuReMe/padmet-utils>`__
+	- `pandas <https://github.com/pandas-dev/pandas>`__
+
+	- `pybind11 <https://github.com/pybind/pybind11>`__ 
+
+	- `pyparsing <https://github.com/pyparsing/pyparsing>`__
+
+	- `pythran <https://github.com/serge-sans-paille/pythran>`__ 
 
 	- `requests <https://github.com/kennethreitz/requests>`__
 
+	- `rpy2 <https://github.com/rpy2/rpy2>`__
+
+	- `scipy <https://github.com/scipy/scipy>`__
+
 	- `seaborn <https://github.com/mwaskom/seaborn>`__
 
+	- `setuptools <https://github.com/pypa/setuptools>`__
 
-To run annotation based reconstruction, you need to install Pathway Tools. This tool is available at the `Pathway Tools website <http://bioinformatics.ai.sri.com/ptools/>`__. A command in the package install the tools:
+	- `supervenn <https://github.com/gecko984/supervenn>`__
+
+	- `tzlocal <https://github.com/regebro/tzlocal>`__
+
+Installation of Pathway Tools
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To run annotation based reconstruction, you need to install Pathway Tools. This tool is 
+available at the `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ website. A 
+command in the package install the tools:
 
 .. code:: sh
 
         aucome --installPWT=path/to/pathway/tools/installer
+	source ~/.bashrc
 
 You can also provide an option to this commande: --ptools=ptools_path
 
-This option let you choose the path where the ptools-local folder will be installed. PGDBs created by Pathway-Tools are stored in this folder.
+
+This option let you choose the path where the ptools-local folder will be installed. PGDBs 
+created by `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ are stored in this 
+folder.
+
+
+Getting the MetaCyc PADMET file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You also should install the MetaCyc_XX.X.padmet (the version number of 
+`MetaCyc <https://metacyc.org/>`__  is replaced with XX.X), and then you should update your 
+config.txt files for each study. This is the way to 
+getting a MetaCyc_XX.padmet file: Firstly, download the flat files of 
+`MetaCyc <https://metacyc.org/>`__ in DAT format at the
+`https://biocyc.org/download.shtml <https://biocyc.org/download.shtml>`__ webpage. Secondly, 
+put all the downloaded DAT files in a directory (it is named FLAT_DIR here). Thirdly run this 
+command:
+
+.. code:: sh
+
+	padmet pgdb_to_padmet --pgdb=FLAT_DIR --output=metacyc_XX.X.padmet --version=XX.X --db=Metacyc -v
 
 
 Docker
@@ -93,8 +140,9 @@ If you have the issue:
 	FATAL:   While performing build: while creating squashfs: create command failed: exit status 1: Write failed because No space left on device
 	FATAL ERROR: Failed to write to output filesystem
 
-It is because Singularity has not enough space in its temporary folder due to the size of the tools needed by aucome.
-You can modify manually this path using the ``SINGULARITY_TMPDIR`` variable (the temporary folder must exist), for example:
+It is because Singularity has not enough space in its temporary folder due to the size of the
+tools needed by aucome. You can modify manually this path using the ``SINGULARITY_TMPDIR`` 
+variable (the temporary folder must exist), for example:
 
 .. code:: sh
 
@@ -108,7 +156,8 @@ Then you can run the container with command like:
 
 But using only these commands can produce errors due to the compartmentalization of singularity.
 So it is better to use the ``-c`` to avoid sharing filesystem with host.
-And the ``-B`` allows to give a shared folder between the host and the singularity container so Singularity can also access to the data in the host.
+And the ``-B`` allows to give a shared folder between the host and the singularity container 
+so Singularity can also access to the data in the host.
 
 .. code:: sh
 
@@ -136,7 +185,8 @@ You have to create the working folder for AuCoMe, with the --init argument:
 
     aucome --init=run_ID [-v]
 
-This command will create a folder name "run_ID" inside the working folder. In this "run_ID" folder, the command will create all the folders used during the analysis.
+This command will create a folder name "run_ID" inside the working folder. In this "run_ID"
+folder, the command will create all the folders used during the analysis.
 
 .. code-block:: text
 
@@ -153,8 +203,6 @@ This command will create a folder name "run_ID" inside the working folder. In th
 			├──
 	├── config.txt
 	├── logs
-		├──
-	├── model_organisms
 		├──
 	├── networks
 		├── PADMETs
@@ -177,30 +225,63 @@ This command will create a folder name "run_ID" inside the working folder. In th
 	├── studied_organisms
 		├──
 
-**analysis** will store the result of padmet analysis.
+**analysis** will store the various analysis of the 
+`PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ files which 
+are in the networks folder.
 
-**annotation_based** contains three sub-folders. The folder PGDBs will contain all the results from Pathway-Tools (in dat format). These results will be stored in padmet and sbml inside PADMETs and SBMLs.
+**annotation_based** includes three subfolders. The PGDBs folder will contain all the results 
+from `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ (in DAT format). These results
+will also be stored in `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ 
+and `SBML <https://sbml.org/documents/specifications/>`__ files inside PADMETs and SBMLs.
 
-**config.txt** contains numerous paths used by the script.
+**config.txt** contains numerous paths used by the script: paths to programs, directories and 
+databases. It also inclues the `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ 
+and `MetaCyc <https://metacyc.org/>`__  versions. 
 
-**model_organisms** contains the model organisms you want to use for the orthology. In this folder you put a new folder with the name of the species and in this folder you put the proteome and the sbml of the metabolic network of your species. Proteome and metabolic network names must be the same than the name of the folder.
+**networks** will contain one metabolic network per studied organism, created thanks to AuCoMe,
+in `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ and 
+`SBML <https://sbml.org/documents/specifications/>`__ formats that are stored into two
+directories (PADMETs and SBMLs). It also includes the panmetabolism of all the studied 
+organisms in `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__
+and `SBML <https://sbml.org/documents/specifications/>`__ format. 
 
-.. code-block:: text
+**orthology_based** contains four subfolders. Firstly the 0_Orthofinder_WD directory folder 
+will include all the run of `Orthofinder <https://github.com/davidemms/OrthoFinder>`__. 
+Secondly, the 1_sbml_orthology folder will contain one subdirectory per studied organims, and 
+each subfolders include `SBML <https://sbml.org/documents/specifications/>`__  files with the
+orthogroups of other species that `OrthoFinder <https://github.com/davidemms/OrthoFinder>`__ 
+found. Thirdly, the 2_padmet_orthology directory will contain the 
+`PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ files created 
+with the orthology step. Fourthly, the 3_padmet_filtered folder will contain 
+`PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ files created
+thanks to the orthology step, but in this subfolder only the robust reactions are kept in 
+these `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ files.  
 
-	├── model_organisms
-		├── A_thaliana
-			├── A_thaliana.fasta
-			├── A_thaliana.sbml
+**structral_check** relies on the search on the genomes for missing Gene-Proteins-Reactions 
+associations. All the metabolic networks previously created are be pairwise compared. If one 
+metabolic network has a Gene-Protein-Reaction association that another one has not, a genomic 
+search will be performed between both genomes corresponding with the both metabolic networks.
+Gene-Protein-Reaction associated with the first metabolic network will be used to search for 
+match with the genome sequence corresponding with of the second metabolic network.
+It contains four subdirectories. Firstly 0_specifics_reactions folder will include numerous 
+TSV files with lists of Gene-Protein-Reaction associations that are present in a metabolic 
+network and that are absent in another metabolic network. Secondly, the 1_blast_results 
+directory will contain the search results between genomes of studied organisms and selected 
+genes in the previous TSV files. Here orther TSV files will also be created with another format. These TSV 
+files will include the results of genomic search programs. 
+`BlastP <https://blast.ncbi.nlm.nih.gov/>`__, `TblastN <https://blast.ncbi.nlm.nih.gov/>`__, 
+and `Exonerate <https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate>`__ are 
+used as genomic search programs. Thirdly the 2_reactions_to_add folder will contain a PADMET 
+form with the reactions to add for each studied organisms. Fourthly, the 3_PADMETs will include
+the `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__ files 
+created with the structural step.
 
-**networks** will contain all the metabolic network created by aucome in padmet format.
-
-**orthology_based** this folder will contain all the run of Orthofinder, the sbml and padmets created with the orthology and the padmet with the robust reacitons.
-
-**orthology_based** contains the search on the genome for missing reactions. All the studied organisms will be comapred two by two.
-If one organism has a reaction that another one has not a genomic search will be performed.
-Genes associated with the reaction in the first organism will be used to search for match with the genome sequence of the second organism.
-
-**studied_organisms**: you put all the species that you want to studies in this folder. For each species you create a folder and in this folder you put the genbank file of this species. Like for model_organisms, file and folder must have the same name. And the genbank file must end with a '.gbk'.
+**studied_organisms**: you put all the species that you want to study in this folder. For each 
+species, you create a folder and in this folder you put the 
+`GenBank <https://www.ncbi.nlm.nih.gov/Sitemap/samplerecord.html>`__ file of this species. Each
+files and folders must have the same name. Then, the 
+`GenBank <https://www.ncbi.nlm.nih.gov/Sitemap/samplerecord.html>`__ file must end with a 
+'.gbk'.
 
 .. code-block:: text
 
@@ -211,7 +292,9 @@ Genes associated with the reaction in the first organism will be used to search 
 			├── species_2.gbk
 
 
-Once you have put your species in the studied_organisms folder and the model in model_organisms, a check must be done on the data using:
+.. warning:: Remember to check the versions of `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ and `MetaCyc <https://metacyc.org/>`__ before running the check command. 
+
+Once you have put your species in the studied_organisms folder, a check must be done on the data using:
 
 Check command
 ~~~~~~~~~~~~~
@@ -220,11 +303,14 @@ Check command
 
     aucome check --run=ID [--cpu=INT] [-v] [--vv]
 
-This command will check if there is no character that will cause trouble. It will also create the proteome fasta file from the genbank.
-
-Also, this command will fill the 'all' row of analysis/group_template.tsv, with all the species from the studied_organisms folder.
-
-And for the annotation_based folder, if PGDBs contains folder, it will create the padmet and the sbml corresponding to these draft in PADMETs and SBMLs.
+This command will check if there is no character that will cause trouble. It will also create
+the proteome `FASTA <http://bioinformatics.org/annhyb/examples/seq_fasta.html>`__ file from 
+the `GenBank <https://www.ncbi.nlm.nih.gov/Sitemap/samplerecord.html>`__. Also, this command
+will fill the 'all' row of analysis/group_template.tsv, with all the species from the 
+studied_organisms folder. And for the annotation_based folder, if PGDBs contains folder, it 
+will create the `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#padmet-format>`__
+and the `SBML <https://sbml.org/documents/specifications/>`__ corresponding to these draft in 
+PADMETs and SBMLs folders.
 
 Renconstruction command
 ~~~~~~~~~~~~~~~~~~~~~~~
