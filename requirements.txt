@@ -1,3 +1,4 @@
+biopython>=1.78
 mpwt>=0.6.0
 padmet>=4.0
 rpy2>=3.0.5
