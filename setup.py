@@ -1,43 +1,37 @@
-import os
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-from io import open
-from distutils.util import convert_path
-from setuptools import setup, find_packages
-
-setup_directory = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(setup_directory, 'README.rst'), encoding='utf-8') as readme_file:
-    long_description = readme_file.read()
-
+from setuptools import setup
 
 setup(name='aucome',
+      url='https://github.com/aureme/aucome',
+      license='GPLv3+',
       description='Automatic Comparison of Metabolism',
-      long_description=long_description,
-      url='https://github.com/AuReMe/aucome',
+      long_description=
+      'AuCoMe is a Python3 workflow that aims at reconstructing homogeneous metabolic networks from genomes with heterogeneous levels of annotations. More information on usage and troubleshooting on Github: https://github.com/aureme/aucome',
       author='AuReMe',
       author_email='gem-aureme@inria.fr',
+      python_requires='>=3.6',
       classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
-
+          'Development Status :: 3 - Alpha',       
         # Audience
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: Developers',
-
+          'Intended Audience :: Science/Research',
+          'Intended Audience :: Developers',
+          'License :: OSI Approved',
+          'Natural Language :: English',
+          'Topic :: Scientific/Engineering :: Bio-Informatics',
+          
         # Environnement, OS, languages
-        'Programming Language :: Python :: 3'
+          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7'
       ],
       packages=['aucome'],
-      install_requires=[
-            'mpwt>=0.6.0',
-            'padmet>=4.0',
-            'requests>=2.22.0',
-            'rpy2>=3.0.5',
-            'supervenn>=0.1.13',
-            'seaborn'
-      ],
+      install_requires=['matplotlib', 'mpwt', 'padmet', 'rpy2==3.0.5',
+                        'seaborn', 'supervenn', 'tzlocal'],      
       entry_points={
           'console_scripts': [
               'aucome = aucome.__main__:main'

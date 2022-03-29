@@ -1,5 +1,7 @@
-biopython>=1.78
-mpwt>=0.6.0
-padmet>=4.0
-rpy2>=3.0.5
-supervenn>=0.1.13
+matplotlib
+mpwt
+padmet
+rpy2==3.0.5
+seaborn
+supervenn
+tzlocal

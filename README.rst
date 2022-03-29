@@ -29,43 +29,15 @@ These tools are needed:
 
 And some python packages:
 
-	- `biopython <https://github.com/biopython/biopython>`__
-	
-	- `cobra <https://github.com/opencobra/cobrapy>`__ 
-	
-	- `cython <https://github.com/cython/cython>`__
-
-	- `docopt <https://github.com/docopt/docopt>`__
-
-	- `eventlet <https://github.com/eventlet/eventlet>`__
-
-	- `lxml <https://github.com/lxml/lxml>`__
-
 	- `matplotlib <https://github.com/matplotlib/matplotlib>`__
 
 	- `mpwt <https://github.com/AuReMe/mpwt>`__
 
-	- `numpy <https://github.com/numpy/numpy>`__
-
 	- `padmet <https://github.com/AuReMe/padmet>`__
-
-	- `pandas <https://github.com/pandas-dev/pandas>`__
-
-	- `pybind11 <https://github.com/pybind/pybind11>`__ 
-
-	- `pyparsing <https://github.com/pyparsing/pyparsing>`__
-
-	- `pythran <https://github.com/serge-sans-paille/pythran>`__ 
-
-	- `requests <https://github.com/kennethreitz/requests>`__
 
 	- `rpy2 <https://github.com/rpy2/rpy2>`__
 
-	- `scipy <https://github.com/scipy/scipy>`__
-
 	- `seaborn <https://github.com/mwaskom/seaborn>`__
-
-	- `setuptools <https://github.com/pypa/setuptools>`__
 
 	- `supervenn <https://github.com/gecko984/supervenn>`__
 
