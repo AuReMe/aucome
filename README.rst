@@ -366,7 +366,7 @@ Orthofinder can be launched using:
 			├── species_1.padmet
 			├── species_2.padmet
 			├── species_3.padmet
-	    ├── 3_padmet_filtered
+		├── 3_padmet_filtered
 			├── propagation_to_remove.tsv
 			├── reactions_to_remove.tsv
 			├── species_1.padmet
