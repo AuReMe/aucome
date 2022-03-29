@@ -48,7 +48,7 @@ Installation of Pathway Tools
 
 To run annotation based reconstruction, you need to install Pathway Tools. This tool is 
 available at the `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ website. A 
-command in the package install the tools:
+command in the package install the tool:
 
 .. code:: sh
 
@@ -262,7 +262,8 @@ files and folders must have the same name. Then, the
 			├── species_1.gbk
 		├── species_2
 			├── species_2.gbk
-
+		├── species_3
+			├── species_3.gbk
 
 .. warning:: Remember to check the versions of `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ and `MetaCyc <https://metacyc.org/>`__ before running the check command. 
 
@@ -284,10 +285,11 @@ will create the `PADMET <https://padmet.readthedocs.io/en/latest/tutorial.html#p
 and the `SBML <https://sbml.org/documents/specifications/>`__ corresponding to these draft in 
 PADMETs and SBMLs folders.
 
-Renconstruction command
+Reconstruction command
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-A run of Pathway-Tools can be launched using the command:
+A run of `Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ can be launched using
+the command:
 
 .. code:: sh
 
@@ -299,6 +301,7 @@ A run of Pathway-Tools can be launched using the command:
 		├── PADMETs
 			├── output_pathwaytools_species_1.padmet
 			├── output_pathwaytools_species_2.padmet
+			├── output_pathwaytools_species_3.padmet
 		├── PGDBs
 			├── species_1
 				├── PGDB dat files
@@ -306,14 +309,27 @@ A run of Pathway-Tools can be launched using the command:
 			├── species_2
 				├── PGDB dat files
 				├── ...
+				├── species_3
+				├── PGDB dat files
+				├── ...
 		├── SBMLs
 			├── output_pathwaytools_species_1.sbml
 			├── output_pathwaytools_species_2.sbml
+			├── output_pathwaytools_species_3.sbml
 	├── logs
 		├── log_error.txt
 		├── resume_inference.tsv
 
-Using the package mpwt, it will create the input file for Pathway-Tools inside studied_organisms and if there is no error, it will create for each species inside this folder a folder inside PGDBs containing all the dat files ofthe draft metabolic network.
+Using the package `mpwt <https://github.com/AuReMe/mpwt>`__, it will create the input file for
+`Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__ inside studied_organisms/ directory.
+Then, for each species that has correctly run in 
+`Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__, a species/ directory is created 
+inside annotation_based/PGDBs/ which containing all the DAT files of the draft metabolic 
+network; two other files will also be written: output_pathwaytools_species.padmet (in 
+annotation_based/PADMETs/) and output_pathwaytools_species.sbml (inside annotation_based/SBMLs).
+At the end of the reconstruction step, the resume_inference.tsv file will be generated too. 
+This file is useful to detect which species were not correctly run with 
+`Pathway Tools <http://bioinformatics.ai.sri.com/ptools/>`__.
 
 Orthology command
 ~~~~~~~~~~~~~~~~~
@@ -327,19 +343,35 @@ Orthofinder can be launched using:
 .. code-block:: text
 
 	├── orthology_based
-		├── Orthofinder_WD
-			├── species_1
-				├── output_orthofinder_from_species_2.sbml
-			├── species_2
-				├── output_orthofinder_from_species_1.sbml
-			├── Orthofinder_WD
+			├── 0_Orthofinder_WD
 				├── species_1.faa
 				├── species_2.faa
+				├── species_3.faa
 				├── OrthoFinder
 					├── Results_MonthDay
 						├── Orthogroups
 						├── Orthologues
 						├── ..
+			├── 1_sbml_orthology
+				├── species_1
+					├── output_orthofinder_from_species_2.sbml
+					├── output_orthofinder_from_species_3.sbml
+				├── species_2
+					├── output_orthofinder_from_species_1.sbml
+					├── output_orthofinder_from_species_3.sbml
+				├── species_3
+					├── output_orthofinder_from_species_1.sbml
+					├── output_orthofinder_from_species_2.sbml
+			├── 2_padmet_orthology
+				├── species_1.padmet
+				├── species_2.padmet
+				├── species_3.padmet
+            ├── 3_padmet_filtered
+				├── propagation_to_remove.tsv
+				├── reactions_to_remove.tsv
+				├── species_1.padmet
+				├── species_2.padmet
+				├── species_3.padmet
 
 Then the proteome from the studied organisms and from the models will be moved to the Orthofinder_WD folder and orthofinder will be launch on them. Orthofinder result will be in this folder and in orthology_based, there will be all the metabolic network reconstructed from orthology.
 
@@ -357,22 +389,28 @@ To assure that no reactions are missing due to missing gene structures a genomic
 	├── structural_check
 		├── 0_specifics_reactions
 			├── species_1_VS_species_2.tsv
+			├── species_1_VS_species_3.tsv
 			├── species_2_VS_species_1.tsv
+			├── species_2_VS_species_3.tsv
 		├── 1_blast_results
 			├── analysis
 				├── species_1_VS_species_2.tsv
+				├── species_1_VS_species_3.tsv
 				├── species_2_VS_species_1.tsv
+				├── species_2_VS_species_3.tsv
 			├── tmp
 		├── 2_reactions_to_add
 			├── species_1.tsv
 			├── species_2.tsv
+			├── species_3.tsv
 		├── 3_PADMETs
 			├── species_1.padmet
 			├── species_2.padmet
+			├── species_3.padmet
 
 
 Spontaneous command
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 Then you can spontaneous all the metabolic network with:
 
@@ -386,11 +424,13 @@ Then you can spontaneous all the metabolic network with:
 		├── PADMETs
 			├── species_1.padmet
 			├── species_2.padmet
+			├── species_3.padmet
 		├── panmetabolism.padmet
 		├── panmetabolism.sbml
 		├── SBMLs
 			├── species_1.sbml
 			├── species_2.sbml
+			├── species_3.sbml
 
 This will output the result inside the networks folder.
 
