@@ -343,35 +343,35 @@ Orthofinder can be launched using:
 .. code-block:: text
 
 	├── orthology_based
-			├── 0_Orthofinder_WD
-				├── species_1.faa
-				├── species_2.faa
-				├── species_3.faa
-				├── OrthoFinder
-					├── Results_MonthDay
-						├── Orthogroups
-						├── Orthologues
-						├── ..
-			├── 1_sbml_orthology
-				├── species_1
-					├── output_orthofinder_from_species_2.sbml
-					├── output_orthofinder_from_species_3.sbml
-				├── species_2
-					├── output_orthofinder_from_species_1.sbml
-					├── output_orthofinder_from_species_3.sbml
-				├── species_3
-					├── output_orthofinder_from_species_1.sbml
-					├── output_orthofinder_from_species_2.sbml
-			├── 2_padmet_orthology
-				├── species_1.padmet
-				├── species_2.padmet
-				├── species_3.padmet
-            ├── 3_padmet_filtered
-				├── propagation_to_remove.tsv
-				├── reactions_to_remove.tsv
-				├── species_1.padmet
-				├── species_2.padmet
-				├── species_3.padmet
+		├── 0_Orthofinder_WD
+			├── species_1.faa
+			├── species_2.faa
+			├── species_3.faa
+			├── OrthoFinder
+				├── Results_MonthDay
+					├── Orthogroups
+					├── Orthologues
+					├── ..
+		├── 1_sbml_orthology
+			├── species_1
+				├── output_orthofinder_from_species_2.sbml
+				├── output_orthofinder_from_species_3.sbml
+			├── species_2
+				├── output_orthofinder_from_species_1.sbml
+				├── output_orthofinder_from_species_3.sbml
+			├── species_3
+				├── output_orthofinder_from_species_1.sbml
+				├── output_orthofinder_from_species_2.sbml
+		├── 2_padmet_orthology
+			├── species_1.padmet
+			├── species_2.padmet
+			├── species_3.padmet
+	    ├── 3_padmet_filtered
+			├── propagation_to_remove.tsv
+			├── reactions_to_remove.tsv
+			├── species_1.padmet
+			├── species_2.padmet
+			├── species_3.padmet
 
 Then the proteome from the studied organisms and from the models will be moved to the Orthofinder_WD folder and orthofinder will be launch on them. Orthofinder result will be in this folder and in orthology_based, there will be all the metabolic network reconstructed from orthology.
 
