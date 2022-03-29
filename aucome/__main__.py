@@ -18,7 +18,7 @@ The subcommands are:
     reconstruction    Run Pathway Tools
     orthology    Run Orthofinder for crossing orthology between species
     structural    Run check of the structural annotation
-    merge    Merge all networks (from Pathway Tools, Orthology and Structural)
+    spontaneous    Spontaneous all networks (from Pathway Tools, Orthology and Structural)
 
     workflow    Run Check, Pathway Tools, Orthofinder and Merging of all networks
     analysis    Analyze results
@@ -76,8 +76,8 @@ def main(args=None):
         return
 
     if command:
-        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'merge', 'structural', 'analysis', 'compare']:
-            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, merge, structural, analysis, compare.')
+        if command not in ['workflow', 'check', 'reconstruction', 'orthology', 'spontaneous', 'structural', 'analysis', 'compare']:
+            sys.exit(command + ' not a valid command: workflow, check, reconstruction, orthology, spontaneous, structural, analysis, compare.')
 
         if '-h' in command_args:
             getattr(aucome, command).command_help()
@@ -101,8 +101,8 @@ def main(args=None):
         elif command == 'structural':
             aucome.structural.structural_parse_args(command_args)
 
-        elif command == 'merge':
-            aucome.merge.merge_parse_args(command_args)
+        elif command == 'spontaneous':
+            aucome.spontaneous.spontaneous_parse_args(command_args)
 
         elif command == 'analysis':
             aucome.analysis.analysis_parse_args(command_args)

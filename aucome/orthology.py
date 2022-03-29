@@ -446,7 +446,7 @@ def filter_propagation(padmet_folder, output_folder, aucome_pool, filtering_thre
                 padmet_output_folder, reactions_to_remove_file, aucome_pool)
 
 
-def merge_result_dict(first_dict, second_dict):
+def spontaneous_result_dict(first_dict, second_dict):
     for rxn_id in second_dict:
         if rxn_id not in first_dict:
             first_dict[rxn_id] = dict()
@@ -475,7 +475,7 @@ def extractRGL(padmet_folder, aucome_pool):
     multiprocessing_results = aucome_pool.starmap(mp_extractRGL, multiprocessing_datas)
 
     for multiprocessing_result in multiprocessing_results:
-        merge_result_dict(dict_rxn_orgs_genes, multiprocessing_result[0])
+        spontaneous_result_dict(dict_rxn_orgs_genes, multiprocessing_result[0])
         dict_rxn_ec.update(multiprocessing_result[1])
 
     return dict_rxn_orgs_genes, dict_rxn_ec
@@ -609,7 +609,7 @@ def remove_gene(gene_ids_to_remove, dict_rxn_org_gene_propag_to_remove, rxn_id,
     return dict_rxn_org_gene_propag_to_remove
 
 
-def merge_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean,
+def spontaneous_dict_org_rxn_clean(dict_org_rxn_clean, tmp_dict_org_rxn_clean,
                              dict_rxn_org_gene_propag_to_remove):
     for org_id in tmp_dict_org_rxn_clean:
         if org_id not in dict_org_rxn_clean:
@@ -696,7 +696,7 @@ def cleanPadmet(dict_rxn_org_gene_propag_to_remove, dict_rxn_ec, padmet_folder,
     multiprocessing_results = aucome_pool.starmap(create_dict_org_rxn_clean, create_multiprocessing_datas)
 
     for multiprocessing_result in multiprocessing_results:
-        merge_dict_org_rxn_clean(dict_org_rxn_clean, multiprocessing_result, dict_rxn_org_gene_propag_to_remove)
+        spontaneous_dict_org_rxn_clean(dict_org_rxn_clean, multiprocessing_result, dict_rxn_org_gene_propag_to_remove)
 
     remove_multiprocessing_datas = []
     for padmet_file in next(os.walk(padmet_folder))[2]:

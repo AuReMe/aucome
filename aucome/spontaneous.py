@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 usage:
-    aucome merge --run=ID [--cpu=INT] [-v] [--vv]
+    aucome spontaneous --run=ID [--cpu=INT] [-v] [--vv]
 
 options:
     --run=ID    Pathname to the comparison workspace.
@@ -28,7 +28,7 @@ def command_help():
     print(docopt.docopt(__doc__))
 
 
-def merge_parse_args(command_args):
+def spontaneous_parse_args(command_args):
     args = docopt.docopt(__doc__, argv=command_args)
     run_id = args['--run']
     verbose = args['-v']
@@ -42,13 +42,13 @@ def merge_parse_args(command_args):
     if veryverbose and not verbose:
         verbose = veryverbose
 
-    run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)
+    run_spontaneous(run_id, nb_cpu_to_use, verbose, veryverbose)
 
 
-def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
+def run_spontaneous(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     if verbose:
-        print('--- Running merge step ---')
-    merge_start_time = time.time()
+        print('--- Running spontaneous step ---')
+    spontaneous_start_time = time.time()
     aucome_pool = Pool(nb_cpu_to_use)
 
     config_data = parse_config_file(run_id)
@@ -94,12 +94,12 @@ def run_merge(run_id, nb_cpu_to_use, verbose, veryverbose=None):
     padmet_to_padmet.padmet_to_padmet(padmet_from_networks_path, networks_path + '/panmetabolism.padmet', verbose=veryverbose)
     sbmlGenerator.padmet_to_sbml(padmet=networks_path + '/panmetabolism.padmet', output=networks_path + '/panmetabolism.sbml', verbose=veryverbose)
 
-    merge_end_time = (time.time() - merge_start_time)
-    integer_part, decimal_part = str(merge_end_time).split('.')
-    merge_time = ".".join([integer_part, decimal_part[:3]])
+    spontaneous_end_time = (time.time() - spontaneous_start_time)
+    integer_part, decimal_part = str(spontaneous_end_time).split('.')
+    spontaneous_time = ".".join([integer_part, decimal_part[:3]])
 
     if verbose:
-        print("--- merge step done in: %ss ---" %merge_time)
+        print("--- spontaneous step done in: %ss ---" %spontaneous_time)
 
 
 def add_spontaneous_reactions(padmet_path, padmet_ref_path, output_padmet_path, only_complete_pathways=True):

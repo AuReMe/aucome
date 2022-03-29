@@ -399,14 +399,14 @@ To assure that no reactions are missing due to missing gene structures a genomic
 			├── species_2.padmet
 
 
-Merge command
+Spontaneous command
 ~~~~~~~~~~~~~
 
-Then you can merge all the metabolic network with:
+Then you can spontaneous all the metabolic network with:
 
 .. code:: sh
 
-    aucome merge --run=ID [--cpu=INT] [-v] [--vv]
+    aucome spontaneous --run=ID [--cpu=INT] [-v] [--vv]
 
 .. code-block:: text
 

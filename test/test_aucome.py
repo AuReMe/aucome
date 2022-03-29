@@ -19,9 +19,9 @@ def test_aucome():
     # Run Orthofinder.
     aucome_cmd_ortho = ['aucome', 'orthology', '--run=test']
     subprocess.call(aucome_cmd_ortho)
-    # Merge all networks.
-    aucome_cmd_merge = ['aucome', 'draft', '--run=test']
-    subprocess.call(aucome_cmd_merge)
+    # Spontaneous all networks.
+    aucome_cmd_spontaneous = ['aucome', 'draft', '--run=test']
+    subprocess.call(aucome_cmd_spontaneous)
 
     padmetSpec = PadmetSpec('test/networks/fatty_acid_beta_oxydation_I_1.padmet')
     expected_fabo_reactions = [node.id for node in padmetSpec.dicOfNode.values() if node.type == "reaction"]

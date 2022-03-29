@@ -83,7 +83,7 @@ def run_workflow(run_id, nb_cpu_to_use, sequence_search_prg, filtering_threshold
 
     aucome.structural.run_structural(run_id, keep_tmp, nb_cpu_to_use, verbose)
 
-    aucome.merge.run_merge(run_id, nb_cpu_to_use, verbose, veryverbose)
+    aucome.spontaneous.run_spontaneous(run_id, nb_cpu_to_use, verbose, veryverbose)
 
     workflow_end_time = (time.time() - workflow_start_time)
     integer_part, decimal_part = str(workflow_end_time).split('.')
