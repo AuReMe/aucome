@@ -83,15 +83,21 @@ command:
 Docker
 ~~~~~~
 
-From git repository:
+1. From git repository, download the Dockerfile in recipes/.
+
+2. Install docker and docker.io if is not done yet.
+
+3. Build the AuCoMe Docker image, like this: 
 
 .. code:: sh
 
-	git clone https://github.com/AuReMe/aucome.git
+		docker build -t aucome .
 
-	cd aucome
+4. Enter in the Aucome Docker image.
 
-	docker build -t "my_image".
+5. Install Pathway Tools and metacyc_XX.padmet.
+
+6. Run the Aucome commands.
 
 
 Singularity

@@ -7,53 +7,85 @@ ENV PYTHONIOENCODING=utf-8
 # No interactive debian (like tzdata)
 ENV DEBIAN_FRONTEND=noninteractive
 
-LABEL maintainer="Meziane AITE & Arnaud BELCOUR"
-LABEL Version="0.5"
+LABEL maintainer="Meziane AITE, Arnaud BELCOUR & Jeanne GOT"
+LABEL Version="0.5.1"
 LABEL Description="Metabolic Network comparison dockerfile."
+
+RUN mkdir -p /programs/pathway-tools /programs/diamond/
+RUN mkdir -p /home/database/BIOCYC/METACYC/25/
 
 # Install dependencies for Pathway-Tools and Orthofinder.
 RUN apt-get -y update && \
-    apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get install -yq \
     curl \
     make \
+    cmake \
     wget \
     csh \
     git \
     ncbi-blast+ \
+    libffi-dev \
     libxm4 \ 
     vim \
-    r-base \
-    python3-pip \	
-    python3.7 \
     python3.7-dev \
+    python3-pip \
     iputils-ping \
-    screen \
     exonerate \
-    gnome-terminal;\
-    echo "[ncbi]\nData=/usr/bin/data" > ~/.ncbirc
+    gnome-terminal \
+    r-base \
+    mcl
+RUN apt-get clean \
+    apt-get purge
 
-#Install Python packages
-RUN python3.7 -m pip install requests \
-    tzlocal \
-	mpwt \
-	padmet \
-	aucome
-
-
-# Install OrthoFinder.
-RUN mkdir /programs/ /programs/diamond/ /shared/;\
-    cd /programs;\
-    wget https://github.com/davidemms/OrthoFinder/releases/download/2.3.11/OrthoFinder.tar.gz;\
+## Install OrthoFinder and its dependencies.
+# Install OrthoFinder
+RUN wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz;\
     tar xzf OrthoFinder.tar.gz;\
-    rm OrthoFinder.tar.gz;\
-    echo 'export PATH="$PATH:/programs/OrthoFinder:"\nexport PATH="$PATH:/programs/OrthoFinder/bin:"\nexport OPENBLAS_NUM_THREADS=1' >> ~/.bashrc
+    mv OrthoFinder/ /programs/;\
+    rm OrthoFinder.tar.gz
+# Install FastME
+RUN wget http://www.atgc-montpellier.fr/download/sources/fastme/fastme-2.1.5.tar.gz;\
+    tar xzf fastme-2.1.5.tar.gz fastme-2.1.5/binaries/fastme-2.1.5-linux64;\
+    mv fastme-2.1.5/binaries/fastme-2.1.5-linux64 /usr/local/bin/fastme;\
+    rm -r fastme-2.1.5*
+# Install MMseqs2
+RUN wget https://mmseqs.com/latest/mmseqs-linux-avx2.tar.gz;\
+    tar xzf mmseqs-linux-avx2.tar.gz;\
+    cp mmseqs/bin/mmseqs /usr/local/bin/;\
+    mv mmseqs/ /programs/;\
+    rm mmseqs-linux-avx2.tar.gz
+# Install Diamond
+RUN wget https://github.com/bbuchfink/diamond/releases/latest/download/diamond-linux64.tar.gz;\
+    tar xzf diamond-linux64.tar.gz;\
+    mv diamond /programs/diamond/;\
+    rm diamond-linux64.tar.gz
+ 
+RUN echo "[ncbi]" > ~/.ncbirc;\
+    echo "Data=/usr/bin/data" >> ~/.ncbirc;\
+    echo 'export PATH="$PATH:/programs/OrthoFinder:/programs/OrthoFinder/bin:/programs/mmseqs/bin/:/programs/diamond:"' >> ~/.bashrc
+    
 
-# Install r upset for pvclust for dendrogram, padmet, mpwt and comparison script.
+# Install r upset for pvclust for dendrogram, padmet, mpwt and comparison
+# script.
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/pvclust/pvclust_2.0-0.tar.gz', repos=NULL, type='source', dependencies=TRUE)";\
     R -e "install.packages('ape', dependencies=TRUE)"
 
+#Install Python package
+RUN python3 -m pip install --upgrade pip;\
+    python3 -m pip install --upgrade setuptools
 
-#Change in future by python3.7 -m pip install aucome (need to update aucome pack)
-#clone depots
-RUN cd /programs;\
-    git clone https://github.com/AuReMe/padmet-utils.git
+# Install Padmet
+RUN cd /programs/;\
+    git clone https://github.com/AuReMe/padmet.git;\
+    cd /programs/padmet;\
+    pip3 install -r requirements.txt;\
+    chmod +x setup.py;\
+    python3 setup.py install
+
+# Install aucome
+RUN cd /programs/;\
+    git clone https://github.com/AuReMe/aucome.git;\
+    cd /programs/aucome;\
+    pip3 install -r requirements.txt;\
+    chmod +x setup.py;\
+    python3 setup.py install
