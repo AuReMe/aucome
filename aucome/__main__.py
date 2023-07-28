@@ -148,7 +148,7 @@ def create_run(run_id):
 def create_config_file(config_file_path, run_id):
     config = configparser.RawConfigParser()
     config.add_section('DATABASE_PATHS')
-    config.set('DATABASE_PATHS', 'database_ref_path', '/home/database/BIOCYC/METACYC/23.5/metacyc_23.5.padmet')
+    config.set('DATABASE_PATHS', 'database_ref_path', '/home/database/BIOCYC/METACYC/26/metacyc_26.0.padmet')
     config.add_section('PATHS_IN_RUN')
     config.set('PATHS_IN_RUN', 'run_id', run_id)
     config.set('PATHS_IN_RUN', 'studied_organisms_path', '/studied_organisms')
