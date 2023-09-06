@@ -1,5 +1,9 @@
 .. image:: https://img.shields.io/pypi/v/aucome.svg
 	:target: https://pypi.python.org/pypi/aucome
+.. image:: https://img.shields.io/github/license/AuReMe/metage2metabo.svg
+	:target: https://github.com/AuReMe/aucome/blob/master/LICENSE
+.. image:: https://img.shields.io/badge/doi-10.1101/gr.277056.122-blueviolet.svg
+	:target: https://doi.org/10.1101/gr.277056.122
 
 AuCoMe: Automatic Comparison of Metabolism
 ==========================================
