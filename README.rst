@@ -422,7 +422,7 @@ To assure that no reactions are missing due to missing gene structures a genomic
 Spontaneous command
 ~~~~~~~~~~~~~~~~~~~
 
-Then you can spontaneous all the metabolic network with:
+In this command, spontaneous reactions will be added to each metabolic network, if they complete at least one `MetaCyc <https://metacyc.org/>`__ pathway. Then you can spontaneous all the metabolic network with:
 
 .. code:: sh
 
