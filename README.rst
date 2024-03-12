@@ -14,6 +14,9 @@ AuCoMe: Automatic Comparison of Metabolism
    :backlinks: top
    :local:
 
+License
+--------
+This workflow is licensed under the GNU LGPL-3.0-or-later, see the `LICENSE <https://github.com/AuReMe/aucome/blob/main/LICENSE>`__ file for details.
 
 Installation
 ------------
