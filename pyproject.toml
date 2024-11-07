@@ -27,7 +27,7 @@ aucome = "aucome.__main__:main"
 Homepage = "https://github.com/AuReMe/aucome"
 
 [tool.setuptools]
-packages = ['aucome', 'aucome.analysis', 'aucome.check', 'aucome.compare', 'aucome.orthology', 'aucome.reconstruction', 'aucome.spontaneous', 'aucome.structural']
+packages = ['aucome']
 
 [tool.setuptools.dynamic]
 version = { attr = "aucome.__version__" }
