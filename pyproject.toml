@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aucome"
+dynamic = ["version"]
+authors = [{name = "AuReMe", email = "gem-aureme@inria.fr"}]
+readme = "README.md"
+description = "AuCoMe is a Python package that aims at reconstructing homogeneous metabolic networks and pan-metabolism starting from genomes with heterogeneous levels of annotations. Four steps are composing AuCoMe. 1) It automatically infers annotated genomes from draft metabolic networks thanks to Pathway Tools and MPWT. 2) The Gene-Protein-Reaction (GPR) associations previously obtained are propagated to protein orthogroups in using Orthofinder and, an additional robustness criteria. 3) AuCoMe checking the presence of supplementary GPR associations by finding missing annotation in all genomes. In this step, the tools BlastP, TblastN and, Exonerate are called. 4) It adding spontaneous reactions to metabolic pathways that were completed by the previous steps. AuCoMe generates several outputs to facilitate the analysis of results: tabuled files, SBML files, PADMET files, supervenn and a dendogram of reactions."
+license = {text = "GPL-3.0-or-later"}
+
+dependencies = ['matplotlib',
+	     'mpwt',
+	     'padmet',
+	     'rpy2==3.0.5',
+	     'seaborn',
+	     'supervenn',
+	     'tzlocal'
+]
+	     
+
+[project.scripts]
+aucome = "aucome.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/AuReMe/aucome"
+
+[tool.setuptools]
+packages = ['aucome', 'aucome.analysis', 'aucome.check', 'aucome.compare', 'aucome.orthology', 'aucome.reconstruction', 'aucome.spontaneous', 'aucome.structural']
+
+[tool.setuptools.dynamic]
+version = { attr = "aucome.__version__" }
+dependencies = {file = ["requirements.txt"]}
