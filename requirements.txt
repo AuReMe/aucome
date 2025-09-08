@@ -1,7 +1,7 @@
 matplotlib
 mpwt
 padmet
-rpy2
+rpy2-robjects>=3.6.2
 seaborn
 supervenn
 tzlocal

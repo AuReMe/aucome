@@ -13,7 +13,7 @@ license = {text = "GPL-3.0-or-later"}
 dependencies = ['matplotlib',
 	     'mpwt',
 	     'padmet',
-	     'rpy2==3.0.5',
+	     'rpy2-robjects>=3.6.2',
 	     'seaborn',
 	     'supervenn',
 	     'tzlocal'
