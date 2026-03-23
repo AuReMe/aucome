@@ -9,7 +9,7 @@ This program AuCoMe is free software: you can redistribute it and/or modify it u
 
 AuCoMe is distributed in the hope that it will be useful, for internal research purposes only and strictly academic, but WITHOUT ANY WARRANTY. See the GNU General Public license for more details and below. You should have received a copy of the GNU General Public license along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-By downloading AuCoMe, the user accepts the associated user license, as detailed in the following provisions, and undertakes to abide by it in full (hereinafter the [license](../LICENSE).
+By downloading AuCoMe, the user accepts the associated user license, as detailed in the following provisions, and undertakes to abide by it in full (hereinafter the [license]<../LICENSE>.
 
 The license grants the User a right to use AuCoMe, in whole or in part, under the conditions defined below and to the express exclusion of any commercial use.
 
