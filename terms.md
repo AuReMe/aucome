@@ -30,11 +30,11 @@ All references to the source of AuCoMe and/or its authors must be retained in th
 
 The right of use defined by this license is personal and not exclusive. Any use other than those provided for in this license is subject to the prior, express permission of [CNRS](https://www.cnrs.fr/) (French National Center for Scientific Research), to the following address:
 
-Anne SIEGEL, 
-BioGraphs team
-IRISA Campus de Beaulieu
-263 Avenue du Général Leclerc
-35042 Rennes – France
+Anne SIEGEL<br/>
+BioGraphs team<br/>
+IRISA Campus de Beaulieu<br/>
+263 Avenue du Général Leclerc<br/>
+35042 Rennes – France<br/>
 
 Contact : anne DOT siegel AT irisa DOT fr
 
