@@ -20,6 +20,6 @@ IRISA Campus de Beaulieu<br/>
 Contact : anne DOT siegel AT irisa DOT fr
 
 
-## INCLUDED SOFTWARE
+## ADDITIONAL SOFTWARE REQUIRED TO RUN AuCoMe
 
 The Pathway Tools software is provided under this [license](https://biocyc.org/download-bundle.shtml). The MetaCyc database is delivered under this [license](https://metacyc.org/download.shtml).
