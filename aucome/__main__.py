@@ -32,7 +32,6 @@ import docopt
 import logging
 import mpwt
 import os
-import pkg_resources
 import re
 import requests
 import shutil
