@@ -177,7 +177,7 @@ def create_config_file(config_file_path, run_id):
     config.set('PATHS_IN_RUN', 'structural_blast_results_reactions_sequences_path', '%(structural_blast_results_path)s/reactions_sequences')
 
     config.add_section('TOOL_PATHS')
-    config.set('TOOL_PATHS', 'orthofinder_bin_path', '/programs/OrthoFinder/orthofinder')
+    config.set('TOOL_PATHS', 'orthofinder_bin_path', 'orthofinder')
     config.add_section('VAR')
     config.set('VAR', 'study_from_annot_prefix', 'output_pathwaytools_')
 
